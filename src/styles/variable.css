@@ -1,0 +1,53 @@
+:root {
+  --background: #fafafa;
+  --foreground: #171717;
+  --surface: #ffffff;
+  --surface-foreground: #000000;
+  --muted-foreground: #52525b;
+  --border: rgb(0 0 0 / 8%);
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --primary-hover: #383838;
+  --secondary-hover: #f4f4f5;
+  --focus: #71717a;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-foreground: #ffffff;
+  color-scheme: light;
+}
+
+:root.dark {
+  --background: #000000;
+  --foreground: #ededed;
+  --surface: #000000;
+  --surface-foreground: #fafafa;
+  --muted-foreground: #a1a1aa;
+  --border: rgb(255 255 255 / 14.5%);
+  --primary: #ededed;
+  --primary-foreground: #0a0a0a;
+  --primary-hover: #cccccc;
+  --secondary-hover: #1a1a1a;
+  --focus: #a1a1aa;
+  --danger: #f87171;
+  --danger-hover: #dc2626;
+  --danger-foreground: #ffffff;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-foreground: var(--surface-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-focus: var(--focus);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-foreground: var(--danger-foreground);
+  --font-sans: var(--font-geist-sans);
+}
