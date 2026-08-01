@@ -1,10 +1,12 @@
 import { zValidator } from '@hono/zod-validator';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+import type { MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { getDatabase } from '@/db';
 import { tasks } from '@/db/schema';
+import { getCurrentUserId } from '@/lib/supabase/auth';
 
 const taskInputSchema = z.object({
   title: z.string().trim().min(1).max(80),
@@ -21,25 +23,45 @@ const taskColumns = {
   description: tasks.description,
 };
 
-export const api = new Hono()
+type ApiEnvironment = {
+  Variables: {
+    userId: string;
+  };
+};
+
+const requireAuthentication: MiddlewareHandler<ApiEnvironment> = async (
+  context,
+  next,
+) => {
+  const userId = await getCurrentUserId();
+
+  if (!userId) {
+    return context.json({ error: 'Unauthorized' }, 401);
+  }
+
+  context.set('userId', userId);
+  await next();
+};
+
+export const api = new Hono<ApiEnvironment>()
   .basePath('/api')
-  .get('/health', (context) =>
-    context.json({
-      status: 'ok',
-    }),
-  )
+  .use('/tasks', requireAuthentication)
+  .use('/tasks/*', requireAuthentication)
   .get('/tasks', async (context) => {
+    const userId = context.get('userId');
     const taskList = await getDatabase()
       .select(taskColumns)
       .from(tasks)
+      .where(eq(tasks.userId, userId))
       .orderBy(desc(tasks.createdAt), desc(tasks.id));
 
     return context.json({ tasks: taskList }, 200);
   })
   .post('/tasks', zValidator('json', taskInputSchema), async (context) => {
+    const userId = context.get('userId');
     const [task] = await getDatabase()
       .insert(tasks)
-      .values(context.req.valid('json'))
+      .values({ ...context.req.valid('json'), userId })
       .returning(taskColumns);
 
     return context.json({ task }, 201);
@@ -53,7 +75,7 @@ export const api = new Hono()
       const [task] = await getDatabase()
         .update(tasks)
         .set(context.req.valid('json'))
-        .where(eq(tasks.id, id))
+        .where(and(eq(tasks.id, id), eq(tasks.userId, context.get('userId'))))
         .returning(taskColumns);
 
       if (!task) {
@@ -67,7 +89,7 @@ export const api = new Hono()
     const { id } = context.req.valid('param');
     const [deletedTask] = await getDatabase()
       .delete(tasks)
-      .where(eq(tasks.id, id))
+      .where(and(eq(tasks.id, id), eq(tasks.userId, context.get('userId'))))
       .returning({ id: tasks.id });
 
     if (!deletedTask) {

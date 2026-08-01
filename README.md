@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Galexi
 
-## Getting Started
+Galexi is a Next.js task workspace with authentication, private per-user data, internationalization, and light/dark themes.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 and React 19
+- Tailwind CSS 4
+- Supabase Auth and PostgreSQL
+- Drizzle ORM with code-first migrations
+- Hono API routes
+- React Hook Form and Zod validation
+- `next-intl` with English and no locale sub-path
+- `next-themes` and Lucide React
+
+## Local setup
+
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and set the Supabase database and public Auth values.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Apply the existing database migrations:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm db:migrate
+```
 
-## Learn More
+Start the development server:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Routes
 
-## Deploy on Vercel
+- `/` — Galexi landing page
+- `/login` — sign in
+- `/signup` — create an account
+- `/profile` — authenticated account details
+- `/tasks` — authenticated task manager
+- `/api/tasks` — authenticated Hono CRUD API
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+pnpm dev          # Start development mode
+pnpm build        # Create a production build
+pnpm start        # Start the production server
+pnpm lint         # Run ESLint
+pnpm format       # Format and fix the project
+pnpm format:check # Check formatting and linting
+pnpm db:generate  # Generate a Drizzle migration
+pnpm db:migrate   # Apply Drizzle migrations
+pnpm db:check     # Validate Drizzle migrations
+pnpm db:studio    # Open Drizzle Studio
+```
+
+Translation messages live in `src/i18n/locales/en.json`. Routes do not include a locale prefix.

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { hc } from 'hono/client';
 import { Pencil, Plus, Save, Trash2, X } from 'lucide-react';
@@ -50,7 +51,30 @@ function createTaskSchema(labels: TaskLabels) {
 
 type TaskFormValues = z.infer<ReturnType<typeof createTaskSchema>>;
 
-export function TaskManager({ labels }: { labels: TaskLabels }) {
+export function TaskManager() {
+  const t = useTranslations('tasks.manager');
+  const labels = useMemo<TaskLabels>(
+    () => ({
+      titleLabel: t('titleLabel'),
+      titlePlaceholder: t('titlePlaceholder'),
+      descriptionLabel: t('descriptionLabel'),
+      descriptionPlaceholder: t('descriptionPlaceholder'),
+      create: t('create'),
+      update: t('update'),
+      cancel: t('cancel'),
+      listTitle: t('listTitle'),
+      empty: t('empty'),
+      edit: t('edit'),
+      delete: t('delete'),
+      titleRequired: t('titleRequired'),
+      titleTooLong: t('titleTooLong'),
+      descriptionTooLong: t('descriptionTooLong'),
+      loading: t('loading'),
+      loadError: t('loadError'),
+      requestError: t('requestError'),
+    }),
+    [t],
+  );
   const schema = useMemo(() => createTaskSchema(labels), [labels]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);

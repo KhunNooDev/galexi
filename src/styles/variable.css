@@ -1,36 +1,62 @@
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
+  --background: #f4f8ff;
+  --foreground: #111a33;
   --surface: #ffffff;
-  --surface-foreground: #000000;
-  --muted-foreground: #52525b;
-  --border: rgb(0 0 0 / 8%);
-  --primary: #171717;
+  --surface-foreground: #10182d;
+  --muted-foreground: #5b6680;
+  --border: rgb(59 90 160 / 14%);
+  --primary: #335cff;
   --primary-foreground: #ffffff;
-  --primary-hover: #383838;
-  --secondary-hover: #f4f4f5;
-  --focus: #71717a;
+  --primary-hover: #2448d8;
+  --secondary-hover: #edf3ff;
+  --focus: #5276ff;
   --danger: #dc2626;
   --danger-hover: #b91c1c;
   --danger-foreground: #ffffff;
+  --auth-backdrop: #dbeafe;
+  --auth-card: rgb(250 252 255 / 94%);
+  --auth-control: rgb(255 255 255 / 82%);
+  --auth-control-foreground: #172554;
+  --auth-field: rgb(255 255 255 / 72%);
+  --auth-field-border: rgb(57 88 166 / 18%);
+  --auth-overlay: rgb(255 255 255 / 5%);
+  --auth-gradient: linear-gradient(
+    100deg,
+    #38bdf8 0%,
+    #4f7cff 52%,
+    #7158e8 100%
+  );
   color-scheme: light;
 }
 
 :root.dark {
-  --background: #000000;
-  --foreground: #ededed;
-  --surface: #000000;
-  --surface-foreground: #fafafa;
-  --muted-foreground: #a1a1aa;
-  --border: rgb(255 255 255 / 14.5%);
-  --primary: #ededed;
-  --primary-foreground: #0a0a0a;
-  --primary-hover: #cccccc;
-  --secondary-hover: #1a1a1a;
-  --focus: #a1a1aa;
+  --background: #050816;
+  --foreground: #eaf1ff;
+  --surface: #090d20;
+  --surface-foreground: #f1f5ff;
+  --muted-foreground: #9ca8c8;
+  --border: rgb(130 162 255 / 18%);
+  --primary: #7aa2ff;
+  --primary-foreground: #081126;
+  --primary-hover: #9ab8ff;
+  --secondary-hover: #111a38;
+  --focus: #8ab4ff;
   --danger: #f87171;
   --danger-hover: #dc2626;
   --danger-foreground: #ffffff;
+  --auth-backdrop: #050816;
+  --auth-card: rgb(7 12 32 / 92%);
+  --auth-control: rgb(9 15 40 / 78%);
+  --auth-control-foreground: #dbeafe;
+  --auth-field: rgb(112 145 255 / 8%);
+  --auth-field-border: rgb(130 162 255 / 22%);
+  --auth-overlay: rgb(2 6 23 / 35%);
+  --auth-gradient: linear-gradient(
+    100deg,
+    #22d3ee 0%,
+    #4f7cff 52%,
+    #8b5cf6 100%
+  );
   color-scheme: dark;
 }
 
@@ -49,5 +75,12 @@
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
+  --color-auth-backdrop: var(--auth-backdrop);
+  --color-auth-card: var(--auth-card);
+  --color-auth-control: var(--auth-control);
+  --color-auth-control-foreground: var(--auth-control-foreground);
+  --color-auth-field: var(--auth-field);
+  --color-auth-field-border: var(--auth-field-border);
+  --color-auth-overlay: var(--auth-overlay);
   --font-sans: var(--font-geist-sans);
 }

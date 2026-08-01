@@ -1,0 +1,48 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+
+import { ThemeToggle } from './theme-toggle';
+
+type AuthPageShellProps = {
+  backLabel: string;
+  children: React.ReactNode;
+  themeLabel: string;
+};
+
+export function AuthPageShell({
+  backLabel,
+  children,
+  themeLabel,
+}: AuthPageShellProps) {
+  return (
+    <main className='relative min-h-svh overflow-x-hidden overflow-y-auto bg-auth-backdrop'>
+      <Image
+        src='/auth-galaxy-background.png'
+        alt=''
+        fill
+        priority
+        sizes='100vw'
+        className='object-cover object-[52%_30%] dark:brightness-45 dark:saturate-125'
+      />
+      <div className='absolute inset-0 bg-auth-overlay' />
+
+      <Link
+        href='/'
+        className='absolute top-5 left-5 z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/60 bg-auth-control text-auth-control-foreground shadow-sm backdrop-blur-md transition-transform hover:-translate-x-0.5 sm:top-7 sm:left-7'
+        aria-label={backLabel}
+        title={backLabel}
+      >
+        <ArrowLeft aria-hidden='true' className='size-5' />
+      </Link>
+
+      <div className='absolute top-5 right-5 z-20 sm:top-7 sm:right-7'>
+        <ThemeToggle label={themeLabel} />
+      </div>
+
+      <div className='relative z-10 flex min-h-svh items-end justify-center pt-24 sm:pt-40 md:items-center md:justify-end md:px-[8vw] md:py-12'>
+        {children}
+      </div>
+    </main>
+  );
+}

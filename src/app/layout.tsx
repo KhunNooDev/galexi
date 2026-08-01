@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { defaultLocale } from '@/i18n/config';
-import { getDictionary } from '@/i18n/dictionaries';
 
 import '@/styles/globals.css';
 
@@ -13,9 +14,12 @@ const geistSans = Geist({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const dictionary = await getDictionary(defaultLocale);
+  const t = await getTranslations('metadata');
 
-  return dictionary.metadata;
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
 }
 
 export default function RootLayout({
@@ -30,7 +34,9 @@ export default function RootLayout({
       className={`${geistSans.variable} h-full antialiased`}
     >
       <body className='flex min-h-full flex-col'>
-        <ThemeProvider>{children}</ThemeProvider>
+        <NextIntlClientProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

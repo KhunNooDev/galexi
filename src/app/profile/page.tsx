@@ -1,0 +1,155 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getFormatter, getTranslations } from 'next-intl/server';
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  KeyRound,
+  ListTodo,
+  Mail,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react';
+
+import { signOut } from '@/app/auth/actions';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { getCurrentUser } from '@/lib/supabase/auth';
+
+export default async function ProfilePage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  const auth = await getTranslations('auth');
+  const home = await getTranslations('home');
+  const profile = await getTranslations('profile');
+  const formatter = await getFormatter();
+  const notAvailable = profile('notAvailable');
+  const formatDate = (value: string | undefined) =>
+    value
+      ? formatter.dateTime(new Date(value), {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })
+      : notAvailable;
+  const email = user.email ?? notAvailable;
+  const provider =
+    typeof user.app_metadata.provider === 'string'
+      ? user.app_metadata.provider
+      : notAvailable;
+  const details = [
+    {
+      icon: Mail,
+      label: profile('email'),
+      value: email,
+    },
+    {
+      icon: KeyRound,
+      label: profile('userId'),
+      value: user.id,
+    },
+    {
+      icon: ShieldCheck,
+      label: profile('verification'),
+      value: user.email_confirmed_at ? profile('verified') : profile('pending'),
+    },
+    {
+      icon: CheckCircle2,
+      label: profile('provider'),
+      value: provider,
+    },
+    {
+      icon: CalendarDays,
+      label: profile('createdAt'),
+      value: formatDate(user.created_at),
+    },
+    {
+      icon: Clock3,
+      label: profile('lastSignIn'),
+      value: formatDate(user.last_sign_in_at),
+    },
+  ];
+
+  return (
+    <main className='min-h-full bg-background px-4 py-6 sm:px-8 sm:py-10'>
+      <div className='mx-auto max-w-4xl'>
+        <header className='mb-8 flex items-center justify-between gap-4'>
+          <Link
+            href='/'
+            className='inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
+          >
+            <ArrowLeft aria-hidden='true' className='size-4' />
+            {profile('backHome')}
+          </Link>
+          <div className='flex items-center gap-3'>
+            <Link
+              href='/tasks'
+              className='inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
+            >
+              <ListTodo aria-hidden='true' className='size-4' />
+              <span className='hidden sm:inline'>{profile('tasks')}</span>
+            </Link>
+            <ThemeToggle label={home('themeToggle')} />
+          </div>
+        </header>
+
+        <section className='overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
+          <div className='border-b border-border bg-[linear-gradient(135deg,rgb(56_189_248/16%),rgb(79_124_255/14%),rgb(113_88_232/14%))] px-6 py-8 sm:px-10 sm:py-10'>
+            <div className='mb-5 inline-flex size-16 items-center justify-center rounded-2xl bg-primary text-2xl font-semibold text-primary-foreground shadow-lg shadow-primary/20'>
+              {email === notAvailable ? (
+                <UserRound aria-hidden='true' className='size-7' />
+              ) : (
+                email.charAt(0).toUpperCase()
+              )}
+            </div>
+            <h1 className='text-3xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
+              {profile('pageTitle')}
+            </h1>
+            <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
+              {profile('pageDescription')}
+            </p>
+          </div>
+
+          <div className='p-6 sm:p-10'>
+            <h2 className='mb-5 text-sm font-semibold tracking-wide text-surface-foreground uppercase'>
+              {profile('accountDetails')}
+            </h2>
+            <dl className='grid gap-3 sm:grid-cols-2'>
+              {details.map(({ icon: Icon, label, value }) => (
+                <div
+                  key={label}
+                  className='flex min-w-0 items-start gap-3 rounded-2xl border border-border bg-background/60 p-4'
+                >
+                  <span className='inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                    <Icon aria-hidden='true' className='size-4' />
+                  </span>
+                  <div className='min-w-0'>
+                    <dt className='text-xs font-medium text-muted-foreground'>
+                      {label}
+                    </dt>
+                    <dd className='mt-1 truncate text-sm font-medium text-surface-foreground'>
+                      {value}
+                    </dd>
+                  </div>
+                </div>
+              ))}
+            </dl>
+
+            <form action={signOut} className='mt-6'>
+              <button
+                type='submit'
+                className='h-11 w-full cursor-pointer rounded-full border border-border px-5 text-sm font-medium text-surface-foreground transition-colors hover:bg-secondary-hover sm:w-auto'
+              >
+                {auth('signOut')}
+              </button>
+            </form>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}
