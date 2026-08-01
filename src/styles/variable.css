@@ -20,12 +20,7 @@
   --auth-field: rgb(255 255 255 / 72%);
   --auth-field-border: rgb(57 88 166 / 18%);
   --auth-overlay: rgb(255 255 255 / 5%);
-  --auth-gradient: linear-gradient(
-    100deg,
-    #38bdf8 0%,
-    #4f7cff 52%,
-    #7158e8 100%
-  );
+  --auth-gradient: linear-gradient(100deg, #38bdf8 0%, #4f7cff 52%, #7158e8 100%);
   color-scheme: light;
 }
 
@@ -51,12 +46,7 @@
   --auth-field: rgb(112 145 255 / 8%);
   --auth-field-border: rgb(130 162 255 / 22%);
   --auth-overlay: rgb(2 6 23 / 35%);
-  --auth-gradient: linear-gradient(
-    100deg,
-    #22d3ee 0%,
-    #4f7cff 52%,
-    #8b5cf6 100%
-  );
+  --auth-gradient: linear-gradient(100deg, #22d3ee 0%, #4f7cff 52%, #8b5cf6 100%);
   color-scheme: dark;
 }
 
@@ -65,8 +55,19 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--surface-foreground);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--surface-foreground);
+  --color-secondary: var(--secondary-hover);
+  --color-secondary-foreground: var(--surface-foreground);
+  --color-muted: var(--secondary-hover);
   --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--secondary-hover);
+  --color-accent-foreground: var(--surface-foreground);
   --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--focus);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-hover: var(--primary-hover);
@@ -75,6 +76,7 @@
   --color-danger: var(--danger);
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
+  --color-destructive: var(--danger);
   --color-auth-backdrop: var(--auth-backdrop);
   --color-auth-card: var(--auth-card);
   --color-auth-control: var(--auth-control);

@@ -2,14 +2,16 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
   ArrowRight,
+  BookOpenText,
+  Globe2,
   Languages,
-  ListTodo,
   Orbit,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
 
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Tooltip } from '@/components/tooltip';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 
 export default async function Home() {
@@ -21,9 +23,9 @@ export default async function Home() {
       description: t('home.secureDescription'),
     },
     {
-      icon: ListTodo,
-      title: t('home.tasksTitle'),
-      description: t('home.tasksDescription'),
+      icon: BookOpenText,
+      title: t('home.wordsTitle'),
+      description: t('home.wordsDescription'),
     },
     {
       icon: Languages,
@@ -51,14 +53,15 @@ export default async function Home() {
             {t('home.brand')}
           </Link>
           <div className='flex items-center gap-2'>
-            <Link
-              href={ROUTES.PROFILE}
-              className='inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground'
-              aria-label={t('home.profile')}
-              title={t('home.profile')}
-            >
-              <UserRound aria-hidden='true' className='size-4' />
-            </Link>
+            <Tooltip label={t('home.profile')}>
+              <Link
+                href={ROUTES.PROFILE}
+                className='inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground'
+                aria-label={t('home.profile')}
+              >
+                <UserRound aria-hidden='true' className='size-4' />
+              </Link>
+            </Tooltip>
             <ThemeToggle label={t('home.themeToggle')} />
           </div>
         </header>
@@ -83,11 +86,18 @@ export default async function Home() {
                 <ArrowRight aria-hidden='true' className='size-4' />
               </Link>
               <Link
-                href={ROUTES.TASKS}
+                href={ROUTES.WORDS}
                 className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
               >
-                <ListTodo aria-hidden='true' className='size-4' />
-                {t('home.openTasks')}
+                <BookOpenText aria-hidden='true' className='size-4' />
+                {t('home.openWords')}
+              </Link>
+              <Link
+                href={ROUTES.SEARCH_WORDS}
+                className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
+              >
+                <Globe2 aria-hidden='true' className='size-4' />
+                {t('home.browsePublicWords')}
               </Link>
             </div>
           </div>
@@ -101,12 +111,8 @@ export default async function Home() {
                 <span className='mb-4 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
                   <Icon aria-hidden='true' className='size-5' />
                 </span>
-                <h2 className='font-semibold text-surface-foreground'>
-                  {title}
-                </h2>
-                <p className='mt-2 text-sm leading-6 text-muted-foreground'>
-                  {description}
-                </p>
+                <h2 className='font-semibold text-surface-foreground'>{title}</h2>
+                <p className='mt-2 text-sm leading-6 text-muted-foreground'>{description}</p>
               </article>
             ))}
           </div>

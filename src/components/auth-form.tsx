@@ -1,34 +1,21 @@
 'use client';
 
-import {
-  startTransition,
-  useActionState,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { startTransition, useActionState, useEffect, useMemo, useState } from 'react';
 import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  CircleAlert,
-  Eye,
-  EyeOff,
-  LockKeyhole,
-  LogIn,
-  Mail,
-  UserPlus,
-} from 'lucide-react';
+import { CircleAlert, Eye, EyeOff, LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
 import { z } from 'zod';
 
 import type { AuthState } from '@/app/auth/actions';
-import {
-  AUTH_MODE,
-  AUTH_PASSWORD_MIN_LENGTH,
-  type AuthMode,
-} from '@/constants/auth';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AUTH_MODE, AUTH_PASSWORD_MIN_LENGTH, type AuthMode } from '@/constants/auth';
 import { AUTH_ROUTES } from '@/constants/routes';
+import { cn } from '@/lib/utils';
 
 type AuthAction = (state: AuthState, formData: FormData) => Promise<AuthState>;
 
@@ -103,20 +90,14 @@ export function AuthForm({ action, mode }: AuthFormProps) {
     resolver: zodResolver(authFormSchema),
   });
   const Icon = mode === AUTH_MODE.SIGN_IN ? LogIn : UserPlus;
-  const alternateHref =
-    mode === AUTH_MODE.SIGN_IN ? AUTH_ROUTES.SIGN_UP : AUTH_ROUTES.SIGN_IN;
-  const alternateLabel =
-    mode === AUTH_MODE.SIGN_IN ? t('auth.signUp') : t('auth.signIn');
+  const alternateHref = mode === AUTH_MODE.SIGN_IN ? AUTH_ROUTES.SIGN_UP : AUTH_ROUTES.SIGN_IN;
+  const alternateLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signUp') : t('auth.signIn');
   const alternatePrompt =
     mode === AUTH_MODE.SIGN_IN ? t('auth.needAccount') : t('auth.haveAccount');
   const description =
-    mode === AUTH_MODE.SIGN_IN
-      ? t('auth.signInDescription')
-      : t('auth.signUpDescription');
-  const submitLabel =
-    mode === AUTH_MODE.SIGN_IN ? t('auth.signIn') : t('auth.signUp');
-  const title =
-    mode === AUTH_MODE.SIGN_IN ? t('auth.signInTitle') : t('auth.signUpTitle');
+    mode === AUTH_MODE.SIGN_IN ? t('auth.signInDescription') : t('auth.signUpDescription');
+  const submitLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signIn') : t('auth.signUp');
+  const title = mode === AUTH_MODE.SIGN_IN ? t('auth.signInTitle') : t('auth.signUpTitle');
 
   useEffect(() => {
     if (!state.success) return;
@@ -125,9 +106,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
     resetField('confirmPassword');
   }, [resetField, state.success]);
 
-  const emailErrors = errors.email?.message
-    ? [errors.email.message]
-    : state.fieldErrors?.email;
+  const emailErrors = errors.email?.message ? [errors.email.message] : state.fieldErrors?.email;
   const passwordErrors = errors.password?.message
     ? [errors.password.message]
     : state.fieldErrors?.password;
@@ -153,32 +132,26 @@ export function AuthForm({ action, mode }: AuthFormProps) {
       >
         <Link
           href={AUTH_ROUTES.SIGN_IN}
-          className={`rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5 ${
+          className={cn(
+            'rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5',
             mode === AUTH_MODE.SIGN_IN
               ? 'text-white shadow-sm'
-              : 'text-muted-foreground hover:text-surface-foreground'
-          }`}
-          style={
-            mode === AUTH_MODE.SIGN_IN
-              ? { background: 'var(--auth-gradient)' }
-              : {}
-          }
+              : 'text-muted-foreground hover:text-surface-foreground',
+          )}
+          style={mode === AUTH_MODE.SIGN_IN ? { background: 'var(--auth-gradient)' } : {}}
           aria-current={mode === AUTH_MODE.SIGN_IN ? 'page' : undefined}
         >
           {t('auth.signIn')}
         </Link>
         <Link
           href={AUTH_ROUTES.SIGN_UP}
-          className={`rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5 ${
+          className={cn(
+            'rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5',
             mode === AUTH_MODE.SIGN_UP
               ? 'text-white shadow-sm'
-              : 'text-muted-foreground hover:text-surface-foreground'
-          }`}
-          style={
-            mode === AUTH_MODE.SIGN_UP
-              ? { background: 'var(--auth-gradient)' }
-              : {}
-          }
+              : 'text-muted-foreground hover:text-surface-foreground',
+          )}
+          style={mode === AUTH_MODE.SIGN_UP ? { background: 'var(--auth-gradient)' } : {}}
           aria-current={mode === AUTH_MODE.SIGN_UP ? 'page' : undefined}
         >
           {t('auth.signUp')}
@@ -201,43 +174,45 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         onSubmit={submitForm}
       >
         {state.error && (
-          <p
+          <Alert
+            variant='destructive'
             className='rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
-            role='alert'
           >
-            {state.error}
-          </p>
+            <CircleAlert aria-hidden='true' />
+            <AlertDescription className='text-danger'>{state.error}</AlertDescription>
+          </Alert>
         )}
         {state.success && (
-          <p
+          <Alert
             className='rounded-2xl border border-auth-field-border bg-auth-field px-4 py-3 text-sm text-surface-foreground'
             role='status'
           >
-            {state.success}
-          </p>
+            <AlertDescription className='text-surface-foreground'>{state.success}</AlertDescription>
+          </Alert>
         )}
 
         <div className='flex flex-col gap-2 sm:gap-2.5'>
           <div className='flex flex-col gap-2 sm:gap-2.5'>
-            <label className='text-xs font-medium sm:text-sm' htmlFor='email'>
+            <Label className='text-xs sm:text-sm' htmlFor='email'>
               {t('auth.email')}
-            </label>
+            </Label>
             <div className='relative'>
               <Mail
                 aria-hidden='true'
                 className='pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground'
               />
-              <input
+              <Input
                 {...register('email')}
                 id='email'
                 type='email'
                 autoComplete='email'
                 required
-                className={`h-11 w-full rounded-full border bg-auth-field pr-4 pl-11 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-2 sm:h-13 ${
+                className={cn(
+                  'h-11 w-full rounded-full border bg-auth-field pr-4 pl-11 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-2 sm:h-13',
                   emailErrors
                     ? 'border-danger/70 ring-2 ring-danger/10 focus:border-danger focus:ring-danger/20'
-                    : 'border-auth-field-border focus:border-focus focus:ring-focus/20'
-                }`}
+                    : 'border-auth-field-border focus:border-focus focus:ring-focus/20',
+                )}
                 placeholder={t('auth.emailPlaceholder')}
                 aria-invalid={Boolean(emailErrors)}
                 aria-describedby={emailErrors ? 'email-error' : undefined}
@@ -250,10 +225,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
               className='flex items-start gap-1.5 text-xs text-danger sm:gap-2 sm:text-sm'
               role='alert'
             >
-              <CircleAlert
-                aria-hidden='true'
-                className='mt-0.5 size-3.5 shrink-0 sm:size-4'
-              />
+              <CircleAlert aria-hidden='true' className='mt-0.5 size-3.5 shrink-0 sm:size-4' />
               <div>
                 {emailErrors.map((error) => (
                   <p key={error}>{error}</p>
@@ -273,9 +245,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
                   minLength: AUTH_PASSWORD_MIN_LENGTH,
                 })
           }
-          autoComplete={
-            mode === AUTH_MODE.SIGN_IN ? 'current-password' : 'new-password'
-          }
+          autoComplete={mode === AUTH_MODE.SIGN_IN ? 'current-password' : 'new-password'}
           error={passwordErrors}
           registration={register('password')}
           hideLabel={t('auth.hidePassword')}
@@ -303,15 +273,15 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           />
         )}
 
-        <button
+        <Button
           type='submit'
           disabled={pending}
-          className='mt-4 inline-flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-4 font-medium text-white shadow-[0_12px_28px_rgb(190_128_205/28%)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60 sm:h-13'
+          className='mt-4 h-11 w-full cursor-pointer rounded-full px-4 font-medium text-white shadow-[0_12px_28px_rgb(190_128_205/28%)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait sm:h-13'
           style={{ background: 'var(--auth-gradient)' }}
         >
           <Icon aria-hidden='true' className='size-4' />
           {submitLabel}
-        </button>
+        </Button>
       </form>
 
       <p className='mt-4 text-center text-xs text-muted-foreground sm:mt-7 sm:text-sm'>
@@ -357,33 +327,36 @@ function PasswordField({
   return (
     <div className='flex flex-col gap-2 sm:gap-2.5'>
       <div className='flex flex-col gap-2 sm:gap-2.5'>
-        <label className='text-xs font-medium sm:text-sm' htmlFor={id}>
+        <Label className='text-xs sm:text-sm' htmlFor={id}>
           {label}
-        </label>
+        </Label>
         <div className='relative'>
           <LockKeyhole
             aria-hidden='true'
             className='pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground'
           />
-          <input
+          <Input
             {...registration}
             id={id}
             type={visible ? 'text' : 'password'}
             autoComplete={autoComplete}
             minLength={minLength}
             required
-            className={`h-11 w-full rounded-full border bg-auth-field pr-12 pl-11 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-2 sm:h-13 ${
+            className={cn(
+              'h-11 w-full rounded-full border bg-auth-field pr-12 pl-11 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-2 sm:h-13',
               error
                 ? 'border-danger/70 ring-2 ring-danger/10 focus:border-danger focus:ring-danger/20'
-                : 'border-auth-field-border focus:border-focus focus:ring-focus/20'
-            }`}
+                : 'border-auth-field-border focus:border-focus focus:ring-focus/20',
+            )}
             placeholder={placeholder}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `${id}-error` : undefined}
           />
-          <button
+          <Button
             type='button'
-            className='absolute top-1/2 right-3 inline-flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-surface-foreground'
+            variant='ghost'
+            size='icon-sm'
+            className='absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full text-muted-foreground hover:bg-secondary-hover hover:text-surface-foreground'
             aria-label={visible ? hideLabel : showLabel}
             onClick={onToggle}
           >
@@ -392,7 +365,7 @@ function PasswordField({
             ) : (
               <Eye aria-hidden='true' className='size-4' />
             )}
-          </button>
+          </Button>
         </div>
       </div>
       {error && (
@@ -401,10 +374,7 @@ function PasswordField({
           className='flex items-start gap-1.5 text-xs text-danger sm:gap-2 sm:text-sm'
           role='alert'
         >
-          <CircleAlert
-            aria-hidden='true'
-            className='mt-0.5 size-3.5 shrink-0 sm:size-4'
-          />
+          <CircleAlert aria-hidden='true' className='mt-0.5 size-3.5 shrink-0 sm:size-4' />
           <div>
             {error.map((message) => (
               <p key={message}>{message}</p>

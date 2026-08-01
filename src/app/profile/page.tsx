@@ -3,11 +3,11 @@ import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import {
   ArrowLeft,
+  BookOpenText,
   CalendarDays,
   CheckCircle2,
   Clock3,
   KeyRound,
-  ListTodo,
   Mail,
   ShieldCheck,
   UserRound,
@@ -15,8 +15,10 @@ import {
 
 import { signOut } from '@/app/auth/actions';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { getCurrentUser } from '@/lib/supabase/auth';
+import { getUserRole } from '@/server/roles';
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
@@ -26,6 +28,7 @@ export default async function ProfilePage() {
   }
 
   const t = await getTranslations();
+  const role = await getUserRole(user.id);
   const formatter = await getFormatter();
   const notAvailable = t('profile.notAvailable');
   const formatDate = (value: string | undefined) =>
@@ -37,9 +40,7 @@ export default async function ProfilePage() {
       : notAvailable;
   const email = user.email ?? notAvailable;
   const provider =
-    typeof user.app_metadata.provider === 'string'
-      ? user.app_metadata.provider
-      : notAvailable;
+    typeof user.app_metadata.provider === 'string' ? user.app_metadata.provider : notAvailable;
   const details = [
     {
       icon: Mail,
@@ -54,9 +55,7 @@ export default async function ProfilePage() {
     {
       icon: ShieldCheck,
       label: t('profile.verification'),
-      value: user.email_confirmed_at
-        ? t('profile.verified')
-        : t('profile.pending'),
+      value: user.email_confirmed_at ? t('profile.verified') : t('profile.pending'),
     },
     {
       icon: CheckCircle2,
@@ -88,11 +87,13 @@ export default async function ProfilePage() {
           </Link>
           <div className='flex items-center gap-3'>
             <Link
-              href={ROUTES.TASKS}
+              href={role === USER_ROLE.ADMIN ? ROUTES.WORDS : ROUTES.SEARCH_WORDS}
               className='inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
             >
-              <ListTodo aria-hidden='true' className='size-4' />
-              <span className='hidden sm:inline'>{t('profile.tasks')}</span>
+              <BookOpenText aria-hidden='true' className='size-4' />
+              <span className='hidden sm:inline'>
+                {role === USER_ROLE.ADMIN ? t('profile.manageWords') : t('profile.searchWords')}
+              </span>
             </Link>
             <ThemeToggle label={t('home.themeToggle')} />
           </div>
@@ -129,9 +130,7 @@ export default async function ProfilePage() {
                     <Icon aria-hidden='true' className='size-4' />
                   </span>
                   <div className='min-w-0'>
-                    <dt className='text-xs font-medium text-muted-foreground'>
-                      {label}
-                    </dt>
+                    <dt className='text-xs font-medium text-muted-foreground'>{label}</dt>
                     <dd className='mt-1 truncate text-sm font-medium text-surface-foreground'>
                       {value}
                     </dd>

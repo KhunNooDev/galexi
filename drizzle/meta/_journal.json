@@ -22,6 +22,48 @@
       "when": 1785559155036,
       "tag": "0002_woozy_slyde",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785566373650,
+      "tag": "0003_replace_tasks_with_words",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785568265952,
+      "tag": "0004_add_word_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785569421456,
+      "tag": "0005_index_public_words",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785570540554,
+      "tag": "0006_add_user_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785573951593,
+      "tag": "0007_add_word_image_storage",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785597815211,
+      "tag": "0008_secure_word_images",
+      "breakpoints": true
     }
   ]
 }

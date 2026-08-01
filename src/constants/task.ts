@@ -1,4 +1,0 @@
-export const TASK_LIMITS = {
-  DESCRIPTION_MAX_LENGTH: 200,
-  TITLE_MAX_LENGTH: 80,
-} as const;

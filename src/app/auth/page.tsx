@@ -16,24 +16,16 @@ type AuthPageProps = {
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   if (await getCurrentUserId()) {
-    redirect(ROUTES.TASKS);
+    redirect(ROUTES.WORDS);
   }
 
   const { mode: requestedMode } = await searchParams;
-  const mode =
-    requestedMode === AUTH_MODE.SIGN_UP ? AUTH_MODE.SIGN_UP : AUTH_MODE.SIGN_IN;
+  const mode = requestedMode === AUTH_MODE.SIGN_UP ? AUTH_MODE.SIGN_UP : AUTH_MODE.SIGN_IN;
   const t = await getTranslations();
 
   return (
-    <AuthPageShell
-      backLabel={t('auth.backHome')}
-      themeLabel={t('home.themeToggle')}
-    >
-      <AuthForm
-        key={mode}
-        action={mode === AUTH_MODE.SIGN_IN ? signIn : signUp}
-        mode={mode}
-      />
+    <AuthPageShell backLabel={t('auth.backHome')} themeLabel={t('home.themeToggle')}>
+      <AuthForm key={mode} action={mode === AUTH_MODE.SIGN_IN ? signIn : signUp} mode={mode} />
     </AuthPageShell>
   );
 }

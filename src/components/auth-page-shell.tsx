@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { ROUTES } from '@/constants/routes';
 
 import { ThemeToggle } from './theme-toggle';
+import { Tooltip } from './tooltip';
 
 type AuthPageShellProps = {
   backLabel: string;
@@ -12,11 +13,7 @@ type AuthPageShellProps = {
   themeLabel: string;
 };
 
-export function AuthPageShell({
-  backLabel,
-  children,
-  themeLabel,
-}: AuthPageShellProps) {
+export function AuthPageShell({ backLabel, children, themeLabel }: AuthPageShellProps) {
   return (
     <main className='relative min-h-svh overflow-x-hidden overflow-y-auto bg-auth-backdrop'>
       <Image
@@ -29,14 +26,17 @@ export function AuthPageShell({
       />
       <div className='absolute inset-0 bg-auth-overlay' />
 
-      <Link
-        href={ROUTES.HOME}
-        className='absolute top-5 left-5 z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/60 bg-auth-control text-auth-control-foreground shadow-sm backdrop-blur-md transition-transform hover:-translate-x-0.5 sm:top-7 sm:left-7'
-        aria-label={backLabel}
-        title={backLabel}
-      >
-        <ArrowLeft aria-hidden='true' className='size-5' />
-      </Link>
+      <div className='absolute top-5 left-5 z-20 sm:top-7 sm:left-7'>
+        <Tooltip label={backLabel} side='bottom'>
+          <Link
+            href={ROUTES.HOME}
+            className='inline-flex size-11 items-center justify-center rounded-full border border-white/60 bg-auth-control text-auth-control-foreground shadow-sm backdrop-blur-md transition-transform hover:-translate-x-0.5'
+            aria-label={backLabel}
+          >
+            <ArrowLeft aria-hidden='true' className='size-5' />
+          </Link>
+        </Tooltip>
+      </div>
 
       <div className='absolute top-5 right-5 z-20 sm:top-7 sm:right-7'>
         <ThemeToggle label={themeLabel} />

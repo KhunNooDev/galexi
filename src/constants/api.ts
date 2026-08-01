@@ -1,6 +1,7 @@
 export const API_PATH = {
   BASE: '/api',
-  TASK_BY_ID: '/tasks/:id',
-  TASKS: '/tasks',
-  TASKS_WILDCARD: '/tasks/*',
+  WORD_IMAGE_BY_ID: '/word-images/:id',
+  WORD_BY_ID: '/words/:id',
+  WORDS: '/words',
+  WORDS_WILDCARD: '/words/*',
 } as const;

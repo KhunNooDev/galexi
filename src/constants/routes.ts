@@ -5,8 +5,29 @@ export const ROUTES = {
   AUTH_CALLBACK: '/auth/callback',
   HOME: '/',
   PROFILE: '/profile',
-  TASKS: '/tasks',
+  WORDS: '/words',
+  SEARCH_WORDS: '/words/search',
 } as const;
+
+export function getWordRoute(id: number) {
+  return `${ROUTES.WORDS}/${id}`;
+}
+
+export function getWordImageRoute(id: number) {
+  return `/api/word-images/${id}`;
+}
+
+export function getSearchWordRoute(word: string) {
+  return `${ROUTES.SEARCH_WORDS}/${encodeURIComponent(word)}`;
+}
+
+export function decodeWordRouteParam(word: string) {
+  try {
+    return decodeURIComponent(word);
+  } catch {
+    return word;
+  }
+}
 
 export const AUTH_ROUTES = {
   SIGN_IN: `${ROUTES.AUTH}?mode=${AUTH_MODE.SIGN_IN}`,

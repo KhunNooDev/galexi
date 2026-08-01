@@ -1,6 +1,6 @@
 # Galexi
 
-Galexi is a Next.js task workspace with authentication, private per-user data, internationalization, and light/dark themes.
+Galexi is a Next.js vocabulary workspace with authentication, private per-user data, internationalization, and light/dark themes.
 
 ## Stack
 
@@ -42,8 +42,11 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/` — Galexi landing page
 - `/auth` — sign in or create an account
 - `/profile` — authenticated account details
-- `/tasks` — authenticated task manager
-- `/api/tasks` — authenticated Hono CRUD API
+- `/words` — authenticated vocabulary manager
+- `/words/[id]` — authenticated owner flashcard details
+- `/words/search` — public vocabulary directory for members and guests
+- `/words/search/[word]` — public flashcards for a word
+- `/api/words` — authenticated Hono CRUD API
 
 ## Scripts
 

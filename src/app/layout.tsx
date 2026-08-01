@@ -4,7 +4,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 
 import { ThemeProvider } from '@/components/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { defaultLocale } from '@/i18n/config';
+import { cn } from '@/lib/utils';
 
 import '@/styles/globals.css';
 
@@ -31,11 +33,13 @@ export default function RootLayout({
     <html
       lang={defaultLocale}
       suppressHydrationWarning
-      className={`${geistSans.variable} h-full antialiased`}
+      className={cn(geistSans.variable, 'h-full antialiased')}
     >
       <body className='flex min-h-full flex-col'>
         <NextIntlClientProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

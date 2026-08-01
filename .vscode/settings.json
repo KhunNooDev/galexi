@@ -5,6 +5,7 @@
     "source.fixAll.eslint": "explicit"
   },
   "css.lint.unknownAtRules": "ignore",
+  "json.schemaDownload.enable": false,
   "prettier.configPath": "./.prettierrc.json",
   "prettier.prettierPath": "./node_modules/prettier",
   "prettier.requireConfig": true,

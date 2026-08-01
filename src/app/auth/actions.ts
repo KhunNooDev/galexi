@@ -9,10 +9,7 @@ import { AUTH_PASSWORD_MIN_LENGTH } from '@/constants/auth';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { createClient } from '@/lib/supabase/server';
 
-function createSignInSchema(messages: {
-  invalidEmail: string;
-  passwordRequired: string;
-}) {
+function createSignInSchema(messages: { invalidEmail: string; passwordRequired: string }) {
   return z.object({
     email: z.string().trim().pipe(z.email(messages.invalidEmail)),
     password: z.string().min(1, messages.passwordRequired),
@@ -28,9 +25,7 @@ function createSignUpSchema(messages: {
   return z
     .object({
       email: z.string().trim().pipe(z.email(messages.invalidEmail)),
-      password: z
-        .string()
-        .min(AUTH_PASSWORD_MIN_LENGTH, messages.passwordTooShort),
+      password: z.string().min(AUTH_PASSWORD_MIN_LENGTH, messages.passwordTooShort),
       confirmPassword: z.string().min(1, messages.confirmPassword),
     })
     .refine(({ confirmPassword, password }) => confirmPassword === password, {
@@ -56,10 +51,7 @@ function getCredentials(formData: FormData) {
   };
 }
 
-export async function signIn(
-  _state: AuthState,
-  formData: FormData,
-): Promise<AuthState> {
+export async function signIn(_state: AuthState, formData: FormData): Promise<AuthState> {
   const t = await getTranslations();
   const signInSchema = createSignInSchema({
     invalidEmail: t('auth.validation.invalidEmail'),
@@ -68,7 +60,7 @@ export async function signIn(
   const result = signInSchema.safeParse(getCredentials(formData));
 
   if (!result.success) {
-    return { fieldErrors: result.error.flatten().fieldErrors };
+    return { fieldErrors: z.flattenError(result.error).fieldErrors };
   }
 
   const supabase = await createClient();
@@ -78,13 +70,10 @@ export async function signIn(
     return { error: t('auth.validation.incorrectCredentials') };
   }
 
-  redirect(ROUTES.TASKS);
+  redirect(ROUTES.WORDS);
 }
 
-export async function signUp(
-  _state: AuthState,
-  formData: FormData,
-): Promise<AuthState> {
+export async function signUp(_state: AuthState, formData: FormData): Promise<AuthState> {
   const t = await getTranslations();
   const signUpSchema = createSignUpSchema({
     confirmPassword: t('auth.validation.confirmPassword'),
@@ -100,7 +89,7 @@ export async function signUp(
   });
 
   if (!result.success) {
-    return { fieldErrors: result.error.flatten().fieldErrors };
+    return { fieldErrors: z.flattenError(result.error).fieldErrors };
   }
 
   const requestHeaders = await headers();
@@ -123,7 +112,7 @@ export async function signUp(
     return { success: t('auth.validation.checkEmail') };
   }
 
-  redirect(ROUTES.TASKS);
+  redirect(ROUTES.WORDS);
 }
 
 export async function signOut() {

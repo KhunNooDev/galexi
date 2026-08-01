@@ -1,0 +1,1 @@
+CREATE INDEX "words_public_word_idx" ON "words" USING btree (lower("word"),"part_of_speech","id") WHERE "words"."is_public" = true;
