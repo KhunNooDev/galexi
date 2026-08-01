@@ -2,6 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+import { ROUTES } from '@/constants/routes';
+
 import { ThemeToggle } from './theme-toggle';
 
 type AuthPageShellProps = {
@@ -28,7 +30,7 @@ export function AuthPageShell({
       <div className='absolute inset-0 bg-auth-overlay' />
 
       <Link
-        href='/'
+        href={ROUTES.HOME}
         className='absolute top-5 left-5 z-20 inline-flex size-11 items-center justify-center rounded-full border border-white/60 bg-auth-control text-auth-control-foreground shadow-sm backdrop-blur-md transition-transform hover:-translate-x-0.5 sm:top-7 sm:left-7'
         aria-label={backLabel}
         title={backLabel}

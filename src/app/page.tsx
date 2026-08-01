@@ -10,24 +10,25 @@ import {
 } from 'lucide-react';
 
 import { ThemeToggle } from '@/components/theme-toggle';
+import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 
 export default async function Home() {
-  const t = await getTranslations('home');
+  const t = await getTranslations();
   const features = [
     {
       icon: ShieldCheck,
-      title: t('secureTitle'),
-      description: t('secureDescription'),
+      title: t('home.secureTitle'),
+      description: t('home.secureDescription'),
     },
     {
       icon: ListTodo,
-      title: t('tasksTitle'),
-      description: t('tasksDescription'),
+      title: t('home.tasksTitle'),
+      description: t('home.tasksDescription'),
     },
     {
       icon: Languages,
-      title: t('languageTitle'),
-      description: t('languageDescription'),
+      title: t('home.languageTitle'),
+      description: t('home.languageDescription'),
     },
   ];
 
@@ -41,52 +42,52 @@ export default async function Home() {
       <div className='relative mx-auto flex min-h-[calc(100svh-3rem)] max-w-6xl flex-col'>
         <header className='flex items-center justify-between'>
           <Link
-            href='/'
+            href={ROUTES.HOME}
             className='inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground'
           >
             <span className='inline-flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20'>
               <Orbit aria-hidden='true' className='size-5' />
             </span>
-            {t('brand')}
+            {t('home.brand')}
           </Link>
           <div className='flex items-center gap-2'>
             <Link
-              href='/profile'
+              href={ROUTES.PROFILE}
               className='inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground'
-              aria-label={t('profile')}
-              title={t('profile')}
+              aria-label={t('home.profile')}
+              title={t('home.profile')}
             >
               <UserRound aria-hidden='true' className='size-4' />
             </Link>
-            <ThemeToggle label={t('themeToggle')} />
+            <ThemeToggle label={t('home.themeToggle')} />
           </div>
         </header>
 
         <section className='flex flex-1 flex-col justify-center py-16 sm:py-24'>
           <div className='mx-auto max-w-3xl text-center'>
             <p className='mb-5 text-sm font-semibold tracking-[0.2em] text-primary uppercase'>
-              {t('eyebrow')}
+              {t('home.eyebrow')}
             </p>
             <h1 className='text-4xl leading-tight font-semibold tracking-tight text-foreground sm:text-6xl sm:leading-tight'>
-              {t('heading')}
+              {t('home.heading')}
             </h1>
             <p className='mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8'>
-              {t('description')}
+              {t('home.description')}
             </p>
             <div className='mt-8 flex flex-col justify-center gap-3 sm:flex-row'>
               <Link
-                href='/login'
+                href={AUTH_ROUTES.SIGN_IN}
                 className='inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary-hover'
               >
-                {t('getStarted')}
+                {t('home.getStarted')}
                 <ArrowRight aria-hidden='true' className='size-4' />
               </Link>
               <Link
-                href='/tasks'
+                href={ROUTES.TASKS}
                 className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
               >
                 <ListTodo aria-hidden='true' className='size-4' />
-                {t('openTasks')}
+                {t('home.openTasks')}
               </Link>
             </div>
           </div>

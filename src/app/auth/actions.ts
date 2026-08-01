@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
+import { AUTH_PASSWORD_MIN_LENGTH } from '@/constants/auth';
+import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { createClient } from '@/lib/supabase/server';
 
 function createSignInSchema(messages: {
@@ -26,7 +28,9 @@ function createSignUpSchema(messages: {
   return z
     .object({
       email: z.string().trim().pipe(z.email(messages.invalidEmail)),
-      password: z.string().min(8, messages.passwordTooShort),
+      password: z
+        .string()
+        .min(AUTH_PASSWORD_MIN_LENGTH, messages.passwordTooShort),
       confirmPassword: z.string().min(1, messages.confirmPassword),
     })
     .refine(({ confirmPassword, password }) => confirmPassword === password, {
@@ -56,10 +60,10 @@ export async function signIn(
   _state: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const t = await getTranslations('auth.validation');
+  const t = await getTranslations();
   const signInSchema = createSignInSchema({
-    invalidEmail: t('invalidEmail'),
-    passwordRequired: t('passwordRequired'),
+    invalidEmail: t('auth.validation.invalidEmail'),
+    passwordRequired: t('auth.validation.passwordRequired'),
   });
   const result = signInSchema.safeParse(getCredentials(formData));
 
@@ -71,22 +75,24 @@ export async function signIn(
   const { error } = await supabase.auth.signInWithPassword(result.data);
 
   if (error) {
-    return { error: t('incorrectCredentials') };
+    return { error: t('auth.validation.incorrectCredentials') };
   }
 
-  redirect('/tasks');
+  redirect(ROUTES.TASKS);
 }
 
 export async function signUp(
   _state: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const t = await getTranslations('auth.validation');
+  const t = await getTranslations();
   const signUpSchema = createSignUpSchema({
-    confirmPassword: t('confirmPassword'),
-    invalidEmail: t('invalidEmail'),
-    passwordsMismatch: t('passwordsMismatch'),
-    passwordTooShort: t('passwordTooShort'),
+    confirmPassword: t('auth.validation.confirmPassword'),
+    invalidEmail: t('auth.validation.invalidEmail'),
+    passwordsMismatch: t('auth.validation.passwordsMismatch'),
+    passwordTooShort: t('auth.validation.passwordTooShort', {
+      minLength: AUTH_PASSWORD_MIN_LENGTH,
+    }),
   });
   const result = signUpSchema.safeParse({
     ...getCredentials(formData),
@@ -105,23 +111,23 @@ export async function signUp(
     email,
     password,
     options: {
-      emailRedirectTo: new URL('/auth/callback', origin).toString(),
+      emailRedirectTo: new URL(ROUTES.AUTH_CALLBACK, origin).toString(),
     },
   });
 
   if (error) {
-    return { error: t('accountCreationFailed') };
+    return { error: t('auth.validation.accountCreationFailed') };
   }
 
   if (!data.session) {
-    return { success: t('checkEmail') };
+    return { success: t('auth.validation.checkEmail') };
   }
 
-  redirect('/tasks');
+  redirect(ROUTES.TASKS);
 }
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect('/login');
+  redirect(AUTH_ROUTES.SIGN_IN);
 }

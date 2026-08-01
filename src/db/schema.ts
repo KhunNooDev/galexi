@@ -11,6 +11,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { authenticatedRole, authUid, authUsers } from 'drizzle-orm/supabase';
 
+import { TASK_LIMITS } from '@/constants/task';
+
 export const tasks = pgTable(
   'tasks',
   {
@@ -20,7 +22,7 @@ export const tasks = pgTable(
       .references(() => authUsers.id, {
         onDelete: 'cascade',
       }),
-    title: varchar('title', { length: 80 }).notNull(),
+    title: varchar('title', { length: TASK_LIMITS.TITLE_MAX_LENGTH }).notNull(),
     description: text('description').default('').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()

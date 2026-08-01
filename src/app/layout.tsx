@@ -14,11 +14,11 @@ const geistSans = Geist({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('metadata');
+  const t = await getTranslations();
 
   return {
-    title: t('title'),
-    description: t('description'),
+    title: t('metadata.title'),
+    description: t('metadata.description'),
   };
 }
 

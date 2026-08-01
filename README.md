@@ -40,8 +40,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Routes
 
 - `/` — Galexi landing page
-- `/login` — sign in
-- `/signup` — create an account
+- `/auth` — sign in or create an account
 - `/profile` — authenticated account details
 - `/tasks` — authenticated task manager
 - `/api/tasks` — authenticated Hono CRUD API

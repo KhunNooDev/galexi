@@ -6,39 +6,38 @@ import { ArrowLeft, UserRound } from 'lucide-react';
 import { signOut } from '@/app/auth/actions';
 import { TaskManager } from '@/components/task-manager';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { getCurrentUserClaims } from '@/lib/supabase/auth';
 
 export default async function TasksPage() {
   const claims = await getCurrentUserClaims();
 
   if (!claims) {
-    redirect('/login');
+    redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  const auth = await getTranslations('auth');
-  const home = await getTranslations('home');
-  const tasks = await getTranslations('tasks');
+  const t = await getTranslations();
 
   return (
     <main className='min-h-full bg-background px-6 py-12 sm:px-10'>
       <div className='mx-auto max-w-5xl'>
         <div className='mb-10 flex items-center justify-between gap-4'>
           <Link
-            href='/'
+            href={ROUTES.HOME}
             className='inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
           >
             <ArrowLeft aria-hidden='true' className='size-4' />
-            {tasks('backHome')}
+            {t('tasks.backHome')}
           </Link>
           <div className='flex items-center gap-3'>
             <span className='hidden max-w-56 truncate text-sm text-muted-foreground sm:block'>
               {typeof claims.email === 'string' ? claims.email : ''}
             </span>
             <Link
-              href='/profile'
+              href={ROUTES.PROFILE}
               className='inline-flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground'
-              aria-label={home('profile')}
-              title={home('profile')}
+              aria-label={t('home.profile')}
+              title={t('home.profile')}
             >
               <UserRound aria-hidden='true' className='size-4' />
             </Link>
@@ -47,22 +46,22 @@ export default async function TasksPage() {
                 type='submit'
                 className='h-10 cursor-pointer rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
               >
-                {auth('signOut')}
+                {t('auth.signOut')}
               </button>
             </form>
-            <ThemeToggle label={home('themeToggle')} />
+            <ThemeToggle label={t('home.themeToggle')} />
           </div>
         </div>
 
         <div className='mb-10 max-w-2xl space-y-3'>
           <h1 className='text-4xl font-semibold tracking-tight text-foreground'>
-            {tasks('pageTitle')}
+            {t('tasks.pageTitle')}
           </h1>
           <p className='text-lg leading-8 text-muted-foreground'>
-            {tasks('pageDescription')}
+            {t('tasks.pageDescription')}
           </p>
           <p className='text-sm text-muted-foreground'>
-            {tasks('ephemeralNote')}
+            {t('tasks.ephemeralNote')}
           </p>
         </div>
 

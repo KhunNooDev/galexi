@@ -8,6 +8,7 @@ import { hc } from 'hono/client';
 import { Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { z } from 'zod';
 
+import { TASK_LIMITS } from '@/constants/task';
 import type { ApiType } from '@/server/api';
 
 const client = hc<ApiType>('/');
@@ -44,34 +45,41 @@ function createTaskSchema(labels: TaskLabels) {
       .string()
       .trim()
       .min(1, labels.titleRequired)
-      .max(80, labels.titleTooLong),
-    description: z.string().trim().max(200, labels.descriptionTooLong),
+      .max(TASK_LIMITS.TITLE_MAX_LENGTH, labels.titleTooLong),
+    description: z
+      .string()
+      .trim()
+      .max(TASK_LIMITS.DESCRIPTION_MAX_LENGTH, labels.descriptionTooLong),
   });
 }
 
 type TaskFormValues = z.infer<ReturnType<typeof createTaskSchema>>;
 
 export function TaskManager() {
-  const t = useTranslations('tasks.manager');
+  const t = useTranslations();
   const labels = useMemo<TaskLabels>(
     () => ({
-      titleLabel: t('titleLabel'),
-      titlePlaceholder: t('titlePlaceholder'),
-      descriptionLabel: t('descriptionLabel'),
-      descriptionPlaceholder: t('descriptionPlaceholder'),
-      create: t('create'),
-      update: t('update'),
-      cancel: t('cancel'),
-      listTitle: t('listTitle'),
-      empty: t('empty'),
-      edit: t('edit'),
-      delete: t('delete'),
-      titleRequired: t('titleRequired'),
-      titleTooLong: t('titleTooLong'),
-      descriptionTooLong: t('descriptionTooLong'),
-      loading: t('loading'),
-      loadError: t('loadError'),
-      requestError: t('requestError'),
+      titleLabel: t('tasks.manager.titleLabel'),
+      titlePlaceholder: t('tasks.manager.titlePlaceholder'),
+      descriptionLabel: t('tasks.manager.descriptionLabel'),
+      descriptionPlaceholder: t('tasks.manager.descriptionPlaceholder'),
+      create: t('tasks.manager.create'),
+      update: t('tasks.manager.update'),
+      cancel: t('tasks.manager.cancel'),
+      listTitle: t('tasks.manager.listTitle'),
+      empty: t('tasks.manager.empty'),
+      edit: t('tasks.manager.edit'),
+      delete: t('tasks.manager.delete'),
+      titleRequired: t('tasks.manager.titleRequired'),
+      titleTooLong: t('tasks.manager.titleTooLong', {
+        maxLength: TASK_LIMITS.TITLE_MAX_LENGTH,
+      }),
+      descriptionTooLong: t('tasks.manager.descriptionTooLong', {
+        maxLength: TASK_LIMITS.DESCRIPTION_MAX_LENGTH,
+      }),
+      loading: t('tasks.manager.loading'),
+      loadError: t('tasks.manager.loadError'),
+      requestError: t('tasks.manager.requestError'),
     }),
     [t],
   );
@@ -226,7 +234,7 @@ export function TaskManager() {
               id='task-title'
               className='h-11 w-full rounded-lg border border-border bg-background px-3 text-surface-foreground outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20'
               placeholder={labels.titlePlaceholder}
-              maxLength={80}
+              maxLength={TASK_LIMITS.TITLE_MAX_LENGTH}
               aria-invalid={Boolean(errors.title)}
               {...register('title')}
             />
@@ -246,7 +254,7 @@ export function TaskManager() {
               id='task-description'
               className='min-h-28 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-surface-foreground outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20'
               placeholder={labels.descriptionPlaceholder}
-              maxLength={200}
+              maxLength={TASK_LIMITS.DESCRIPTION_MAX_LENGTH}
               aria-invalid={Boolean(errors.description)}
               {...register('description')}
             />

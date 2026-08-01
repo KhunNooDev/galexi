@@ -28,7 +28,7 @@
     "emailPlaceholder": "you@example.com",
     "password": "Password",
     "passwordSignInPlaceholder": "Enter your password",
-    "passwordPlaceholder": "At least 8 characters",
+    "passwordPlaceholder": "At least {minLength} characters",
     "confirmPassword": "Confirm password",
     "signIn": "Sign in",
     "signUp": "Sign up",
@@ -42,7 +42,7 @@
     "validation": {
       "invalidEmail": "Enter a valid email address.",
       "passwordRequired": "Enter your password.",
-      "passwordTooShort": "Password must be at least 8 characters.",
+      "passwordTooShort": "Password must be at least {minLength} characters.",
       "confirmPassword": "Confirm your password.",
       "passwordsMismatch": "Passwords do not match.",
       "incorrectCredentials": "The email or password is incorrect.",
@@ -84,8 +84,8 @@
       "edit": "Edit task",
       "delete": "Delete task",
       "titleRequired": "Title is required.",
-      "titleTooLong": "Title must be 80 characters or fewer.",
-      "descriptionTooLong": "Description must be 200 characters or fewer.",
+      "titleTooLong": "Title must be {maxLength} characters or fewer.",
+      "descriptionTooLong": "Description must be {maxLength} characters or fewer.",
       "loading": "Loading tasks...",
       "loadError": "Tasks could not be loaded.",
       "requestError": "The task request failed. Please try again."

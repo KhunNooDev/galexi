@@ -4,13 +4,15 @@ import type { MiddlewareHandler } from 'hono';
 import { Hono } from 'hono';
 import { z } from 'zod';
 
+import { API_PATH } from '@/constants/api';
+import { TASK_LIMITS } from '@/constants/task';
 import { getDatabase } from '@/db';
 import { tasks } from '@/db/schema';
 import { getCurrentUserId } from '@/lib/supabase/auth';
 
 const taskInputSchema = z.object({
-  title: z.string().trim().min(1).max(80),
-  description: z.string().trim().max(200),
+  title: z.string().trim().min(1).max(TASK_LIMITS.TITLE_MAX_LENGTH),
+  description: z.string().trim().max(TASK_LIMITS.DESCRIPTION_MAX_LENGTH),
 });
 
 const taskIdSchema = z.object({
@@ -44,10 +46,10 @@ const requireAuthentication: MiddlewareHandler<ApiEnvironment> = async (
 };
 
 export const api = new Hono<ApiEnvironment>()
-  .basePath('/api')
-  .use('/tasks', requireAuthentication)
-  .use('/tasks/*', requireAuthentication)
-  .get('/tasks', async (context) => {
+  .basePath(API_PATH.BASE)
+  .use(API_PATH.TASKS, requireAuthentication)
+  .use(API_PATH.TASKS_WILDCARD, requireAuthentication)
+  .get(API_PATH.TASKS, async (context) => {
     const userId = context.get('userId');
     const taskList = await getDatabase()
       .select(taskColumns)
@@ -57,17 +59,21 @@ export const api = new Hono<ApiEnvironment>()
 
     return context.json({ tasks: taskList }, 200);
   })
-  .post('/tasks', zValidator('json', taskInputSchema), async (context) => {
-    const userId = context.get('userId');
-    const [task] = await getDatabase()
-      .insert(tasks)
-      .values({ ...context.req.valid('json'), userId })
-      .returning(taskColumns);
+  .post(
+    API_PATH.TASKS,
+    zValidator('json', taskInputSchema),
+    async (context) => {
+      const userId = context.get('userId');
+      const [task] = await getDatabase()
+        .insert(tasks)
+        .values({ ...context.req.valid('json'), userId })
+        .returning(taskColumns);
 
-    return context.json({ task }, 201);
-  })
+      return context.json({ task }, 201);
+    },
+  )
   .patch(
-    '/tasks/:id',
+    API_PATH.TASK_BY_ID,
     zValidator('param', taskIdSchema),
     zValidator('json', taskInputSchema),
     async (context) => {
@@ -85,19 +91,23 @@ export const api = new Hono<ApiEnvironment>()
       return context.json({ task }, 200);
     },
   )
-  .delete('/tasks/:id', zValidator('param', taskIdSchema), async (context) => {
-    const { id } = context.req.valid('param');
-    const [deletedTask] = await getDatabase()
-      .delete(tasks)
-      .where(and(eq(tasks.id, id), eq(tasks.userId, context.get('userId'))))
-      .returning({ id: tasks.id });
+  .delete(
+    API_PATH.TASK_BY_ID,
+    zValidator('param', taskIdSchema),
+    async (context) => {
+      const { id } = context.req.valid('param');
+      const [deletedTask] = await getDatabase()
+        .delete(tasks)
+        .where(and(eq(tasks.id, id), eq(tasks.userId, context.get('userId'))))
+        .returning({ id: tasks.id });
 
-    if (!deletedTask) {
-      return context.json({ error: 'Task not found' }, 404);
-    }
+      if (!deletedTask) {
+        return context.json({ error: 'Task not found' }, 404);
+      }
 
-    return context.json(deletedTask, 200);
-  })
+      return context.json(deletedTask, 200);
+    },
+  )
   .onError((error, context) => {
     console.error(error);
     return context.json({ error: 'Internal server error' }, 500);

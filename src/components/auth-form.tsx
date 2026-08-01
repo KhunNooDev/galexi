@@ -23,23 +23,28 @@ import {
 import { z } from 'zod';
 
 import type { AuthState } from '@/app/auth/actions';
+import {
+  AUTH_MODE,
+  AUTH_PASSWORD_MIN_LENGTH,
+  type AuthMode,
+} from '@/constants/auth';
+import { AUTH_ROUTES } from '@/constants/routes';
 
 type AuthAction = (state: AuthState, formData: FormData) => Promise<AuthState>;
 
 type AuthFormValues = {
   confirmPassword?: string;
   email: string;
-  mode: 'sign-in' | 'sign-up';
   password: string;
 };
 
 type AuthFormProps = {
   action: AuthAction;
-  mode: 'sign-in' | 'sign-up';
+  mode: AuthMode;
 };
 
 export function AuthForm({ action, mode }: AuthFormProps) {
-  const t = useTranslations('auth');
+  const t = useTranslations();
   const [state, formAction, pending] = useActionState(action, {});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -50,36 +55,38 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           email: z
             .string()
             .trim()
-            .pipe(z.email(t('validation.invalidEmail'))),
+            .pipe(z.email(t('auth.validation.invalidEmail'))),
           password:
-            mode === 'sign-in'
-              ? z.string().min(1, t('validation.passwordRequired'))
-              : z.string().min(8, t('validation.passwordTooShort')),
+            mode === AUTH_MODE.SIGN_IN
+              ? z.string().min(1, t('auth.validation.passwordRequired'))
+              : z.string().min(
+                  AUTH_PASSWORD_MIN_LENGTH,
+                  t('auth.validation.passwordTooShort', {
+                    minLength: AUTH_PASSWORD_MIN_LENGTH,
+                  }),
+                ),
           confirmPassword: z.string().optional(),
-          mode: z.enum(['sign-in', 'sign-up']),
         })
-        .superRefine(
-          ({ confirmPassword, mode: formMode, password }, context) => {
-            if (formMode !== 'sign-up') return;
+        .superRefine(({ confirmPassword, password }, context) => {
+          if (mode !== AUTH_MODE.SIGN_UP) return;
 
-            if (!confirmPassword) {
-              context.addIssue({
-                code: 'custom',
-                message: t('validation.confirmPassword'),
-                path: ['confirmPassword'],
-              });
-              return;
-            }
+          if (!confirmPassword) {
+            context.addIssue({
+              code: 'custom',
+              message: t('auth.validation.confirmPassword'),
+              path: ['confirmPassword'],
+            });
+            return;
+          }
 
-            if (confirmPassword !== password) {
-              context.addIssue({
-                code: 'custom',
-                message: t('validation.passwordsMismatch'),
-                path: ['confirmPassword'],
-              });
-            }
-          },
-        ),
+          if (confirmPassword !== password) {
+            context.addIssue({
+              code: 'custom',
+              message: t('auth.validation.passwordsMismatch'),
+              path: ['confirmPassword'],
+            });
+          }
+        }),
     [mode, t],
   );
   const {
@@ -91,20 +98,25 @@ export function AuthForm({ action, mode }: AuthFormProps) {
     defaultValues: {
       confirmPassword: '',
       email: '',
-      mode,
       password: '',
     },
     resolver: zodResolver(authFormSchema),
   });
-  const Icon = mode === 'sign-in' ? LogIn : UserPlus;
-  const alternateHref = mode === 'sign-in' ? '/signup' : '/login';
-  const alternateLabel = mode === 'sign-in' ? t('signUp') : t('signIn');
+  const Icon = mode === AUTH_MODE.SIGN_IN ? LogIn : UserPlus;
+  const alternateHref =
+    mode === AUTH_MODE.SIGN_IN ? AUTH_ROUTES.SIGN_UP : AUTH_ROUTES.SIGN_IN;
+  const alternateLabel =
+    mode === AUTH_MODE.SIGN_IN ? t('auth.signUp') : t('auth.signIn');
   const alternatePrompt =
-    mode === 'sign-in' ? t('needAccount') : t('haveAccount');
+    mode === AUTH_MODE.SIGN_IN ? t('auth.needAccount') : t('auth.haveAccount');
   const description =
-    mode === 'sign-in' ? t('signInDescription') : t('signUpDescription');
-  const submitLabel = mode === 'sign-in' ? t('signIn') : t('signUp');
-  const title = mode === 'sign-in' ? t('signInTitle') : t('signUpTitle');
+    mode === AUTH_MODE.SIGN_IN
+      ? t('auth.signInDescription')
+      : t('auth.signUpDescription');
+  const submitLabel =
+    mode === AUTH_MODE.SIGN_IN ? t('auth.signIn') : t('auth.signUp');
+  const title =
+    mode === AUTH_MODE.SIGN_IN ? t('auth.signInTitle') : t('auth.signUpTitle');
 
   useEffect(() => {
     if (!state.success) return;
@@ -127,45 +139,49 @@ export function AuthForm({ action, mode }: AuthFormProps) {
     const formData = new FormData();
     formData.set('email', values.email);
     formData.set('password', values.password);
-    if (values.confirmPassword !== undefined) {
+    if (mode === AUTH_MODE.SIGN_UP && values.confirmPassword !== undefined) {
       formData.set('confirmPassword', values.confirmPassword);
     }
     startTransition(() => formAction(formData));
   });
 
   return (
-    <div className='w-full max-w-lg rounded-t-[2rem] border border-auth-field-border bg-auth-card p-4 shadow-[0_-16px_50px_rgb(90_67_115/12%)] backdrop-blur-xl sm:p-8 md:rounded-[2rem] md:p-10 md:shadow-[0_24px_80px_rgb(90_67_115/18%)]'>
+    <div className='w-full max-w-lg rounded-t-4xl border border-auth-field-border bg-auth-card p-4 shadow-[0_-16px_50px_rgb(90_67_115/12%)] backdrop-blur-xl sm:p-8 md:rounded-4xl md:p-10 md:shadow-[0_24px_80px_rgb(90_67_115/18%)]'>
       <nav
         className='mb-4 grid grid-cols-2 rounded-full border border-auth-field-border bg-auth-field p-1 sm:mb-8'
-        aria-label={t('navigationLabel')}
+        aria-label={t('auth.navigationLabel')}
       >
         <Link
-          href='/login'
+          href={AUTH_ROUTES.SIGN_IN}
           className={`rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5 ${
-            mode === 'sign-in'
+            mode === AUTH_MODE.SIGN_IN
               ? 'text-white shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground'
           }`}
           style={
-            mode === 'sign-in' ? { background: 'var(--auth-gradient)' } : {}
+            mode === AUTH_MODE.SIGN_IN
+              ? { background: 'var(--auth-gradient)' }
+              : {}
           }
-          aria-current={mode === 'sign-in' ? 'page' : undefined}
+          aria-current={mode === AUTH_MODE.SIGN_IN ? 'page' : undefined}
         >
-          {t('signIn')}
+          {t('auth.signIn')}
         </Link>
         <Link
-          href='/signup'
+          href={AUTH_ROUTES.SIGN_UP}
           className={`rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5 ${
-            mode === 'sign-up'
+            mode === AUTH_MODE.SIGN_UP
               ? 'text-white shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground'
           }`}
           style={
-            mode === 'sign-up' ? { background: 'var(--auth-gradient)' } : {}
+            mode === AUTH_MODE.SIGN_UP
+              ? { background: 'var(--auth-gradient)' }
+              : {}
           }
-          aria-current={mode === 'sign-up' ? 'page' : undefined}
+          aria-current={mode === AUTH_MODE.SIGN_UP ? 'page' : undefined}
         >
-          {t('signUp')}
+          {t('auth.signUp')}
         </Link>
       </nav>
 
@@ -184,7 +200,6 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         noValidate
         onSubmit={submitForm}
       >
-        <input type='hidden' {...register('mode')} />
         {state.error && (
           <p
             className='rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
@@ -205,7 +220,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         <div className='flex flex-col gap-2 sm:gap-2.5'>
           <div className='flex flex-col gap-2 sm:gap-2.5'>
             <label className='text-xs font-medium sm:text-sm' htmlFor='email'>
-              {t('email')}
+              {t('auth.email')}
             </label>
             <div className='relative'>
               <Mail
@@ -223,7 +238,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
                     ? 'border-danger/70 ring-2 ring-danger/10 focus:border-danger focus:ring-danger/20'
                     : 'border-auth-field-border focus:border-focus focus:ring-focus/20'
                 }`}
-                placeholder={t('emailPlaceholder')}
+                placeholder={t('auth.emailPlaceholder')}
                 aria-invalid={Boolean(emailErrors)}
                 aria-describedby={emailErrors ? 'email-error' : undefined}
               />
@@ -250,36 +265,40 @@ export function AuthForm({ action, mode }: AuthFormProps) {
 
         <PasswordField
           id='password'
-          label={t('password')}
+          label={t('auth.password')}
           placeholder={
-            mode === 'sign-in'
-              ? t('passwordSignInPlaceholder')
-              : t('passwordPlaceholder')
+            mode === AUTH_MODE.SIGN_IN
+              ? t('auth.passwordSignInPlaceholder')
+              : t('auth.passwordPlaceholder', {
+                  minLength: AUTH_PASSWORD_MIN_LENGTH,
+                })
           }
           autoComplete={
-            mode === 'sign-in' ? 'current-password' : 'new-password'
+            mode === AUTH_MODE.SIGN_IN ? 'current-password' : 'new-password'
           }
           error={passwordErrors}
           registration={register('password')}
-          hideLabel={t('hidePassword')}
-          showLabel={t('showPassword')}
+          hideLabel={t('auth.hidePassword')}
+          showLabel={t('auth.showPassword')}
           visible={showPassword}
-          minLength={mode === 'sign-up' ? 8 : 1}
+          minLength={mode === AUTH_MODE.SIGN_UP ? AUTH_PASSWORD_MIN_LENGTH : 1}
           onToggle={() => setShowPassword((current) => !current)}
         />
 
-        {mode === 'sign-up' && (
+        {mode === AUTH_MODE.SIGN_UP && (
           <PasswordField
             id='confirm-password'
-            label={t('confirmPassword')}
-            placeholder={t('passwordPlaceholder')}
+            label={t('auth.confirmPassword')}
+            placeholder={t('auth.passwordPlaceholder', {
+              minLength: AUTH_PASSWORD_MIN_LENGTH,
+            })}
             autoComplete='new-password'
             error={confirmationErrors}
             registration={register('confirmPassword')}
-            hideLabel={t('hidePassword')}
-            showLabel={t('showPassword')}
+            hideLabel={t('auth.hidePassword')}
+            showLabel={t('auth.showPassword')}
             visible={showConfirmation}
-            minLength={8}
+            minLength={AUTH_PASSWORD_MIN_LENGTH}
             onToggle={() => setShowConfirmation((current) => !current)}
           />
         )}

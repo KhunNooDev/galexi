@@ -15,20 +15,19 @@ import {
 
 import { signOut } from '@/app/auth/actions';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { getCurrentUser } from '@/lib/supabase/auth';
 
 export default async function ProfilePage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect('/login');
+    redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  const auth = await getTranslations('auth');
-  const home = await getTranslations('home');
-  const profile = await getTranslations('profile');
+  const t = await getTranslations();
   const formatter = await getFormatter();
-  const notAvailable = profile('notAvailable');
+  const notAvailable = t('profile.notAvailable');
   const formatDate = (value: string | undefined) =>
     value
       ? formatter.dateTime(new Date(value), {
@@ -44,32 +43,34 @@ export default async function ProfilePage() {
   const details = [
     {
       icon: Mail,
-      label: profile('email'),
+      label: t('profile.email'),
       value: email,
     },
     {
       icon: KeyRound,
-      label: profile('userId'),
+      label: t('profile.userId'),
       value: user.id,
     },
     {
       icon: ShieldCheck,
-      label: profile('verification'),
-      value: user.email_confirmed_at ? profile('verified') : profile('pending'),
+      label: t('profile.verification'),
+      value: user.email_confirmed_at
+        ? t('profile.verified')
+        : t('profile.pending'),
     },
     {
       icon: CheckCircle2,
-      label: profile('provider'),
+      label: t('profile.provider'),
       value: provider,
     },
     {
       icon: CalendarDays,
-      label: profile('createdAt'),
+      label: t('profile.createdAt'),
       value: formatDate(user.created_at),
     },
     {
       icon: Clock3,
-      label: profile('lastSignIn'),
+      label: t('profile.lastSignIn'),
       value: formatDate(user.last_sign_in_at),
     },
   ];
@@ -79,21 +80,21 @@ export default async function ProfilePage() {
       <div className='mx-auto max-w-4xl'>
         <header className='mb-8 flex items-center justify-between gap-4'>
           <Link
-            href='/'
+            href={ROUTES.HOME}
             className='inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
           >
             <ArrowLeft aria-hidden='true' className='size-4' />
-            {profile('backHome')}
+            {t('profile.backHome')}
           </Link>
           <div className='flex items-center gap-3'>
             <Link
-              href='/tasks'
+              href={ROUTES.TASKS}
               className='inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
             >
               <ListTodo aria-hidden='true' className='size-4' />
-              <span className='hidden sm:inline'>{profile('tasks')}</span>
+              <span className='hidden sm:inline'>{t('profile.tasks')}</span>
             </Link>
-            <ThemeToggle label={home('themeToggle')} />
+            <ThemeToggle label={t('home.themeToggle')} />
           </div>
         </header>
 
@@ -107,16 +108,16 @@ export default async function ProfilePage() {
               )}
             </div>
             <h1 className='text-3xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
-              {profile('pageTitle')}
+              {t('profile.pageTitle')}
             </h1>
             <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
-              {profile('pageDescription')}
+              {t('profile.pageDescription')}
             </p>
           </div>
 
           <div className='p-6 sm:p-10'>
             <h2 className='mb-5 text-sm font-semibold tracking-wide text-surface-foreground uppercase'>
-              {profile('accountDetails')}
+              {t('profile.accountDetails')}
             </h2>
             <dl className='grid gap-3 sm:grid-cols-2'>
               {details.map(({ icon: Icon, label, value }) => (
@@ -144,7 +145,7 @@ export default async function ProfilePage() {
                 type='submit'
                 className='h-11 w-full cursor-pointer rounded-full border border-border px-5 text-sm font-medium text-surface-foreground transition-colors hover:bg-secondary-hover sm:w-auto'
               >
-                {auth('signOut')}
+                {t('auth.signOut')}
               </button>
             </form>
           </div>
