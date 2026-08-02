@@ -3,6 +3,7 @@
   --foreground: #111a33;
   --surface: #ffffff;
   --surface-foreground: #10182d;
+  --field: #f4f8ff;
   --muted-foreground: #5b6680;
   --border: rgb(59 90 160 / 14%);
   --primary: #335cff;
@@ -13,6 +14,9 @@
   --danger: #dc2626;
   --danger-hover: #b91c1c;
   --danger-foreground: #ffffff;
+  --scrollbar-thumb: rgb(51 92 255 / 38%);
+  --scrollbar-thumb-hover: rgb(51 92 255 / 62%);
+  --scrollbar-track: rgb(59 90 160 / 7%);
   --auth-backdrop: #dbeafe;
   --auth-card: rgb(250 252 255 / 94%);
   --auth-control: rgb(255 255 255 / 82%);
@@ -29,6 +33,7 @@
   --foreground: #eaf1ff;
   --surface: #090d20;
   --surface-foreground: #f1f5ff;
+  --field: #050816;
   --muted-foreground: #9ca8c8;
   --border: rgb(130 162 255 / 18%);
   --primary: #7aa2ff;
@@ -39,6 +44,9 @@
   --danger: #f87171;
   --danger-hover: #dc2626;
   --danger-foreground: #ffffff;
+  --scrollbar-thumb: rgb(122 162 255 / 38%);
+  --scrollbar-thumb-hover: rgb(122 162 255 / 64%);
+  --scrollbar-track: rgb(130 162 255 / 7%);
   --auth-backdrop: #050816;
   --auth-card: rgb(7 12 32 / 92%);
   --auth-control: rgb(9 15 40 / 78%);
@@ -55,6 +63,7 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-foreground: var(--surface-foreground);
+  --color-field: var(--field);
   --color-card: var(--surface);
   --color-card-foreground: var(--surface-foreground);
   --color-popover: var(--surface);

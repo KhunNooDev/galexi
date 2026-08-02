@@ -1,18 +1,15 @@
 'use client';
 
-import { startTransition, useActionState, useEffect, useMemo, useState } from 'react';
-import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
+import { startTransition, useActionState, useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { CircleAlert, Eye, EyeOff, LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
+import { CircleAlert, LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
 import { z } from 'zod';
 
 import type { AuthState } from '@/app/auth/actions';
+import { createFormInputs, Form, FormResetFields } from '@/components/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { AUTH_MODE, AUTH_PASSWORD_MIN_LENGTH, type AuthMode } from '@/constants/auth';
 import { AUTH_ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
@@ -30,11 +27,12 @@ type AuthFormProps = {
   mode: AuthMode;
 };
 
+const { InputPass, InputText } = createFormInputs<AuthFormValues>();
+const authSecretFields: ('password' | 'confirmPassword')[] = ['password', 'confirmPassword'];
+
 export function AuthForm({ action, mode }: AuthFormProps) {
   const t = useTranslations();
   const [state, formAction, pending] = useActionState(action, {});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const authFormSchema = useMemo(
     () =>
       z
@@ -76,19 +74,6 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         }),
     [mode, t],
   );
-  const {
-    formState: { errors },
-    handleSubmit,
-    register,
-    resetField,
-  } = useForm<AuthFormValues>({
-    defaultValues: {
-      confirmPassword: '',
-      email: '',
-      password: '',
-    },
-    resolver: zodResolver(authFormSchema),
-  });
   const Icon = mode === AUTH_MODE.SIGN_IN ? LogIn : UserPlus;
   const alternateHref = mode === AUTH_MODE.SIGN_IN ? AUTH_ROUTES.SIGN_UP : AUTH_ROUTES.SIGN_IN;
   const alternateLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signUp') : t('auth.signIn');
@@ -99,22 +84,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
   const submitLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signIn') : t('auth.signUp');
   const title = mode === AUTH_MODE.SIGN_IN ? t('auth.signInTitle') : t('auth.signUpTitle');
 
-  useEffect(() => {
-    if (!state.success) return;
-
-    resetField('password');
-    resetField('confirmPassword');
-  }, [resetField, state.success]);
-
-  const emailErrors = errors.email?.message ? [errors.email.message] : state.fieldErrors?.email;
-  const passwordErrors = errors.password?.message
-    ? [errors.password.message]
-    : state.fieldErrors?.password;
-  const confirmationErrors = errors.confirmPassword?.message
-    ? [errors.confirmPassword.message]
-    : state.fieldErrors?.confirmPassword;
-
-  const submitForm = handleSubmit((values) => {
+  const submitForm = (values: AuthFormValues) => {
     const formData = new FormData();
     formData.set('email', values.email);
     formData.set('password', values.password);
@@ -122,18 +92,24 @@ export function AuthForm({ action, mode }: AuthFormProps) {
       formData.set('confirmPassword', values.confirmPassword);
     }
     startTransition(() => formAction(formData));
-  });
+  };
 
   return (
-    <div className='w-full max-w-lg rounded-t-4xl border border-auth-field-border bg-auth-card p-4 shadow-[0_-16px_50px_rgb(90_67_115/12%)] backdrop-blur-xl sm:p-8 md:rounded-4xl md:p-10 md:shadow-[0_24px_80px_rgb(90_67_115/18%)]'>
+    <div
+      className={cn(
+        'w-full max-w-lg animate-in rounded-t-4xl border border-auth-field-border bg-auth-card p-4 shadow-[0_-16px_50px_rgb(90_67_115/12%)] ease-out animation-duration-300 fill-mode-both fade-in motion-reduce:animate-none sm:p-8 md:rounded-4xl md:p-10 md:shadow-[0_24px_80px_rgb(90_67_115/18%)]',
+        mode === AUTH_MODE.SIGN_IN ? 'slide-in-from-left-3' : 'slide-in-from-right-3',
+      )}
+    >
       <nav
         className='mb-4 grid grid-cols-2 rounded-full border border-auth-field-border bg-auth-field p-1 sm:mb-8'
         aria-label={t('auth.navigationLabel')}
       >
         <Link
           href={AUTH_ROUTES.SIGN_IN}
+          scroll={false}
           className={cn(
-            'rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5',
+            'rounded-full px-4 py-2 text-center text-sm font-medium transition-all duration-300 sm:py-2.5',
             mode === AUTH_MODE.SIGN_IN
               ? 'text-white shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground',
@@ -145,8 +121,9 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         </Link>
         <Link
           href={AUTH_ROUTES.SIGN_UP}
+          scroll={false}
           className={cn(
-            'rounded-full px-4 py-2 text-center text-sm font-medium transition-colors sm:py-2.5',
+            'rounded-full px-4 py-2 text-center text-sm font-medium transition-all duration-300 sm:py-2.5',
             mode === AUTH_MODE.SIGN_UP
               ? 'text-white shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground',
@@ -167,12 +144,17 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         </p>
       </div>
 
-      <form
+      <Form
         action={formAction}
         className='flex flex-col gap-2 sm:gap-5'
-        noValidate
+        defaultValues={{ confirmPassword: '', email: '', password: '' }}
+        schema={authFormSchema}
         onSubmit={submitForm}
       >
+        <FormResetFields<AuthFormValues>
+          fields={authSecretFields}
+          when={state.success ? state : null}
+        />
         {state.error && (
           <Alert
             variant='destructive'
@@ -191,52 +173,19 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           </Alert>
         )}
 
-        <div className='flex flex-col gap-2 sm:gap-2.5'>
-          <div className='flex flex-col gap-2 sm:gap-2.5'>
-            <Label className='text-xs sm:text-sm' htmlFor='email'>
-              {t('auth.email')}
-            </Label>
-            <div className='relative'>
-              <Mail
-                aria-hidden='true'
-                className='pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground'
-              />
-              <Input
-                {...register('email')}
-                id='email'
-                type='email'
-                autoComplete='email'
-                required
-                className={cn(
-                  'h-11 w-full rounded-full border bg-auth-field pr-4 pl-11 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-2 sm:h-13',
-                  emailErrors
-                    ? 'border-danger/70 ring-2 ring-danger/10 focus:border-danger focus:ring-danger/20'
-                    : 'border-auth-field-border focus:border-focus focus:ring-focus/20',
-                )}
-                placeholder={t('auth.emailPlaceholder')}
-                aria-invalid={Boolean(emailErrors)}
-                aria-describedby={emailErrors ? 'email-error' : undefined}
-              />
-            </div>
-          </div>
-          {emailErrors && (
-            <div
-              id='email-error'
-              className='flex items-start gap-1.5 text-xs text-danger sm:gap-2 sm:text-sm'
-              role='alert'
-            >
-              <CircleAlert aria-hidden='true' className='mt-0.5 size-3.5 shrink-0 sm:size-4' />
-              <div>
-                {emailErrors.map((error) => (
-                  <p key={error}>{error}</p>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        <InputText
+          field='email'
+          label={t('auth.email')}
+          type='email'
+          required
+          errors={state.fieldErrors?.email}
+          leadingIcon={<Mail aria-hidden='true' className='size-4' />}
+          placeholder={t('auth.emailPlaceholder')}
+          variant='auth'
+        />
 
-        <PasswordField
-          id='password'
+        <InputPass
+          field='password'
           label={t('auth.password')}
           placeholder={
             mode === AUTH_MODE.SIGN_IN
@@ -245,31 +194,29 @@ export function AuthForm({ action, mode }: AuthFormProps) {
                   minLength: AUTH_PASSWORD_MIN_LENGTH,
                 })
           }
-          autoComplete={mode === AUTH_MODE.SIGN_IN ? 'current-password' : 'new-password'}
-          error={passwordErrors}
-          registration={register('password')}
+          errors={state.fieldErrors?.password}
           hideLabel={t('auth.hidePassword')}
           showLabel={t('auth.showPassword')}
-          visible={showPassword}
+          leadingIcon={<LockKeyhole aria-hidden='true' className='size-4' />}
           minLength={mode === AUTH_MODE.SIGN_UP ? AUTH_PASSWORD_MIN_LENGTH : 1}
-          onToggle={() => setShowPassword((current) => !current)}
+          required
+          variant='auth'
         />
 
         {mode === AUTH_MODE.SIGN_UP && (
-          <PasswordField
-            id='confirm-password'
+          <InputPass
+            field='confirmPassword'
             label={t('auth.confirmPassword')}
             placeholder={t('auth.passwordPlaceholder', {
               minLength: AUTH_PASSWORD_MIN_LENGTH,
             })}
-            autoComplete='new-password'
-            error={confirmationErrors}
-            registration={register('confirmPassword')}
+            errors={state.fieldErrors?.confirmPassword}
             hideLabel={t('auth.hidePassword')}
             showLabel={t('auth.showPassword')}
-            visible={showConfirmation}
+            leadingIcon={<LockKeyhole aria-hidden='true' className='size-4' />}
             minLength={AUTH_PASSWORD_MIN_LENGTH}
-            onToggle={() => setShowConfirmation((current) => !current)}
+            required
+            variant='auth'
           />
         )}
 
@@ -282,7 +229,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           <Icon aria-hidden='true' className='size-4' />
           {submitLabel}
         </Button>
-      </form>
+      </Form>
 
       <p className='mt-4 text-center text-xs text-muted-foreground sm:mt-7 sm:text-sm'>
         {alternatePrompt}{' '}
@@ -293,95 +240,6 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           {alternateLabel}
         </Link>
       </p>
-    </div>
-  );
-}
-
-type PasswordFieldProps = {
-  autoComplete: 'current-password' | 'new-password';
-  error?: string[];
-  hideLabel: string;
-  id: string;
-  label: string;
-  minLength: number;
-  onToggle: () => void;
-  placeholder: string;
-  registration: UseFormRegisterReturn;
-  showLabel: string;
-  visible: boolean;
-};
-
-function PasswordField({
-  autoComplete,
-  error,
-  hideLabel,
-  id,
-  label,
-  minLength,
-  onToggle,
-  placeholder,
-  registration,
-  showLabel,
-  visible,
-}: PasswordFieldProps) {
-  return (
-    <div className='flex flex-col gap-2 sm:gap-2.5'>
-      <div className='flex flex-col gap-2 sm:gap-2.5'>
-        <Label className='text-xs sm:text-sm' htmlFor={id}>
-          {label}
-        </Label>
-        <div className='relative'>
-          <LockKeyhole
-            aria-hidden='true'
-            className='pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground'
-          />
-          <Input
-            {...registration}
-            id={id}
-            type={visible ? 'text' : 'password'}
-            autoComplete={autoComplete}
-            minLength={minLength}
-            required
-            className={cn(
-              'h-11 w-full rounded-full border bg-auth-field pr-12 pl-11 text-sm outline-none placeholder:text-muted-foreground/70 focus:ring-2 sm:h-13',
-              error
-                ? 'border-danger/70 ring-2 ring-danger/10 focus:border-danger focus:ring-danger/20'
-                : 'border-auth-field-border focus:border-focus focus:ring-focus/20',
-            )}
-            placeholder={placeholder}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? `${id}-error` : undefined}
-          />
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon-sm'
-            className='absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer rounded-full text-muted-foreground hover:bg-secondary-hover hover:text-surface-foreground'
-            aria-label={visible ? hideLabel : showLabel}
-            onClick={onToggle}
-          >
-            {visible ? (
-              <EyeOff aria-hidden='true' className='size-4' />
-            ) : (
-              <Eye aria-hidden='true' className='size-4' />
-            )}
-          </Button>
-        </div>
-      </div>
-      {error && (
-        <div
-          id={`${id}-error`}
-          className='flex items-start gap-1.5 text-xs text-danger sm:gap-2 sm:text-sm'
-          role='alert'
-        >
-          <CircleAlert aria-hidden='true' className='mt-0.5 size-3.5 shrink-0 sm:size-4' />
-          <div>
-            {error.map((message) => (
-              <p key={message}>{message}</p>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

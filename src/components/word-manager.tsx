@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,48 +12,32 @@ import {
   Eye,
   Globe2,
   ImageIcon,
-  ImagePlus,
   LockKeyhole,
   Pencil,
   Plus,
   Save,
   Search,
   Trash2,
+  TriangleAlert,
   X,
 } from 'lucide-react';
 import { z } from 'zod';
 
+import { AlertDialog } from '@/components/alert-dialog';
+import { Dialog } from '@/components/dialog';
+import { createFormInputs, Form } from '@/components/form';
+import { ImageWithSkeleton } from '@/components/image-with-skeleton';
+import { Tooltip } from '@/components/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
 import { getSearchWordRoute, getWordImageRoute, getWordRoute } from '@/constants/routes';
 import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
 import { createClient as createSupabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import type { ApiType } from '@/server/api';
-
-import { Tooltip } from './tooltip';
 
 const client = hc<ApiType>('/');
 
@@ -116,10 +100,8 @@ function createWordSchema(labels: WordLabels) {
 
 type WordFormValues = z.infer<ReturnType<typeof createWordSchema>>;
 
-const inputClassName =
-  'h-11 w-full rounded-lg border border-border bg-background px-3 text-surface-foreground outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20';
-const textareaClassName =
-  'min-h-24 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-surface-foreground outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20';
+const { InputCheckbox, InputCombobox, InputFile, InputTags, InputText, InputTextarea } =
+  createFormInputs<WordFormValues>();
 
 function getImageExtension(file: File) {
   const extension = file.name.split('.').pop()?.toLocaleLowerCase();
@@ -161,7 +143,7 @@ async function uploadWordImage(file: File) {
   return path;
 }
 
-export function WordManager() {
+export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
   const t = useTranslations();
   const labels = useMemo<WordLabels>(
     () => ({
@@ -177,29 +159,23 @@ export function WordManager() {
   const schema = useMemo(() => createWordSchema(labels), [labels]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [words, setWords] = useState<WordEntry[]>([]);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [words, setWords] = useState<WordEntry[]>(initialWords);
   const [searchQuery, setSearchQuery] = useState('');
-  const [meaningDraft, setMeaningDraft] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
-  const [imageInputKey, setImageInputKey] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [wordToDelete, setWordToDelete] = useState<WordEntry | null>(null);
-  const {
-    control,
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    clearErrors,
-    formState: { errors, isSubmitting },
-  } = useForm<WordFormValues>({
+  const form = useForm<WordFormValues, unknown, WordFormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   });
-  const meaningsTh = useWatch({ control, name: 'meaningsTh' });
+  const {
+    control,
+    reset,
+    formState: { isDirty, isSubmitting },
+  } = form;
   const imageUrl = useWatch({ control, name: 'imageUrl' });
 
   useEffect(
@@ -229,46 +205,10 @@ export function WordManager() {
     );
   }, [searchQuery, words]);
 
-  useEffect(() => {
-    let ignore = false;
-
-    async function loadWords() {
-      try {
-        const response = await client.api.words.$get();
-
-        if (response.status !== 200) {
-          throw new Error('Unable to load words');
-        }
-
-        const data = await response.json();
-
-        if (!ignore) {
-          setWords(data.words);
-        }
-      } catch {
-        if (!ignore) {
-          setRequestError(t('words.manager.loadError'));
-        }
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadWords();
-
-    return () => {
-      ignore = true;
-    };
-  }, [t]);
-
   function resetForm() {
     setEditingId(null);
-    setMeaningDraft('');
     setSelectedImage(null);
     setSelectedImagePreview(null);
-    setImageInputKey((current) => current + 1);
     reset(defaultValues);
   }
 
@@ -283,8 +223,22 @@ export function WordManager() {
   }
 
   function closeDialog() {
+    setIsDiscardDialogOpen(false);
     setIsDialogOpen(false);
     resetForm();
+  }
+
+  function requestCloseDialog() {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (isDirty || selectedImage !== null) {
+      setIsDiscardDialogOpen(true);
+      return;
+    }
+
+    closeDialog();
   }
 
   function requestDeleteWord(word: WordEntry) {
@@ -294,33 +248,6 @@ export function WordManager() {
 
   function closeDeleteDialog() {
     setWordToDelete(null);
-  }
-
-  function addMeaning() {
-    const meaning = meaningDraft.trim();
-
-    if (
-      !meaning ||
-      meaningsTh.length >= WORD_LIMITS.MEANINGS_MAX_COUNT ||
-      meaningsTh.includes(meaning)
-    ) {
-      return;
-    }
-
-    setValue('meaningsTh', [...meaningsTh, meaning], {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-    clearErrors('meaningsTh');
-    setMeaningDraft('');
-  }
-
-  function removeMeaning(meaning: string) {
-    setValue(
-      'meaningsTh',
-      meaningsTh.filter((item) => item !== meaning),
-      { shouldDirty: true, shouldValidate: true },
-    );
   }
 
   function selectImage(file: File | null) {
@@ -336,7 +263,6 @@ export function WordManager() {
       setSelectedImage(null);
       setSelectedImagePreview(null);
       setRequestError(t('words.manager.validation.invalidImageType'));
-      setImageInputKey((current) => current + 1);
       return;
     }
 
@@ -344,19 +270,11 @@ export function WordManager() {
       setSelectedImage(null);
       setSelectedImagePreview(null);
       setRequestError(t('words.manager.validation.imageTooLarge'));
-      setImageInputKey((current) => current + 1);
       return;
     }
 
     setSelectedImage(file);
     setSelectedImagePreview(URL.createObjectURL(file));
-  }
-
-  function removeImage() {
-    setSelectedImage(null);
-    setSelectedImagePreview(null);
-    setImageInputKey((current) => current + 1);
-    setValue('imageUrl', '', { shouldDirty: true });
   }
 
   async function saveWord(values: WordFormValues) {
@@ -431,7 +349,6 @@ export function WordManager() {
   function editWord(word: WordEntry) {
     setRequestError(null);
     setEditingId(word.id);
-    setMeaningDraft('');
     reset({
       word: word.word,
       pronunciationIpa: word.pronunciationIpa,
@@ -491,384 +408,212 @@ export function WordManager() {
             closeDeleteDialog();
           }
         }}
+        icon={<Trash2 aria-hidden='true' className='size-5' />}
+        title={t('words.manager.deleteDialogTitle')}
+        description={t('words.manager.deleteDialogDescription', {
+          word: wordToDelete?.word ?? '',
+        })}
+        cancelLabel={t('words.manager.cancel')}
+        actionLabel={t('words.manager.confirmDelete')}
+        actionIcon={<Trash2 aria-hidden='true' className='size-4' />}
+        actionVariant='destructive'
+        actionDisabled={!wordToDelete}
+        pending={deletingId !== null}
+        closeOnAction={false}
+        tone='danger'
+        onAction={() => {
+          if (wordToDelete) {
+            void deleteWord(wordToDelete.id);
+          }
+        }}
       >
-        <AlertDialogContent className='max-w-md gap-0 rounded-3xl border-border bg-surface p-6 text-surface-foreground shadow-2xl sm:max-w-md sm:p-7'>
-          <AlertDialogHeader className='block text-left'>
-            <span className='mb-5 inline-flex size-12 items-center justify-center rounded-2xl bg-danger/10 text-danger'>
-              <Trash2 aria-hidden='true' className='size-5' />
-            </span>
-            <AlertDialogTitle className='text-xl text-surface-foreground'>
-              {t('words.manager.deleteDialogTitle')}
-            </AlertDialogTitle>
-            <AlertDialogDescription className='mt-2 leading-6'>
-              {t('words.manager.deleteDialogDescription', {
-                word: wordToDelete?.word ?? '',
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {requestError && (
-            <Alert
-              variant='destructive'
-              className='mt-4 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
-            >
-              <AlertDescription className='text-danger'>{requestError}</AlertDescription>
-            </Alert>
-          )}
-
-          <AlertDialogFooter className='mt-6 gap-3'>
-            <AlertDialogCancel
-              className='h-11 cursor-pointer rounded-full border-border px-5 hover:bg-secondary-hover'
-              disabled={deletingId !== null}
-            >
-              {t('words.manager.cancel')}
-            </AlertDialogCancel>
-            <Button
-              type='button'
-              variant='destructive'
-              className='h-11 cursor-pointer rounded-full bg-danger px-5 text-danger-foreground hover:bg-danger-hover disabled:cursor-wait'
-              disabled={!wordToDelete || deletingId !== null}
-              onClick={() => {
-                if (wordToDelete) {
-                  void deleteWord(wordToDelete.id);
-                }
-              }}
-            >
-              <Trash2 aria-hidden='true' className='size-4' />
-              {t('words.manager.confirmDelete')}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        {requestError && (
+          <Alert
+            variant='destructive'
+            className='rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
+          >
+            <AlertDescription className='text-danger'>{requestError}</AlertDescription>
+          </Alert>
+        )}
       </AlertDialog>
+
+      <AlertDialog
+        open={isDiscardDialogOpen}
+        onOpenChange={setIsDiscardDialogOpen}
+        icon={<TriangleAlert aria-hidden='true' className='size-5' />}
+        title={t('words.manager.discardDialogTitle')}
+        description={t('words.manager.discardDialogDescription')}
+        cancelLabel={t('words.manager.keepEditing')}
+        actionLabel={t('words.manager.discardChanges')}
+        actionVariant='destructive'
+        tone='warning'
+        onAction={closeDialog}
+      />
 
       <Dialog
         open={isDialogOpen}
         onOpenChange={(open) => {
           if (!open) {
-            closeDialog();
+            requestCloseDialog();
           }
         }}
+        title={
+          editingId === null
+            ? t('words.manager.createDialogTitle')
+            : t('words.manager.editDialogTitle')
+        }
+        closeLabel={t('words.manager.closeDialog')}
+        closeDisabled={isSubmitting}
+        initialFocusId='word'
+        size='xl'
       >
-        <DialogContent
-          showCloseButton={false}
-          className='max-h-[calc(100svh-2rem)] max-w-4xl gap-0 overflow-hidden rounded-3xl border-border bg-surface p-0 text-surface-foreground shadow-2xl sm:max-w-4xl'
-          onOpenAutoFocus={(event) => {
-            event.preventDefault();
-            document.getElementById('word')?.focus();
-          }}
+        <Form
+          className='grid max-h-[calc(100svh-8rem)] gap-5 overflow-y-auto p-5 sm:grid-cols-2 sm:p-6'
+          form={form}
+          onSubmit={saveWord}
         >
-          <DialogHeader className='flex-row items-center justify-between gap-4 border-b border-border px-5 py-4 text-left sm:px-6'>
-            <div>
-              <DialogTitle className='text-xl text-surface-foreground'>
-                {editingId === null
-                  ? t('words.manager.createDialogTitle')
-                  : t('words.manager.editDialogTitle')}
-              </DialogTitle>
-              <DialogDescription className='mt-1'>
-                {t('words.manager.dialogDescription')}
-              </DialogDescription>
-            </div>
-            <DialogClose asChild>
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon-lg'
-                className='shrink-0 cursor-pointer rounded-full text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
-                aria-label={t('words.manager.closeDialog')}
-              >
-                <X aria-hidden='true' className='size-5' />
-              </Button>
-            </DialogClose>
-          </DialogHeader>
-
-          <form
-            className='grid max-h-[calc(100svh-8rem)] gap-5 overflow-y-auto p-5 sm:grid-cols-2 sm:p-6'
-            noValidate
-            onSubmit={handleSubmit(saveWord)}
-          >
-            {requestError && (
-              <Alert
-                variant='destructive'
-                className='rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger sm:col-span-2'
-              >
-                <AlertDescription className='text-danger'>{requestError}</AlertDescription>
-              </Alert>
-            )}
-            <FormField id='word' label={t('words.manager.wordLabel')} error={errors.word?.message}>
-              <Input
-                id='word'
-                className={inputClassName}
-                placeholder={t('words.manager.wordPlaceholder')}
-                maxLength={WORD_LIMITS.WORD_MAX_LENGTH}
-                aria-invalid={Boolean(errors.word)}
-                {...register('word')}
-              />
-            </FormField>
-
-            <FormField
-              id='part-of-speech'
-              label={t('words.manager.partOfSpeechLabel')}
-              error={errors.partOfSpeech?.message}
+          {requestError && (
+            <Alert
+              variant='destructive'
+              className='rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger sm:col-span-2'
             >
-              <Input
-                id='part-of-speech'
-                className={inputClassName}
-                placeholder={t('words.manager.partOfSpeechPlaceholder')}
-                maxLength={WORD_LIMITS.PART_OF_SPEECH_MAX_LENGTH}
-                aria-invalid={Boolean(errors.partOfSpeech)}
-                {...register('partOfSpeech')}
-              />
-            </FormField>
+              <AlertDescription className='text-danger'>{requestError}</AlertDescription>
+            </Alert>
+          )}
+          <InputText
+            field='word'
+            label={t('words.manager.wordLabel')}
+            placeholder={t('words.manager.wordPlaceholder')}
+            maxLength={WORD_LIMITS.WORD_MAX_LENGTH}
+            required
+          />
 
-            <FormField
-              id='pronunciation-ipa'
-              label={t('words.manager.pronunciationIpaLabel')}
-              error={errors.pronunciationIpa?.message}
-            >
-              <Input
-                id='pronunciation-ipa'
-                className={inputClassName}
-                placeholder={t('words.manager.pronunciationIpaPlaceholder')}
-                maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
-                aria-invalid={Boolean(errors.pronunciationIpa)}
-                {...register('pronunciationIpa')}
-              />
-            </FormField>
+          <InputCombobox
+            field='partOfSpeech'
+            id='part-of-speech'
+            label={t('words.manager.partOfSpeechLabel')}
+            placeholder={t('words.manager.partOfSpeechPlaceholder')}
+            searchPlaceholder={t('words.manager.partOfSpeechSearchPlaceholder')}
+            noResultsLabel={t('words.manager.partOfSpeechNoResults')}
+            clearLabel={t('words.manager.partOfSpeechClear')}
+            options={PART_OF_SPEECH_OPTIONS}
+          />
 
-            <FormField
-              id='pronunciation-thai'
-              label={t('words.manager.pronunciationThaiLabel')}
-              error={errors.pronunciationThai?.message}
-            >
-              <Input
-                id='pronunciation-thai'
-                className={inputClassName}
-                placeholder={t('words.manager.pronunciationThaiPlaceholder')}
-                maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
-                aria-invalid={Boolean(errors.pronunciationThai)}
-                {...register('pronunciationThai')}
-              />
-            </FormField>
+          <InputText
+            field='pronunciationIpa'
+            id='pronunciation-ipa'
+            label={t('words.manager.pronunciationIpaLabel')}
+            placeholder={t('words.manager.pronunciationIpaPlaceholder')}
+            maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
+          />
 
-            <FormField
-              id='meaning-th'
-              label={t('words.manager.meaningsThLabel')}
-              hint={t('words.manager.meaningsThHint')}
-              error={errors.meaningsTh?.message}
-              className='sm:col-span-2'
-            >
-              <Controller
-                control={control}
-                name='meaningsTh'
-                render={() => (
-                  <div
-                    className='flex min-h-11 flex-wrap items-center gap-2 rounded-lg border border-border bg-background p-2 focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20'
-                    aria-invalid={Boolean(errors.meaningsTh)}
-                  >
-                    {meaningsTh.map((meaning) => (
-                      <Badge
-                        key={meaning}
-                        className='gap-1 bg-primary/12 px-3 py-1 text-sm text-primary'
-                      >
-                        {meaning}
-                        <Button
-                          type='button'
-                          variant='ghost'
-                          size='icon-xs'
-                          className='size-5 cursor-pointer rounded-full p-0.5 text-primary hover:bg-primary/15 hover:text-primary'
-                          aria-label={t('words.manager.removeMeaning', {
-                            meaning,
-                          })}
-                          onClick={() => removeMeaning(meaning)}
-                        >
-                          <X aria-hidden='true' className='size-3.5' />
-                        </Button>
-                      </Badge>
-                    ))}
-                    <Input
-                      id='meaning-th'
-                      className='h-7 min-w-40 flex-1 border-0 bg-transparent px-1 text-sm text-surface-foreground shadow-none outline-none placeholder:text-muted-foreground focus-visible:ring-0 dark:bg-transparent'
-                      value={meaningDraft}
-                      placeholder={t('words.manager.meaningsThPlaceholder')}
-                      maxLength={WORD_LIMITS.MEANING_MAX_LENGTH}
-                      onChange={(event) => setMeaningDraft(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          addMeaning();
-                        }
-                      }}
-                    />
-                    <Button
-                      type='button'
-                      variant='ghost'
-                      size='icon-xs'
-                      className='size-7 cursor-pointer rounded-full text-muted-foreground hover:bg-secondary-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40'
-                      aria-label={t('words.manager.addMeaning')}
-                      disabled={!meaningDraft.trim()}
-                      onClick={addMeaning}
-                    >
-                      <Plus aria-hidden='true' className='size-4' />
-                    </Button>
-                  </div>
-                )}
-              />
-            </FormField>
+          <InputText
+            field='pronunciationThai'
+            id='pronunciation-thai'
+            label={t('words.manager.pronunciationThaiLabel')}
+            placeholder={t('words.manager.pronunciationThaiPlaceholder')}
+            maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
+          />
 
-            <FormField
-              id='example-sentence'
-              label={t('words.manager.exampleSentenceLabel')}
-              error={errors.exampleSentence?.message}
-            >
-              <Textarea
-                id='example-sentence'
-                className={textareaClassName}
-                placeholder={t('words.manager.exampleSentencePlaceholder')}
-                maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
-                aria-invalid={Boolean(errors.exampleSentence)}
-                {...register('exampleSentence')}
-              />
-            </FormField>
+          <InputTags
+            field='meaningsTh'
+            id='meaning-th'
+            label={t('words.manager.meaningsThLabel')}
+            hint={t('words.manager.meaningsThHint')}
+            wrapperClassName='sm:col-span-2'
+            addLabel={t('words.manager.addMeaning')}
+            removeLabel={(meaning) =>
+              t('words.manager.removeMeaning', {
+                meaning,
+              })
+            }
+            placeholder={t('words.manager.meaningsThPlaceholder')}
+            maxLength={WORD_LIMITS.MEANING_MAX_LENGTH}
+            maxItems={WORD_LIMITS.MEANINGS_MAX_COUNT}
+            required
+          />
 
-            <FormField
-              id='example-sentence-meaning-th'
-              label={t('words.manager.exampleSentenceMeaningThLabel')}
-              error={errors.exampleSentenceMeaningTh?.message}
-            >
-              <Textarea
-                id='example-sentence-meaning-th'
-                className={textareaClassName}
-                placeholder={t('words.manager.exampleSentenceMeaningThPlaceholder')}
-                maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
-                aria-invalid={Boolean(errors.exampleSentenceMeaningTh)}
-                {...register('exampleSentenceMeaningTh')}
-              />
-            </FormField>
+          <InputTextarea
+            field='exampleSentence'
+            id='example-sentence'
+            label={t('words.manager.exampleSentenceLabel')}
+            placeholder={t('words.manager.exampleSentencePlaceholder')}
+            maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
+          />
 
-            <FormField
-              id='image-file'
-              label={t('words.manager.imageUploadLabel')}
-              hint={t('words.manager.imageUploadHint')}
-              error={errors.imageUrl?.message}
-              className='sm:col-span-2'
-            >
-              <input type='hidden' {...register('imageUrl')} />
-              <label
-                htmlFor='image-file'
-                className='flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-background/60 px-4 py-5 text-center transition-colors hover:border-primary/40 hover:bg-primary/5'
-              >
-                <span className='inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
-                  <ImagePlus aria-hidden='true' className='size-5' />
-                </span>
-                <span className='mt-2 text-sm font-medium text-surface-foreground'>
-                  {selectedImage ? selectedImage.name : t('words.manager.chooseImage')}
-                </span>
-                <span className='mt-1 text-xs text-muted-foreground'>
-                  {t('words.manager.imageFormats')}
-                </span>
-                <input
-                  key={imageInputKey}
-                  id='image-file'
-                  type='file'
-                  className='sr-only'
-                  accept={WORD_IMAGE.ACCEPTED_TYPES.join(',')}
-                  onChange={(event) => {
-                    selectImage(event.target.files?.item(0) ?? null);
-                  }}
+          <InputTextarea
+            field='exampleSentenceMeaningTh'
+            id='example-sentence-meaning-th'
+            label={t('words.manager.exampleSentenceMeaningThLabel')}
+            placeholder={t('words.manager.exampleSentenceMeaningThPlaceholder')}
+            maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
+          />
+
+          <InputFile
+            field='imageUrl'
+            id='image-file'
+            label={t('words.manager.imageUploadLabel')}
+            hint={t('words.manager.imageUploadHint')}
+            wrapperClassName='sm:col-span-2'
+            accept={WORD_IMAGE.ACCEPTED_TYPES.join(',')}
+            chooseLabel={t('words.manager.chooseImage')}
+            replaceLabel={t('words.manager.replaceImage')}
+            formatsLabel={t('words.manager.imageFormats')}
+            file={selectedImage}
+            currentFileLabel={t('words.manager.currentImage')}
+            description={
+              selectedImage ? t('words.manager.readyToUpload') : t('words.manager.uploadedImage')
+            }
+            removeLabel={t('words.manager.removeImage')}
+            onFileChange={selectImage}
+            preview={
+              selectedImagePreview || imageUrl ? (
+                <ImageWithSkeleton
+                  src={
+                    selectedImagePreview ??
+                    (editingId === null ? imageUrl : getWordImageRoute(editingId))
+                  }
+                  alt={t('words.manager.imagePreviewAlt')}
+                  className='object-cover'
                 />
-              </label>
+              ) : undefined
+            }
+          />
 
-              {(selectedImagePreview || imageUrl) && (
-                <div className='flex items-center gap-3 rounded-2xl border border-border bg-background/60 p-3'>
-                  {/* The source can be a local blob preview or a Supabase public URL. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={
-                      selectedImagePreview ??
-                      (editingId === null ? imageUrl : getWordImageRoute(editingId))
-                    }
-                    alt={t('words.manager.imagePreviewAlt')}
-                    className='size-16 shrink-0 rounded-xl object-cover'
-                  />
-                  <div className='min-w-0 flex-1'>
-                    <p className='truncate text-sm font-medium text-surface-foreground'>
-                      {selectedImage?.name ?? t('words.manager.currentImage')}
-                    </p>
-                    <p className='text-xs text-muted-foreground'>
-                      {selectedImage
-                        ? t('words.manager.readyToUpload')
-                        : t('words.manager.uploadedImage')}
-                    </p>
-                  </div>
-                  <Button
-                    type='button'
-                    variant='ghost'
-                    size='icon'
-                    className='shrink-0 cursor-pointer rounded-full text-muted-foreground hover:bg-danger/10 hover:text-danger'
-                    aria-label={t('words.manager.removeImage')}
-                    onClick={removeImage}
-                  >
-                    <X aria-hidden='true' className='size-4' />
-                  </Button>
-                </div>
+          <InputCheckbox
+            field='isPublic'
+            id='is-public'
+            wrapperClassName='sm:col-span-2'
+            label={t('words.manager.publicLabel')}
+            hint={t('words.manager.publicHint')}
+            icon={<Globe2 className='size-5' />}
+          />
+
+          <div className='grid grid-cols-2 gap-3 sm:col-span-2 sm:flex sm:justify-end'>
+            <Button
+              type='button'
+              variant='outline'
+              className='h-11 w-full cursor-pointer rounded-lg border-border px-4 font-medium text-surface-foreground hover:bg-secondary-hover sm:w-auto'
+              disabled={isSubmitting}
+              onClick={requestCloseDialog}
+            >
+              <X aria-hidden='true' className='size-4' />
+              {t('words.manager.cancel')}
+            </Button>
+            <Button
+              type='submit'
+              className='h-11 w-full cursor-pointer rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-wait sm:w-auto'
+              disabled={isSubmitting}
+            >
+              {editingId === null ? (
+                <Plus aria-hidden='true' className='size-4' />
+              ) : (
+                <Save aria-hidden='true' className='size-4' />
               )}
-            </FormField>
-
-            <Controller
-              control={control}
-              name='isPublic'
-              render={({ field }) => (
-                <Label
-                  htmlFor='is-public'
-                  className='flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background/60 p-4 sm:col-span-2'
-                >
-                  <Checkbox
-                    ref={field.ref}
-                    id='is-public'
-                    name={field.name}
-                    checked={field.value}
-                    className='mt-0.5'
-                    onBlur={field.onBlur}
-                    onCheckedChange={field.onChange}
-                  />
-                  <span className='grid gap-1'>
-                    <span className='text-sm font-medium text-surface-foreground'>
-                      {t('words.manager.publicLabel')}
-                    </span>
-                    <span className='text-xs leading-5 font-normal text-muted-foreground'>
-                      {t('words.manager.publicHint')}
-                    </span>
-                  </span>
-                </Label>
-              )}
-            />
-
-            <div className='flex flex-wrap gap-3 sm:col-span-2'>
-              <Button
-                type='submit'
-                className='h-11 cursor-pointer rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-wait'
-                disabled={isSubmitting}
-              >
-                {editingId === null ? (
-                  <Plus aria-hidden='true' className='size-4' />
-                ) : (
-                  <Save aria-hidden='true' className='size-4' />
-                )}
-                {editingId === null ? t('words.manager.create') : t('words.manager.update')}
-              </Button>
-              <DialogClose asChild>
-                <Button
-                  type='button'
-                  variant='outline'
-                  className='h-11 cursor-pointer rounded-lg border-border px-4 font-medium hover:bg-secondary-hover'
-                >
-                  <X aria-hidden='true' className='size-4' />
-                  {t('words.manager.cancel')}
-                </Button>
-              </DialogClose>
-            </div>
-          </form>
-        </DialogContent>
+              {editingId === null ? t('words.manager.create') : t('words.manager.update')}
+            </Button>
+          </div>
+        </Form>
       </Dialog>
 
       <section className='space-y-5' aria-labelledby='word-list-title'>
@@ -925,9 +670,7 @@ export function WordManager() {
           </div>
         </div>
 
-        {isLoading ? (
-          <EmptyState>{t('words.manager.loading')}</EmptyState>
-        ) : words.length === 0 ? (
+        {words.length === 0 ? (
           <EmptyState>{t('words.manager.empty')}</EmptyState>
         ) : filteredWords.length === 0 ? (
           <EmptyState>{t('words.manager.noSearchResults')}</EmptyState>
@@ -1023,7 +766,7 @@ export function WordManager() {
 
                 <div className='mt-auto flex items-center justify-end gap-1 border-t border-border pt-4'>
                   {word.isPublic && (
-                    <Tooltip align='end' label={t('words.manager.openPublicPage')}>
+                    <Tooltip label={t('words.manager.openPublicPage')}>
                       <Link
                         href={getSearchWordRoute(word.word)}
                         className='inline-flex size-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/12'
@@ -1062,37 +805,6 @@ export function WordManager() {
           </ul>
         )}
       </section>
-    </div>
-  );
-}
-
-function FormField({
-  children,
-  className = '',
-  error,
-  hint,
-  id,
-  label,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  error?: string;
-  hint?: string;
-  id: string;
-  label: string;
-}) {
-  return (
-    <div className={cn('grid content-start gap-2', className)}>
-      <Label className='text-sm font-medium text-surface-foreground' htmlFor={id}>
-        {label}
-      </Label>
-      {children}
-      {hint && !error && <p className='text-xs text-muted-foreground'>{hint}</p>}
-      {error && (
-        <p className='text-sm text-danger' role='alert'>
-          {error}
-        </p>
-      )}
     </div>
   );
 }

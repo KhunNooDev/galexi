@@ -1,9 +1,7 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { ArrowLeft } from 'lucide-react';
 
-import { ThemeToggle } from '@/components/theme-toggle';
+import { PageHeader } from '@/components/page-header';
 import { WordFlashcard } from '@/components/word-flashcard';
 import { decodeWordRouteParam, ROUTES } from '@/constants/routes';
 import { listPublicWordEntries } from '@/server/words';
@@ -20,18 +18,13 @@ export default async function SearchWordPage({ params }: { params: Promise<{ wor
   const t = await getTranslations();
 
   return (
-    <main className='min-h-full bg-background px-4 py-6 sm:px-8 sm:py-10'>
-      <div className='mx-auto max-w-5xl'>
-        <header className='mb-8 flex items-center justify-between gap-4'>
-          <Link
-            href={ROUTES.SEARCH_WORDS}
-            className='inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
-          >
-            <ArrowLeft aria-hidden='true' className='size-4' />
-            {t('words.search.backToSearch')}
-          </Link>
-          <ThemeToggle label={t('home.themeToggle')} />
-        </header>
+    <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
+      <div className='mx-auto max-w-7xl'>
+        <PageHeader
+          backHref={ROUTES.SEARCH_WORDS}
+          backLabel={t('words.search.backToSearch')}
+          className='mb-8'
+        />
 
         {publicEntries.length > 1 && (
           <p className='mx-auto mb-6 max-w-3xl text-center text-sm text-muted-foreground'>

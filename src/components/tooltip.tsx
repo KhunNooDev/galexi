@@ -1,4 +1,9 @@
-import { Tooltip as TooltipRoot, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip as TooltipRoot,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type TooltipProps = {
   align?: 'center' | 'end' | 'start';
@@ -9,11 +14,13 @@ type TooltipProps = {
 
 export function Tooltip({ align = 'center', children, label, side = 'top' }: TooltipProps) {
   return (
-    <TooltipRoot>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent align={align} side={side}>
-        {label}
-      </TooltipContent>
-    </TooltipRoot>
+    <TooltipProvider>
+      <TooltipRoot>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent align={align} side={side}>
+          {label}
+        </TooltipContent>
+      </TooltipRoot>
+    </TooltipProvider>
   );
 }

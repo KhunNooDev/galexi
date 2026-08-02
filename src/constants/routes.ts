@@ -1,4 +1,4 @@
-import { AUTH_MODE } from './auth';
+import { AUTH_MODE } from '@/constants/auth';
 
 export const ROUTES = {
   AUTH: '/auth',

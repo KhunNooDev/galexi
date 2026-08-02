@@ -9,8 +9,7 @@ import { getStoredWordImagePath, WORD_LIMITS } from '@/constants/word';
 import { getCurrentUserId } from '@/lib/supabase/auth';
 import { getUserRole } from '@/server/roles';
 import { getWordImageUrl, removeWordImage } from '@/server/word-images';
-
-import { createWord, deleteWord, getWordById, listWords, updateWord } from './words';
+import { createWord, deleteWord, getWordById, listWords, updateWord } from '@/server/words';
 
 const optionalText = (maxLength: number) => z.string().trim().max(maxLength).default('');
 

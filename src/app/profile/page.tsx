@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import {
-  ArrowLeft,
   BookOpenText,
   CalendarDays,
   CheckCircle2,
@@ -13,8 +12,7 @@ import {
   UserRound,
 } from 'lucide-react';
 
-import { signOut } from '@/app/auth/actions';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { PageHeader } from '@/components/page-header';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { getCurrentUser } from '@/lib/supabase/auth';
@@ -75,17 +73,14 @@ export default async function ProfilePage() {
   ];
 
   return (
-    <main className='min-h-full bg-background px-4 py-6 sm:px-8 sm:py-10'>
-      <div className='mx-auto max-w-4xl'>
-        <header className='mb-8 flex items-center justify-between gap-4'>
-          <Link
-            href={ROUTES.HOME}
-            className='inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
-          >
-            <ArrowLeft aria-hidden='true' className='size-4' />
-            {t('profile.backHome')}
-          </Link>
-          <div className='flex items-center gap-3'>
+    <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
+      <div className='mx-auto max-w-7xl'>
+        <PageHeader
+          backHref={ROUTES.HOME}
+          backLabel={t('profile.backHome')}
+          className='mb-8'
+          user={{ email: user.email }}
+          actions={
             <Link
               href={role === USER_ROLE.ADMIN ? ROUTES.WORDS : ROUTES.SEARCH_WORDS}
               className='inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
@@ -95,11 +90,10 @@ export default async function ProfilePage() {
                 {role === USER_ROLE.ADMIN ? t('profile.manageWords') : t('profile.searchWords')}
               </span>
             </Link>
-            <ThemeToggle label={t('home.themeToggle')} />
-          </div>
-        </header>
+          }
+        />
 
-        <section className='overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
+        <section className='mx-auto max-w-4xl overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
           <div className='border-b border-border bg-[linear-gradient(135deg,rgb(56_189_248/16%),rgb(79_124_255/14%),rgb(113_88_232/14%))] px-6 py-8 sm:px-10 sm:py-10'>
             <div className='mb-5 inline-flex size-16 items-center justify-center rounded-2xl bg-primary text-2xl font-semibold text-primary-foreground shadow-lg shadow-primary/20'>
               {email === notAvailable ? (
@@ -138,15 +132,6 @@ export default async function ProfilePage() {
                 </div>
               ))}
             </dl>
-
-            <form action={signOut} className='mt-6'>
-              <button
-                type='submit'
-                className='h-11 w-full cursor-pointer rounded-full border border-border px-5 text-sm font-medium text-surface-foreground transition-colors hover:bg-secondary-hover sm:w-auto'
-              >
-                {t('auth.signOut')}
-              </button>
-            </form>
           </div>
         </section>
       </div>

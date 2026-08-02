@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { createClient } from './server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function getCurrentUserClaims() {
   const supabase = await createClient();

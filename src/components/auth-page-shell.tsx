@@ -2,10 +2,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Tooltip } from '@/components/tooltip';
 import { ROUTES } from '@/constants/routes';
-
-import { ThemeToggle } from './theme-toggle';
-import { Tooltip } from './tooltip';
 
 type AuthPageShellProps = {
   backLabel: string;
@@ -17,10 +16,10 @@ export function AuthPageShell({ backLabel, children, themeLabel }: AuthPageShell
   return (
     <main className='relative min-h-svh overflow-x-hidden overflow-y-auto bg-auth-backdrop'>
       <Image
-        src='/auth-galaxy-background.png'
+        src='/auth-galaxy-background.jpg'
         alt=''
         fill
-        priority
+        preload
         sizes='100vw'
         className='object-cover object-[52%_30%] dark:brightness-45 dark:saturate-125'
       />

@@ -1,17 +1,8 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import {
-  ArrowRight,
-  BookOpenText,
-  Globe2,
-  Languages,
-  Orbit,
-  ShieldCheck,
-  UserRound,
-} from 'lucide-react';
+import { ArrowRight, BookOpenText, Globe2, Languages, ShieldCheck } from 'lucide-react';
 
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Tooltip } from '@/components/tooltip';
+import { PageHeader } from '@/components/page-header';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 
 export default async function Home() {
@@ -35,36 +26,14 @@ export default async function Home() {
   ];
 
   return (
-    <main className='relative min-h-svh overflow-hidden bg-background px-5 py-6 sm:px-8'>
+    <main className='relative min-h-svh overflow-x-clip bg-background px-4 pb-6 sm:px-8'>
       <div className='pointer-events-none absolute inset-0'>
         <div className='absolute -top-40 left-1/2 size-96 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl' />
         <div className='absolute top-1/3 -right-32 size-80 rounded-full bg-[#22d3ee]/10 blur-3xl' />
       </div>
 
-      <div className='relative mx-auto flex min-h-[calc(100svh-3rem)] max-w-6xl flex-col'>
-        <header className='flex items-center justify-between'>
-          <Link
-            href={ROUTES.HOME}
-            className='inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-foreground'
-          >
-            <span className='inline-flex size-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20'>
-              <Orbit aria-hidden='true' className='size-5' />
-            </span>
-            {t('home.brand')}
-          </Link>
-          <div className='flex items-center gap-2'>
-            <Tooltip label={t('home.profile')}>
-              <Link
-                href={ROUTES.PROFILE}
-                className='inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-foreground'
-                aria-label={t('home.profile')}
-              >
-                <UserRound aria-hidden='true' className='size-4' />
-              </Link>
-            </Tooltip>
-            <ThemeToggle label={t('home.themeToggle')} />
-          </div>
-        </header>
+      <div className='relative mx-auto flex min-h-[calc(100svh-1.5rem)] max-w-7xl flex-col'>
+        <PageHeader brand />
 
         <section className='flex flex-1 flex-col justify-center py-16 sm:py-24'>
           <div className='mx-auto max-w-3xl text-center'>
