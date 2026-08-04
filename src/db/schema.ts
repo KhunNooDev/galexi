@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { anonRole, authenticatedRole, authUid, authUsers } from 'drizzle-orm/supabase';
 
+import { PROFILE_LIMITS } from '@/constants/profile';
 import { USER_ROLE } from '@/constants/role';
 import { WORD_LIMITS } from '@/constants/word';
 
@@ -32,6 +33,36 @@ export const userRoles = pgTable(
       for: 'select',
       to: authenticatedRole,
       using: sql`${authUid} = ${table.userId}`,
+    }),
+  ],
+).enableRLS();
+
+export const profiles = pgTable(
+  'profiles',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    displayName: varchar('display_name', { length: PROFILE_LIMITS.DISPLAY_NAME_MAX_LENGTH })
+      .default('')
+      .notNull(),
+    avatarUrl: varchar('avatar_url', { length: PROFILE_LIMITS.AVATAR_URL_MAX_LENGTH })
+      .default('')
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    pgPolicy('Users can view their own profile', {
+      for: 'select',
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+    }),
+    pgPolicy('Users can update their own profile', {
+      for: 'update',
+      to: authenticatedRole,
+      using: sql`${authUid} = ${table.userId}`,
+      withCheck: sql`${authUid} = ${table.userId}`,
     }),
   ],
 ).enableRLS();
@@ -102,3 +133,4 @@ export const words = pgTable(
 ).enableRLS();
 
 export type NewWord = typeof words.$inferInsert;
+export type Profile = typeof profiles.$inferSelect;

@@ -8,14 +8,18 @@ import {
   Clock3,
   KeyRound,
   Mail,
+  PencilLine,
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
 
+import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { PageHeader } from '@/components/page-header';
+import { ProfileForm } from '@/components/profile-form';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { getCurrentUser } from '@/lib/supabase/auth';
+import { getOrCreateProfile } from '@/server/profiles';
 import { getUserRole } from '@/server/roles';
 
 export default async function ProfilePage() {
@@ -25,9 +29,12 @@ export default async function ProfilePage() {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  const t = await getTranslations();
-  const role = await getUserRole(user.id);
-  const formatter = await getFormatter();
+  const [t, role, formatter, profile] = await Promise.all([
+    getTranslations(),
+    getUserRole(user.id),
+    getFormatter(),
+    getOrCreateProfile(user.id),
+  ]);
   const notAvailable = t('profile.notAvailable');
   const formatDate = (value: string | undefined) =>
     value
@@ -37,6 +44,8 @@ export default async function ProfilePage() {
         })
       : notAvailable;
   const email = user.email ?? notAvailable;
+  const displayName = profile.displayName.trim();
+  const profileName = displayName || email;
   const provider =
     typeof user.app_metadata.provider === 'string' ? user.app_metadata.provider : notAvailable;
   const details = [
@@ -94,20 +103,30 @@ export default async function ProfilePage() {
         />
 
         <section className='mx-auto max-w-4xl overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
-          <div className='border-b border-border bg-[linear-gradient(135deg,rgb(56_189_248/16%),rgb(79_124_255/14%),rgb(113_88_232/14%))] px-6 py-8 sm:px-10 sm:py-10'>
-            <div className='mb-5 inline-flex size-16 items-center justify-center rounded-2xl bg-primary text-2xl font-semibold text-primary-foreground shadow-lg shadow-primary/20'>
-              {email === notAvailable ? (
-                <UserRound aria-hidden='true' className='size-7' />
+          <div className='flex items-center gap-5 border-b border-border bg-[linear-gradient(135deg,rgb(56_189_248/16%),rgb(79_124_255/14%),rgb(113_88_232/14%))] px-6 py-8 sm:gap-6 sm:px-10 sm:py-10'>
+            <div className='inline-flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-primary text-2xl font-semibold text-primary-foreground shadow-lg shadow-primary/20 sm:size-24'>
+              {profile.avatarUrl ? (
+                <ImageWithSkeleton
+                  src={profile.avatarUrl}
+                  alt={t('profile.avatarAlt', { name: profileName })}
+                  className='object-cover'
+                  referrerPolicy='no-referrer'
+                />
+              ) : email === notAvailable ? (
+                <UserRound aria-hidden='true' className='size-8' />
               ) : (
-                email.charAt(0).toUpperCase()
+                profileName.charAt(0).toUpperCase()
               )}
             </div>
-            <h1 className='text-3xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
-              {t('profile.pageTitle')}
-            </h1>
-            <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
-              {t('profile.pageDescription')}
-            </p>
+            <div className='min-w-0'>
+              <p className='text-sm font-medium text-primary'>{t('profile.pageTitle')}</p>
+              <h1 className='mt-1 truncate text-3xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
+                {profileName}
+              </h1>
+              <p className='mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base'>
+                {t('profile.pageDescription')}
+              </p>
+            </div>
           </div>
 
           <div className='p-6 sm:p-10'>
@@ -132,6 +151,35 @@ export default async function ProfilePage() {
                 </div>
               ))}
             </dl>
+          </div>
+
+          <div className='border-t border-border p-6 sm:p-10'>
+            <div className='mb-6 flex items-start gap-3'>
+              <span className='inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                <PencilLine aria-hidden='true' className='size-4' />
+              </span>
+              <div>
+                <h2 className='font-semibold text-surface-foreground'>{t('profile.editTitle')}</h2>
+                <p className='mt-1 text-sm leading-6 text-muted-foreground'>
+                  {t('profile.editDescription')}
+                </p>
+              </div>
+            </div>
+
+            <ProfileForm
+              displayName={profile.displayName}
+              avatarUrl={profile.avatarUrl}
+              labels={{
+                displayName: t('profile.displayName'),
+                displayNamePlaceholder: t('profile.displayNamePlaceholder'),
+                displayNameHint: t('profile.displayNameHint'),
+                avatarUrl: t('profile.avatarUrl'),
+                avatarUrlPlaceholder: t('profile.avatarUrlPlaceholder'),
+                avatarUrlHint: t('profile.avatarUrlHint'),
+                save: t('profile.save'),
+                saving: t('profile.saving'),
+              }}
+            />
           </div>
         </section>
       </div>

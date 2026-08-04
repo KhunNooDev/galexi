@@ -1,0 +1,4 @@
+export const PROFILE_LIMITS = {
+  AVATAR_URL_MAX_LENGTH: 2048,
+  DISPLAY_NAME_MAX_LENGTH: 80,
+} as const;

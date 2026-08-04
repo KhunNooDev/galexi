@@ -57,8 +57,21 @@
   },
   "profile": {
     "pageTitle": "Your profile",
-    "pageDescription": "Account and sign-in details from your secure session.",
+    "pageDescription": "Your Galexi profile and secure account details.",
+    "avatarAlt": "Profile picture for {name}",
     "accountDetails": "Account details",
+    "editTitle": "Application profile",
+    "editDescription": "Choose how your name and profile picture appear in Galexi.",
+    "displayName": "Display name",
+    "displayNamePlaceholder": "How should Galexi address you?",
+    "displayNameHint": "Leave this empty to use your email address.",
+    "avatarUrl": "Avatar URL",
+    "avatarUrlPlaceholder": "https://example.com/avatar.jpg",
+    "avatarUrlHint": "Use a direct HTTP or HTTPS image URL, or leave it empty.",
+    "save": "Save profile",
+    "saving": "Saving...",
+    "updateSuccess": "Your profile has been updated.",
+    "updateError": "Your profile could not be updated. Please try again.",
     "email": "Email address",
     "userId": "User ID",
     "verification": "Email status",
@@ -70,7 +83,13 @@
     "notAvailable": "Not available",
     "backHome": "Back home",
     "manageWords": "Manage words",
-    "searchWords": "Search words"
+    "searchWords": "Search words",
+    "validation": {
+      "displayNameTooLong": "Display name must be {maxLength} characters or fewer.",
+      "invalidAvatarUrl": "Enter a valid HTTP or HTTPS URL.",
+      "avatarUrlTooLong": "Avatar URL must be {maxLength} characters or fewer.",
+      "unauthorized": "Sign in again before updating your profile."
+    }
   },
   "words": {
     "backHome": "Back home",

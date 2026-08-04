@@ -78,6 +78,13 @@
       "when": 1785859365025,
       "tag": "0010_remove_word_ownership",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785861101483,
+      "tag": "0011_add_profiles",
+      "breakpoints": true
     }
   ]
 }

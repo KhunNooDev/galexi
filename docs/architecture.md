@@ -23,6 +23,16 @@ fields are audit metadata and are not used as ownership or authorization boundar
 | Member        | Read           | No access           | No access                       |
 | Administrator | Read           | Read                | Allowed                         |
 
+## Identity and profiles
+
+Supabase `auth.users` remains the source of authentication data. Application-facing user data is
+stored separately in `profiles`, while `user_roles` remains the authorization source for member
+and administrator permissions.
+
+Profiles are created lazily on the server and use the Auth user ID as their primary key. Authenticated
+users can read and update only their own profile through row-level security. Deleting an Auth user
+cascades to the related profile and role records.
+
 Row-level security mirrors this model: anonymous and authenticated users can select published rows,
 while the administrator policy permits full management based on `user_roles`. Hono mutation routes
 also require the administrator role before calling the dictionary server functions.
