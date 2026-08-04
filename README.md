@@ -1,6 +1,8 @@
 # Galexi
 
-Galexi is a Next.js vocabulary workspace with authentication, private per-user data, internationalization, and light/dark themes.
+Galexi is an admin-managed global dictionary with public vocabulary flashcards, authentication,
+internationalization, and light/dark themes. Dictionary entries are shared system-wide rather
+than owned by individual users.
 
 ## Stack
 
@@ -42,11 +44,15 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/` — Galexi landing page
 - `/auth` — sign in or create an account
 - `/profile` — authenticated account details
-- `/words` — authenticated vocabulary manager
-- `/words/[id]` — authenticated owner flashcard details
+- `/words` — administrator vocabulary manager for the global dictionary
+- `/words/[id]` — administrator flashcard details
 - `/words/search` — public vocabulary directory for members and guests
 - `/words/search/[word]` — public flashcards for a word
-- `/api/words` — authenticated Hono CRUD API
+- `/api/words` — administrator-only Hono CRUD API for global vocabulary entries
+
+Guests and members can read published entries. Administrators can view and manage every entry,
+including unpublished entries. See [Architecture](docs/architecture.md) for the data model and
+permission boundaries.
 
 ## Scripts
 

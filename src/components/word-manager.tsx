@@ -725,7 +725,7 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
                     )}
                     {word.isPublic
                       ? t('words.manager.publicBadge')
-                      : t('words.manager.privateBadge')}
+                      : t('words.manager.unpublishedBadge')}
                   </Badge>
                 </div>
 

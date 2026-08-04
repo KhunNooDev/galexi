@@ -64,6 +64,20 @@
       "when": 1785597815211,
       "tag": "0008_secure_word_images",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785859342457,
+      "tag": "0009_add_dictionary_audit_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785859365025,
+      "tag": "0010_remove_word_ownership",
+      "breakpoints": true
     }
   ]
 }

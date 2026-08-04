@@ -19,7 +19,7 @@ const wordColumns = {
   isPublic: words.isPublic,
 };
 
-export type SaveWordInput = Pick<
+export type DictionaryEntryInput = Pick<
   NewWord,
   | 'word'
   | 'pronunciationIpa'
@@ -49,19 +49,19 @@ export async function getWordById(id: number) {
   return word ?? null;
 }
 
-export async function createWord(userId: string, values: SaveWordInput) {
+export async function createWord(adminUserId: string, values: DictionaryEntryInput) {
   const [word] = await getDatabase()
     .insert(words)
-    .values({ ...values, userId })
+    .values({ ...values, createdBy: adminUserId, updatedBy: adminUserId })
     .returning(wordColumns);
 
   return word;
 }
 
-export async function updateWord(id: number, values: SaveWordInput) {
+export async function updateWord(id: number, adminUserId: string, values: DictionaryEntryInput) {
   const [word] = await getDatabase()
     .update(words)
-    .set(values)
+    .set({ ...values, updatedBy: adminUserId })
     .where(eq(words.id, id))
     .returning(wordColumns);
 

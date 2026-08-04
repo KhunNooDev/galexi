@@ -44,22 +44,22 @@ const wordIdSchema = z.object({
 
 type ApiEnvironment = {
   Variables: {
-    userId: string;
+    adminUserId: string;
   };
 };
 
 const requireAdmin: MiddlewareHandler<ApiEnvironment> = async (context, next) => {
-  const userId = await getCurrentUserId();
+  const adminUserId = await getCurrentUserId();
 
-  if (!userId) {
+  if (!adminUserId) {
     return context.json({ error: 'Unauthorized' }, 401);
   }
 
-  if ((await getUserRole(userId)) !== USER_ROLE.ADMIN) {
+  if ((await getUserRole(adminUserId)) !== USER_ROLE.ADMIN) {
     return context.json({ error: 'Forbidden' }, 403);
   }
 
-  context.set('userId', userId);
+  context.set('adminUserId', adminUserId);
   await next();
 };
 
@@ -93,8 +93,8 @@ export const api = new Hono<ApiEnvironment>()
     return context.json({ words: wordList }, 200);
   })
   .post(API_PATH.WORDS, zValidator('json', wordInputSchema), async (context) => {
-    const userId = context.get('userId');
-    const word = await createWord(userId, context.req.valid('json'));
+    const adminUserId = context.get('adminUserId');
+    const word = await createWord(adminUserId, context.req.valid('json'));
 
     return context.json({ word }, 201);
   })
@@ -104,6 +104,7 @@ export const api = new Hono<ApiEnvironment>()
     zValidator('json', wordInputSchema),
     async (context) => {
       const { id } = context.req.valid('param');
+      const adminUserId = context.get('adminUserId');
       const previousWord = await getWordById(id);
 
       if (!previousWord) {
@@ -111,7 +112,7 @@ export const api = new Hono<ApiEnvironment>()
       }
 
       const values = context.req.valid('json');
-      const word = await updateWord(id, values);
+      const word = await updateWord(id, adminUserId, values);
 
       if (!word) {
         return context.json({ error: 'Word not found' }, 404);

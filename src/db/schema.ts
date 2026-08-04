@@ -40,11 +40,12 @@ export const words = pgTable(
   'words',
   {
     id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => authUsers.id, {
-        onDelete: 'cascade',
-      }),
+    createdBy: uuid('created_by').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
+    updatedBy: uuid('updated_by').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
     word: varchar('word', { length: WORD_LIMITS.WORD_MAX_LENGTH }).notNull(),
     pronunciationIpa: varchar('pronunciation_ipa', {
       length: WORD_LIMITS.PRONUNCIATION_MAX_LENGTH,
@@ -76,7 +77,9 @@ export const words = pgTable(
       .notNull(),
   },
   (table) => [
-    index('words_user_created_idx').on(table.userId, table.createdAt, table.id),
+    index('words_created_at_idx').on(table.createdAt, table.id),
+    index('words_created_by_idx').on(table.createdBy),
+    index('words_updated_by_idx').on(table.updatedBy),
     index('words_public_word_idx')
       .on(sql`lower(${table.word})`, table.partOfSpeech, table.id)
       .where(sql`${table.isPublic} = true`),

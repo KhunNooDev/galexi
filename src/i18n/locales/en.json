@@ -1,13 +1,13 @@
 {
   "metadata": {
     "title": "Galexi",
-    "description": "A secure, focused workspace for building your vocabulary."
+    "description": "An admin-managed global dictionary with public vocabulary flashcards."
   },
   "home": {
     "brand": "Galexi",
     "eyebrow": "Your vocabulary universe",
     "heading": "Keep new words in orbit.",
-    "description": "A calm, secure place to collect vocabulary, study pronunciation, and remember words through examples.",
+    "description": "Study a shared dictionary of pronunciations, meanings, and examples maintained by administrators.",
     "getStarted": "Get started",
     "openWords": "Open words",
     "browsePublicWords": "Search words",
@@ -108,7 +108,7 @@
       "publicLabel": "Make word public",
       "publicHint": "Anyone with the link can view this word without signing in.",
       "publicBadge": "Public",
-      "privateBadge": "Private",
+      "unpublishedBadge": "Unpublished",
       "create": "Add word",
       "update": "Update word",
       "cancel": "Cancel",
