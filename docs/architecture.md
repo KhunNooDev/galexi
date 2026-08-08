@@ -17,25 +17,44 @@ fields are audit metadata and are not used as ownership or authorization boundar
 
 ## Access model
 
-| Actor         | Public entries | Unpublished entries | Create, update, publish, delete |
-| ------------- | -------------- | ------------------- | ------------------------------- |
-| Guest         | Read           | No access           | No access                       |
-| Member        | Read           | No access           | No access                       |
-| Administrator | Read           | Read                | Allowed                         |
+| Actor         | Current dictionary access                                       | Planned member capabilities                              |
+| ------------- | --------------------------------------------------------------- | -------------------------------------------------------- |
+| Guest         | Read public entries and try the learning experience             | None                                                     |
+| Member        | Read public entries and try the learning experience             | Report incorrect information and track learning progress |
+| Administrator | Read and manage all Global Dictionary entries, including drafts | None                                                     |
 
-## Identity and profiles
+The planned member capabilities are not implemented yet and do not affect the current permission
+model.
 
-Supabase `auth.users` remains the source of authentication data. Application-facing user data is
-stored separately in `profiles`, while `user_roles` remains the authorization source for member
-and administrator permissions.
+## Identity, profiles, and authorization
+
+Supabase `auth.users` remains the source of authentication data. The application deliberately keeps
+descriptive profile data and authorization state in separate tables:
+
+| Table        | Responsibility                          | Fields                                              |
+| ------------ | --------------------------------------- | --------------------------------------------------- |
+| `profiles`   | Describes the user inside Galexi        | `user_id`, `display_name`, `avatar_url`, timestamps |
+| `user_roles` | Controls what the user is allowed to do | `user_id`, `role` (`member` or `admin`)             |
+
+Authorization decisions use only `user_roles` through server-only role helpers or the equivalent
+database policy. Profile fields, Auth email addresses, user metadata, and client-side state are
+never authorization sources. Profile mutations accept only `display_name` and `avatar_url`; role
+changes require a separate future admin-only workflow.
 
 Profiles are created lazily on the server and use the Auth user ID as their primary key. Authenticated
 users can read and update only their own profile through row-level security. Deleting an Auth user
 cascades to the related profile and role records.
 
+Role and profile lifecycles are independent. A missing role record is created as `member` without
+reading or changing `profiles`; a missing profile is created with empty application fields without
+reading or changing `user_roles`. Pages that need both load them independently and combine the
+results only for presentation.
+
 Row-level security mirrors this model: anonymous and authenticated users can select published rows,
-while the administrator policy permits full management based on `user_roles`. Hono mutation routes
-also require the administrator role before calling the dictionary server functions.
+authenticated users may select only their own role, and they may select and update only their own
+profile fields. No authenticated-user grant or policy permits direct role updates. The administrator
+policy permits dictionary management based on `user_roles`, and Hono mutation routes independently
+require the administrator role before calling the dictionary server functions.
 
 ## Application flow
 

@@ -20,6 +20,7 @@ import { WORD_LIMITS } from '@/constants/word';
 
 export const appRole = pgEnum('app_role', [USER_ROLE.MEMBER, USER_ROLE.ADMIN]);
 
+// Authorization state only: this table controls what a user is allowed to do.
 export const userRoles = pgTable(
   'user_roles',
   {
@@ -37,6 +38,7 @@ export const userRoles = pgTable(
   ],
 ).enableRLS();
 
+// Application identity only: never use profile fields for authorization decisions.
 export const profiles = pgTable(
   'profiles',
   {
