@@ -92,6 +92,12 @@ export const api = new Hono<ApiEnvironment>()
 
     return context.json({ words: wordList }, 200);
   })
+  .get(API_PATH.WORD_BY_ID, zValidator('param', wordIdSchema), async (context) => {
+    const { id } = context.req.valid('param');
+    const word = await getWordById(id);
+
+    return word ? context.json({ word }, 200) : context.json({ error: 'Word not found' }, 404);
+  })
   .post(API_PATH.WORDS, zValidator('json', wordInputSchema), async (context) => {
     const adminUserId = context.get('adminUserId');
     const word = await createWord(adminUserId, context.req.valid('json'));

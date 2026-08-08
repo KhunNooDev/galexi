@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
+import { QueryProvider } from '@/components/query-provider';
 import { WordManager } from '@/components/word-manager';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
@@ -38,7 +39,9 @@ export default async function WordsPage() {
         />
 
         <div className='mx-auto max-w-6xl'>
-          <WordManager initialWords={words} />
+          <QueryProvider>
+            <WordManager initialWords={words} />
+          </QueryProvider>
         </div>
       </div>
     </main>

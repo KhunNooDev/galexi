@@ -65,3 +65,25 @@ require the administrator role before calling the dictionary server functions.
 - Updating an entry leaves `created_by` unchanged and sets `updated_by` to the current
   administrator ID.
 - Word images are stored in Supabase Storage and referenced by the dictionary entry.
+
+### Data access boundaries
+
+Server Components read application data directly through the server-only modules. They do not make
+HTTP requests back to the application's own API:
+
+```text
+Server Component -> src/server/* -> Drizzle -> PostgreSQL
+```
+
+Interactive administrator Words CRUD uses a small client-side server-state layer. The `/words`
+Server Component still reads the initial list with `listWords()` and passes it to the client as
+TanStack Query initial data. Subsequent reads and mutations follow this path:
+
+```text
+Client Component -> TanStack Query -> Words API wrapper -> Hono RPC -> Hono API
+                 -> src/server/* -> Drizzle -> PostgreSQL
+```
+
+Only the reusable API client instantiates `hc<ApiType>`. Components and query hooks do not know the
+Hono route structure, and database operations remain confined to `src/server/*`. Authentication and
+profile forms continue to use their existing Server Actions.

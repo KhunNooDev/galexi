@@ -5,7 +5,6 @@ import { useForm, useWatch } from 'react-hook-form';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { hc } from 'hono/client';
 import {
   BookOpenText,
   ExternalLink,
@@ -35,30 +34,22 @@ import { Input } from '@/components/ui/input';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
 import { getSearchWordRoute, getWordImageRoute, getWordRoute } from '@/constants/routes';
 import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
+import {
+  useCreateWord,
+  useDeleteWord,
+  useUpdateWord,
+  useWords,
+} from '@/features/words/word.queries';
+import { ApiError } from '@/lib/api/errors';
+import type { AdminWord } from '@/lib/api/words';
 import { createClient as createSupabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-import type { ApiType } from '@/server/api';
-
-const client = hc<ApiType>('/');
 
 type WordLabels = {
   wordRequired: string;
   meaningsRequired: string;
   tooLong: string;
   tooManyMeanings: string;
-};
-
-type WordEntry = {
-  id: number;
-  word: string;
-  pronunciationIpa: string;
-  pronunciationThai: string;
-  partOfSpeech: string;
-  meaningsTh: string[];
-  exampleSentence: string;
-  exampleSentenceMeaningTh: string;
-  imageUrl: string;
-  isPublic: boolean;
 };
 
 const defaultValues = {
@@ -143,7 +134,7 @@ async function uploadWordImage(file: File) {
   return path;
 }
 
-export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
+export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
   const t = useTranslations();
   const labels = useMemo<WordLabels>(
     () => ({
@@ -157,16 +148,18 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
     [t],
   );
   const schema = useMemo(() => createWordSchema(labels), [labels]);
+  const wordsQuery = useWords(initialWords);
+  const createWordMutation = useCreateWord();
+  const updateWordMutation = useUpdateWord();
+  const deleteWordMutation = useDeleteWord();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
-  const [words, setWords] = useState<WordEntry[]>(initialWords);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [wordToDelete, setWordToDelete] = useState<WordEntry | null>(null);
+  const [wordToDelete, setWordToDelete] = useState<AdminWord | null>(null);
   const form = useForm<WordFormValues, unknown, WordFormValues>({
     resolver: zodResolver(schema),
     defaultValues,
@@ -177,6 +170,21 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
     formState: { isDirty, isSubmitting },
   } = form;
   const imageUrl = useWatch({ control, name: 'imageUrl' });
+  const words = wordsQuery.data;
+  const deletingId = deleteWordMutation.isPending ? deleteWordMutation.variables : null;
+  const isSaving = isSubmitting || createWordMutation.isPending || updateWordMutation.isPending;
+  const apiRequestError =
+    createWordMutation.error ??
+    updateWordMutation.error ??
+    deleteWordMutation.error ??
+    wordsQuery.error;
+  const displayedRequestError =
+    requestError ??
+    (apiRequestError instanceof ApiError && apiRequestError.status === 409
+      ? t('words.manager.validation.duplicateWord')
+      : apiRequestError
+        ? t('words.manager.requestError')
+        : null);
 
   useEffect(
     () => () => {
@@ -212,12 +220,19 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
     reset(defaultValues);
   }
 
+  function clearRequestErrors() {
+    setRequestError(null);
+    createWordMutation.reset();
+    updateWordMutation.reset();
+    deleteWordMutation.reset();
+  }
+
   function openDialog() {
     setIsDialogOpen(true);
   }
 
   function openCreateDialog() {
-    setRequestError(null);
+    clearRequestErrors();
     resetForm();
     openDialog();
   }
@@ -229,7 +244,7 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
   }
 
   function requestCloseDialog() {
-    if (isSubmitting) {
+    if (isSaving) {
       return;
     }
 
@@ -241,8 +256,8 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
     closeDialog();
   }
 
-  function requestDeleteWord(word: WordEntry) {
-    setRequestError(null);
+  function requestDeleteWord(word: AdminWord) {
+    clearRequestErrors();
     setWordToDelete(word);
   }
 
@@ -251,7 +266,7 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
   }
 
   function selectImage(file: File | null) {
-    setRequestError(null);
+    clearRequestErrors();
 
     if (!file) {
       setSelectedImage(null);
@@ -278,9 +293,8 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
   }
 
   async function saveWord(values: WordFormValues) {
-    setRequestError(null);
+    clearRequestErrors();
     let uploadedImagePath: string | null = null;
-    let wordWasSaved = false;
 
     try {
       let nextValues = values;
@@ -291,63 +305,33 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
       }
 
       if (editingId !== null) {
-        const response = await client.api.words[':id'].$patch({
-          param: { id: String(editingId) },
-          json: nextValues,
+        await updateWordMutation.mutateAsync({
+          id: editingId,
+          values: nextValues,
         });
-
-        if (response.status !== 200) {
-          if ((response.status as number) === 409) {
-            if (uploadedImagePath) {
-              await removeStoredImage(uploadedImagePath);
-            }
-            setRequestError(t('words.manager.validation.duplicateWord'));
-            return;
-          }
-
-          throw new Error('Unable to update word');
-        }
-
-        const data = await response.json();
-        wordWasSaved = true;
-        setWords((current) => current.map((word) => (word.id === editingId ? data.word : word)));
-
         closeDialog();
         return;
       }
 
-      const response = await client.api.words.$post({ json: nextValues });
-
-      if (response.status !== 201) {
-        if ((response.status as number) === 409) {
-          if (uploadedImagePath) {
-            await removeStoredImage(uploadedImagePath);
-          }
-          setRequestError(t('words.manager.validation.duplicateWord'));
-          return;
-        }
-
-        throw new Error('Unable to create word');
-      }
-
-      const data = await response.json();
-      wordWasSaved = true;
-      setWords((current) => [data.word, ...current]);
+      await createWordMutation.mutateAsync(nextValues);
       closeDialog();
-    } catch {
-      if (uploadedImagePath && !wordWasSaved) {
+    } catch (error) {
+      if (uploadedImagePath) {
         try {
           await removeStoredImage(uploadedImagePath);
         } catch (error) {
           console.error('Unable to remove an unused word image', error);
         }
       }
-      setRequestError(t('words.manager.requestError'));
+
+      if (!(error instanceof ApiError)) {
+        setRequestError(t('words.manager.requestError'));
+      }
     }
   }
 
-  function editWord(word: WordEntry) {
-    setRequestError(null);
+  function editWord(word: AdminWord) {
+    clearRequestErrors();
     setEditingId(word.id);
     reset({
       word: word.word,
@@ -364,19 +348,10 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
   }
 
   async function deleteWord(id: number) {
-    setDeletingId(id);
-    setRequestError(null);
+    clearRequestErrors();
 
     try {
-      const response = await client.api.words[':id'].$delete({
-        param: { id: String(id) },
-      });
-
-      if (response.status !== 200) {
-        throw new Error('Unable to delete word');
-      }
-
-      setWords((current) => current.filter((word) => word.id !== id));
+      await deleteWordMutation.mutateAsync(id);
 
       if (editingId === id) {
         resetForm();
@@ -384,20 +359,18 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
 
       setWordToDelete(null);
     } catch {
-      setRequestError(t('words.manager.requestError'));
-    } finally {
-      setDeletingId(null);
+      // The mutation exposes a normalized error for the existing alert UI.
     }
   }
 
   return (
     <div className='space-y-6'>
-      {requestError && (
+      {displayedRequestError && (
         <Alert
           variant='destructive'
           className='rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
         >
-          <AlertDescription className='text-danger'>{requestError}</AlertDescription>
+          <AlertDescription className='text-danger'>{displayedRequestError}</AlertDescription>
         </Alert>
       )}
 
@@ -427,12 +400,12 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
           }
         }}
       >
-        {requestError && (
+        {displayedRequestError && (
           <Alert
             variant='destructive'
             className='rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
           >
-            <AlertDescription className='text-danger'>{requestError}</AlertDescription>
+            <AlertDescription className='text-danger'>{displayedRequestError}</AlertDescription>
           </Alert>
         )}
       </AlertDialog>
@@ -463,7 +436,7 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
             : t('words.manager.editDialogTitle')
         }
         closeLabel={t('words.manager.closeDialog')}
-        closeDisabled={isSubmitting}
+        closeDisabled={isSaving}
         initialFocusId='word'
         size='xl'
       >
@@ -472,12 +445,12 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
           form={form}
           onSubmit={saveWord}
         >
-          {requestError && (
+          {displayedRequestError && (
             <Alert
               variant='destructive'
               className='rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger sm:col-span-2'
             >
-              <AlertDescription className='text-danger'>{requestError}</AlertDescription>
+              <AlertDescription className='text-danger'>{displayedRequestError}</AlertDescription>
             </Alert>
           )}
           <InputText
@@ -594,7 +567,7 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
               type='button'
               variant='outline'
               className='h-11 w-full cursor-pointer rounded-lg border-border px-4 font-medium text-surface-foreground hover:bg-secondary-hover sm:w-auto'
-              disabled={isSubmitting}
+              disabled={isSaving}
               onClick={requestCloseDialog}
             >
               <X aria-hidden='true' className='size-4' />
@@ -603,7 +576,7 @@ export function WordManager({ initialWords }: { initialWords: WordEntry[] }) {
             <Button
               type='submit'
               className='h-11 w-full cursor-pointer rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary-hover disabled:cursor-wait sm:w-auto'
-              disabled={isSubmitting}
+              disabled={isSaving}
             >
               {editingId === null ? (
                 <Plus aria-hidden='true' className='size-4' />
