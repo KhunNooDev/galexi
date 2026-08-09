@@ -3,6 +3,7 @@ import 'server-only';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
+import { serverEnv } from '@/config/env.server';
 import * as schema from '@/db/schema';
 
 type PostgresClient = ReturnType<typeof postgres>;
@@ -12,15 +13,9 @@ const globalForDatabase = globalThis as typeof globalThis & {
 };
 
 function createDatabase() {
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is not set');
-  }
-
   const databaseClient =
     globalForDatabase.galexiPostgresClient ??
-    postgres(connectionString, {
+    postgres(serverEnv.databaseUrl, {
       // Concurrent Server Components must not queue behind an abandoned dev/HMR request.
       max: 5,
       prepare: false,
