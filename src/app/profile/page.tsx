@@ -91,7 +91,7 @@ export default async function ProfilePage() {
           user={{ email: user.email }}
           actions={
             <Link
-              href={role === USER_ROLE.ADMIN ? ROUTES.WORDS : ROUTES.SEARCH_WORDS}
+              href={role === USER_ROLE.ADMIN ? ROUTES.MANAGE_WORDS : ROUTES.PUBLIC_WORDS}
               className='inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
             >
               <BookOpenText aria-hidden='true' className='size-4' />

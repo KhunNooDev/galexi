@@ -44,8 +44,8 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/` — Galexi landing page
 - `/auth` — sign in or create an account
 - `/profile` — authenticated account details
-- `/words` — administrator vocabulary manager for the global dictionary
-- `/words/[id]` — administrator flashcard details
+- `/admin/words` — administrator vocabulary manager for the global dictionary
+- `/admin/words/[id]` — administrator flashcard details
 - `/words/search` — public vocabulary directory for members and guests
 - `/words/search/[word]` — public flashcards for a word
 - `/categories` — public vocabulary topics

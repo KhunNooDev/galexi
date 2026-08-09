@@ -84,7 +84,7 @@ HTTP requests back to the application's own API:
 Server Component -> src/server/* -> Drizzle -> PostgreSQL
 ```
 
-Interactive administrator Words CRUD uses a small client-side server-state layer. The `/words`
+Interactive administrator Words CRUD uses a small client-side server-state layer. The `/admin/words`
 Server Component still reads the initial list with `listWords()` and passes it to the client as
 TanStack Query initial data. Subsequent reads and mutations follow this path:
 

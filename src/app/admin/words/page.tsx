@@ -11,7 +11,7 @@ import { listCategories } from '@/server/categories';
 import { getUserRole } from '@/server/roles';
 import { listWords } from '@/server/words';
 
-export default async function WordsPage() {
+export default async function ManageWordsPage() {
   const claims = await getCurrentUserClaims();
 
   if (!claims) {
@@ -19,7 +19,7 @@ export default async function WordsPage() {
   }
 
   if ((await getUserRole(claims.sub)) !== USER_ROLE.ADMIN) {
-    redirect(ROUTES.SEARCH_WORDS);
+    redirect(ROUTES.PUBLIC_WORDS);
   }
 
   const [t, words, categories] = await Promise.all([

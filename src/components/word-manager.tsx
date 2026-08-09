@@ -34,7 +34,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
-import { getSearchWordRoute, getWordImageRoute, getWordRoute, ROUTES } from '@/constants/routes';
+import {
+  getManageWordRoute,
+  getPublicWordRoute,
+  getWordImageRoute,
+  ROUTES,
+} from '@/constants/routes';
 import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
 import {
   useCreateWord,
@@ -851,7 +856,7 @@ export function WordManager({
                   {word.isPublic && (
                     <Tooltip label={t('words.manager.openPublicPage')}>
                       <Link
-                        href={getSearchWordRoute(word.word)}
+                        href={getPublicWordRoute(word.word)}
                         className='inline-flex size-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/12'
                         aria-label={`${t('words.manager.openPublicPage')}: ${word.word}`}
                       >
@@ -861,7 +866,7 @@ export function WordManager({
                   )}
                   <Tooltip label={t('words.manager.openDetails')}>
                     <Link
-                      href={getWordRoute(word.id)}
+                      href={getManageWordRoute(word.id)}
                       className='inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-surface-foreground'
                       aria-label={`${t('words.manager.openDetails')}: ${word.word}`}
                     >

@@ -16,7 +16,7 @@ type AuthPageProps = {
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   if (await getCurrentUserId()) {
-    redirect(ROUTES.WORDS);
+    redirect(ROUTES.MANAGE_WORDS);
   }
 
   const { mode: requestedMode } = await searchParams;

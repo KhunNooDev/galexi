@@ -21,7 +21,7 @@ export default async function SearchWordPage({ params }: { params: Promise<{ wor
     <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
       <div className='mx-auto max-w-7xl'>
         <PageHeader
-          backHref={ROUTES.SEARCH_WORDS}
+          backHref={ROUTES.PUBLIC_WORDS}
           backLabel={t('words.search.backToSearch')}
           className='mb-8'
         />

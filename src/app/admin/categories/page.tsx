@@ -19,7 +19,7 @@ export default async function ManageCategoriesPage() {
   return (
     <main className='min-h-svh bg-background pb-10'>
       <PageHeader
-        backHref={ROUTES.WORDS}
+        backHref={ROUTES.MANAGE_WORDS}
         backLabel={t('categories.manager.backToWords')}
         user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}
       />

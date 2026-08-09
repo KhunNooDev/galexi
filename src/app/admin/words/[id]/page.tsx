@@ -9,14 +9,7 @@ import { getCurrentUserClaims } from '@/lib/supabase/auth';
 import { getUserRole } from '@/server/roles';
 import { getWordById } from '@/server/words';
 
-export default async function WordDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: idParam } = await params;
-  const id = Number(idParam);
-
-  if (!Number.isSafeInteger(id) || id <= 0) {
-    notFound();
-  }
-
+export default async function ManageWordDetailsPage({ params }: PageProps<'/admin/words/[id]'>) {
   const claims = await getCurrentUserClaims();
 
   if (!claims) {
@@ -24,7 +17,14 @@ export default async function WordDetailsPage({ params }: { params: Promise<{ id
   }
 
   if ((await getUserRole(claims.sub)) !== USER_ROLE.ADMIN) {
-    redirect(ROUTES.SEARCH_WORDS);
+    redirect(ROUTES.PUBLIC_WORDS);
+  }
+
+  const { id: idParam } = await params;
+  const id = Number(idParam);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    notFound();
   }
 
   const word = await getWordById(id);
@@ -39,7 +39,7 @@ export default async function WordDetailsPage({ params }: { params: Promise<{ id
     <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
       <div className='mx-auto max-w-7xl'>
         <PageHeader
-          backHref={ROUTES.WORDS}
+          backHref={ROUTES.MANAGE_WORDS}
           backLabel={t('words.flashcard.backToWords')}
           className='mb-8'
           user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}

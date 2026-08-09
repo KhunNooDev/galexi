@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { BookOpenText } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
-import { getSearchWordRoute, ROUTES } from '@/constants/routes';
+import { getPublicWordRoute, ROUTES } from '@/constants/routes';
 import { listPublicWordSummaries } from '@/server/words';
 
 export default async function SearchWordsPage() {
@@ -40,7 +40,7 @@ export default async function SearchWordsPage() {
               {publicWords.map(({ entries, word }) => (
                 <li key={word.toLocaleLowerCase()}>
                   <Link
-                    href={getSearchWordRoute(word)}
+                    href={getPublicWordRoute(word)}
                     className='group flex h-full items-center gap-4 rounded-3xl border border-border bg-surface p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10'
                   >
                     <span className='inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary'>

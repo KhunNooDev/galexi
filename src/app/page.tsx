@@ -55,7 +55,7 @@ export default async function Home() {
                 <ArrowRight aria-hidden='true' className='size-4' />
               </Link>
               <Link
-                href={ROUTES.SEARCH_WORDS}
+                href={ROUTES.PUBLIC_WORDS}
                 className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
               >
                 <BookOpenText aria-hidden='true' className='size-4' />

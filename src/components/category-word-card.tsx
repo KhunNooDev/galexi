@@ -3,7 +3,7 @@ import { ArrowRight, BookOpenText } from 'lucide-react';
 
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Badge } from '@/components/ui/badge';
-import { getSearchWordRoute, getWordImageRoute } from '@/constants/routes';
+import { getPublicWordRoute, getWordImageRoute } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
 type CategoryWordCardProps = {
@@ -33,7 +33,7 @@ export function CategoryWordCard({
 }: CategoryWordCardProps) {
   return (
     <Link
-      href={getSearchWordRoute(word.word)}
+      href={getPublicWordRoute(word.word)}
       className='group flex h-full min-h-80 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10 focus-visible:border-focus focus-visible:ring-3 focus-visible:ring-focus/25 focus-visible:outline-none motion-reduce:transform-none'
     >
       <article className='flex h-full flex-col'>
