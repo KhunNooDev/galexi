@@ -3,6 +3,24 @@
     "title": "Galexi",
     "description": "An admin-managed global dictionary with public vocabulary flashcards."
   },
+  "boundaries": {
+    "loading": "Loading Galexi...",
+    "adminLoading": "Loading dictionary management...",
+    "categoriesLoading": "Loading vocabulary topics...",
+    "error": {
+      "title": "Something went wrong",
+      "description": "We could not load this page. Try again, or return home."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page or vocabulary entry you requested does not exist or is not available."
+    },
+    "actions": {
+      "retry": "Try again",
+      "home": "Return home",
+      "browseWords": "Browse vocabulary"
+    }
+  },
   "home": {
     "brand": "Galexi",
     "eyebrow": "Your vocabulary universe",

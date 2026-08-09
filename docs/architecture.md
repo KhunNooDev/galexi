@@ -96,3 +96,12 @@ Client Component -> TanStack Query -> Words API wrapper -> Hono RPC -> Hono API
 Only the reusable API client instantiates `hc<ApiType>`. Components and query hooks do not know the
 Hono route structure, and database operations remain confined to `src/server/*`. Authentication and
 profile forms continue to use their existing Server Actions.
+
+### App Router boundaries
+
+- `loading.tsx` represents expected pending work and keeps shared layouts interactive.
+- `notFound()` represents a genuinely missing public resource or administrator dictionary entry.
+- `error.tsx` handles unexpected runtime failures without exposing internal error details.
+- Authentication failures redirect to sign in; they are not presented as missing resources.
+- Authenticated users without administrator access redirect to public vocabulary; route names do
+  not replace server-side authorization checks.
