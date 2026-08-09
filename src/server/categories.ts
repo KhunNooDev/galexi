@@ -4,12 +4,7 @@ import { and, asc, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
 import { categories, wordCategories, words } from '@/db/schema';
-
-export type CategoryInput = {
-  name: string;
-  slug: string;
-  sortOrder: number;
-};
+import type { CategoryInput } from '@/features/categories/category.schema';
 
 const categoryColumns = {
   id: categories.id,

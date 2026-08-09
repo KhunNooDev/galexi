@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowDown, ArrowUp, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
-import { z } from 'zod';
 
 import { AlertDialog } from '@/components/alert-dialog';
 import { Dialog } from '@/components/dialog';
@@ -21,47 +20,21 @@ import {
   useReorderCategories,
   useUpdateCategory,
 } from '@/features/categories/category.queries';
+import {
+  type CategoryFormInput,
+  type CategoryFormValues,
+  createCategoryFormSchema,
+} from '@/features/categories/category.schema';
 import type { AdminCategory } from '@/lib/api/categories';
 import { ApiError } from '@/lib/api/errors';
 
-function createCategorySchema(labels: {
-  invalidSlug: string;
-  nameRequired: string;
-  required: string;
-  sortOrderInvalid: string;
-  tooLong: string;
-}) {
-  return z.object({
-    name: z.string().trim().min(1, labels.nameRequired).max(80, labels.tooLong),
-    slug: z
-      .string()
-      .trim()
-      .min(1, labels.required)
-      .max(80, labels.tooLong)
-      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, labels.invalidSlug),
-    sortOrder: z
-      .string()
-      .regex(/^\d+$/, labels.sortOrderInvalid)
-      .transform(Number)
-      .pipe(
-        z
-          .number()
-          .int(labels.sortOrderInvalid)
-          .min(0, labels.sortOrderInvalid)
-          .max(10000, labels.sortOrderInvalid),
-      ),
-  });
-}
-
-type InputValues = z.input<ReturnType<typeof createCategorySchema>>;
-type Values = z.output<ReturnType<typeof createCategorySchema>>;
-const { InputText } = createFormInputs<InputValues>();
+const { InputText } = createFormInputs<CategoryFormInput>();
 
 export function CategoryManager({ initialCategories }: { initialCategories: AdminCategory[] }) {
   const t = useTranslations();
   const schema = useMemo(
     () =>
-      createCategorySchema({
+      createCategoryFormSchema({
         invalidSlug: t('categories.manager.validation.invalidSlug'),
         nameRequired: t('categories.manager.validation.nameRequired'),
         required: t('categories.manager.validation.required'),
@@ -80,7 +53,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState<AdminCategory | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const form = useForm<InputValues, unknown, Values>({
+  const form = useForm<CategoryFormInput, unknown, CategoryFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', slug: '', sortOrder: '0' },
   });
@@ -107,7 +80,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
     setDialogOpen(true);
   }
 
-  async function save(values: Values) {
+  async function save(values: CategoryFormValues) {
     setRequestError(null);
     try {
       if (editing) await updateMutation.mutateAsync({ id: editing.id, values });

@@ -3,8 +3,8 @@ import 'server-only';
 import { asc, desc, eq, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
-import type { NewWord } from '@/db/schema';
 import { wordCategories, words } from '@/db/schema';
+import type { WordInput } from '@/features/words/word.schema';
 
 const baseWordColumns = {
   id: words.id,
@@ -37,19 +37,6 @@ const wordColumns = {
   `,
 };
 
-export type DictionaryEntryInput = Pick<
-  NewWord,
-  | 'word'
-  | 'pronunciationIpa'
-  | 'pronunciationThai'
-  | 'partOfSpeech'
-  | 'meaningsTh'
-  | 'exampleSentence'
-  | 'exampleSentenceMeaningTh'
-  | 'imageUrl'
-  | 'isPublic'
-> & { categoryIds: number[] };
-
 export async function listWords() {
   return getDatabase()
     .select(wordColumns)
@@ -67,7 +54,7 @@ export async function getWordById(id: number) {
   return word ?? null;
 }
 
-export async function createWord(adminUserId: string, values: DictionaryEntryInput) {
+export async function createWord(adminUserId: string, values: WordInput) {
   const { categoryIds, ...wordValues } = values;
   const wordId = await getDatabase().transaction(async (transaction) => {
     const [createdWord] = await transaction
@@ -87,7 +74,7 @@ export async function createWord(adminUserId: string, values: DictionaryEntryInp
   return getWordById(wordId);
 }
 
-export async function updateWord(id: number, adminUserId: string, values: DictionaryEntryInput) {
+export async function updateWord(id: number, adminUserId: string, values: WordInput) {
   const { categoryIds, ...wordValues } = values;
   const updated = await getDatabase().transaction(async (transaction) => {
     const [updatedWord] = await transaction

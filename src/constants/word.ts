@@ -6,6 +6,7 @@ export const WORD_LIMITS = {
   MEANINGS_MAX_COUNT: 10,
   EXAMPLE_MAX_LENGTH: 1_000,
   IMAGE_URL_MAX_LENGTH: 2_048,
+  CATEGORIES_MAX_COUNT: 20,
 } as const;
 
 export const WORD_IMAGE = {

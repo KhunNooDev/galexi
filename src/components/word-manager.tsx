@@ -21,7 +21,6 @@ import {
   TriangleAlert,
   X,
 } from 'lucide-react';
-import { z } from 'zod';
 
 import { AlertDialog } from '@/components/alert-dialog';
 import { Dialog } from '@/components/dialog';
@@ -47,17 +46,11 @@ import {
   useUpdateWord,
   useWords,
 } from '@/features/words/word.queries';
+import { createWordFormSchema, type WordFormValues } from '@/features/words/word.schema';
 import { ApiError } from '@/lib/api/errors';
 import type { AdminWord } from '@/lib/api/words';
 import { createClient as createSupabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
-
-type WordLabels = {
-  wordRequired: string;
-  meaningsRequired: string;
-  tooLong: string;
-  tooManyMeanings: string;
-};
 
 const defaultValues = {
   word: '',
@@ -71,34 +64,6 @@ const defaultValues = {
   isPublic: false,
   categoryIds: [] as number[],
 };
-
-function optionalText(maxLength: number, message: string) {
-  return z.string().trim().max(maxLength, message);
-}
-
-function createWordSchema(labels: WordLabels) {
-  return z.object({
-    word: z
-      .string()
-      .trim()
-      .min(1, labels.wordRequired)
-      .max(WORD_LIMITS.WORD_MAX_LENGTH, labels.tooLong),
-    pronunciationIpa: optionalText(WORD_LIMITS.PRONUNCIATION_MAX_LENGTH, labels.tooLong),
-    pronunciationThai: optionalText(WORD_LIMITS.PRONUNCIATION_MAX_LENGTH, labels.tooLong),
-    partOfSpeech: optionalText(WORD_LIMITS.PART_OF_SPEECH_MAX_LENGTH, labels.tooLong),
-    meaningsTh: z
-      .array(z.string().trim().min(1).max(WORD_LIMITS.MEANING_MAX_LENGTH))
-      .min(1, labels.meaningsRequired)
-      .max(WORD_LIMITS.MEANINGS_MAX_COUNT, labels.tooManyMeanings),
-    exampleSentence: optionalText(WORD_LIMITS.EXAMPLE_MAX_LENGTH, labels.tooLong),
-    exampleSentenceMeaningTh: optionalText(WORD_LIMITS.EXAMPLE_MAX_LENGTH, labels.tooLong),
-    imageUrl: optionalText(WORD_LIMITS.IMAGE_URL_MAX_LENGTH, labels.tooLong),
-    isPublic: z.boolean(),
-    categoryIds: z.array(z.number().int().positive()).max(20),
-  });
-}
-
-type WordFormValues = z.infer<ReturnType<typeof createWordSchema>>;
 
 const {
   InputCheckbox,
@@ -158,18 +123,18 @@ export function WordManager({
   initialWords: AdminWord[];
 }) {
   const t = useTranslations();
-  const labels = useMemo<WordLabels>(
-    () => ({
-      wordRequired: t('words.manager.validation.wordRequired'),
-      meaningsRequired: t('words.manager.validation.meaningsRequired'),
-      tooLong: t('words.manager.validation.tooLong'),
-      tooManyMeanings: t('words.manager.validation.tooManyMeanings', {
-        maxCount: WORD_LIMITS.MEANINGS_MAX_COUNT,
+  const schema = useMemo(
+    () =>
+      createWordFormSchema({
+        wordRequired: t('words.manager.validation.wordRequired'),
+        meaningsRequired: t('words.manager.validation.meaningsRequired'),
+        tooLong: t('words.manager.validation.tooLong'),
+        tooManyMeanings: t('words.manager.validation.tooManyMeanings', {
+          maxCount: WORD_LIMITS.MEANINGS_MAX_COUNT,
+        }),
       }),
-    }),
     [t],
   );
-  const schema = useMemo(() => createWordSchema(labels), [labels]);
   const wordsQuery = useWords(initialWords);
   const createWordMutation = useCreateWord();
   const updateWordMutation = useUpdateWord();

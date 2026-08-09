@@ -4,8 +4,11 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 
 import { API_PATH } from '@/constants/api';
+import { CATEGORY_LIMITS } from '@/constants/category';
 import { USER_ROLE } from '@/constants/role';
-import { getStoredWordImagePath, WORD_LIMITS } from '@/constants/word';
+import { getStoredWordImagePath } from '@/constants/word';
+import { categoryInputSchema } from '@/features/categories/category.schema';
+import { wordInputSchema } from '@/features/words/word.schema';
 import { getCurrentUserId } from '@/lib/supabase/auth';
 import {
   categoriesExist,
@@ -19,8 +22,6 @@ import { getUserRole } from '@/server/roles';
 import { getWordImageUrl, removeWordImage } from '@/server/word-images';
 import { createWord, deleteWord, getWordById, listWords, updateWord } from '@/server/words';
 
-const optionalText = (maxLength: number) => z.string().trim().max(maxLength).default('');
-
 function isValidImageReference(value: string) {
   if (!value) {
     return true;
@@ -31,46 +32,19 @@ function isValidImageReference(value: string) {
   return Boolean(path && /^words\/[0-9a-f-]+\.(avif|gif|jpe?g|png|webp)$/i.test(path));
 }
 
-const wordInputSchema = z.object({
-  word: z.string().trim().min(1).max(WORD_LIMITS.WORD_MAX_LENGTH),
-  pronunciationIpa: optionalText(WORD_LIMITS.PRONUNCIATION_MAX_LENGTH),
-  pronunciationThai: optionalText(WORD_LIMITS.PRONUNCIATION_MAX_LENGTH),
-  partOfSpeech: optionalText(WORD_LIMITS.PART_OF_SPEECH_MAX_LENGTH),
-  meaningsTh: z
-    .array(z.string().trim().min(1).max(WORD_LIMITS.MEANING_MAX_LENGTH))
-    .min(1)
-    .max(WORD_LIMITS.MEANINGS_MAX_COUNT),
-  exampleSentence: optionalText(WORD_LIMITS.EXAMPLE_MAX_LENGTH),
-  exampleSentenceMeaningTh: optionalText(WORD_LIMITS.EXAMPLE_MAX_LENGTH),
-  imageUrl: optionalText(WORD_LIMITS.IMAGE_URL_MAX_LENGTH).refine(isValidImageReference),
-  isPublic: z.boolean().default(false),
-  categoryIds: z
-    .array(z.number().int().positive())
-    .max(20)
-    .default([])
-    .refine((ids) => new Set(ids).size === ids.length),
+const wordApiInputSchema = wordInputSchema.extend({
+  imageUrl: wordInputSchema.shape.imageUrl.refine(isValidImageReference),
 });
 
 const wordIdSchema = z.object({
   id: z.coerce.number().int().positive(),
 });
 
-const categoryInputSchema = z.object({
-  name: z.string().trim().min(1).max(80),
-  slug: z
-    .string()
-    .trim()
-    .min(1)
-    .max(80)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  sortOrder: z.number().int().min(0).max(10000),
-});
-
 const categoryIdSchema = z.object({ id: z.coerce.number().int().positive() });
 const categoryOrderSchema = z.object({
   categoryIds: z
     .array(z.number().int().positive())
-    .max(500)
+    .max(CATEGORY_LIMITS.REORDER_MAX_COUNT)
     .refine((ids) => new Set(ids).size === ids.length),
 });
 
@@ -164,7 +138,7 @@ export const api = new Hono<ApiEnvironment>()
 
     return word ? context.json({ word }, 200) : context.json({ error: 'Word not found' }, 404);
   })
-  .post(API_PATH.WORDS, zValidator('json', wordInputSchema), async (context) => {
+  .post(API_PATH.WORDS, zValidator('json', wordApiInputSchema), async (context) => {
     const adminUserId = context.get('adminUserId');
     const values = context.req.valid('json');
 
@@ -179,7 +153,7 @@ export const api = new Hono<ApiEnvironment>()
   .patch(
     API_PATH.WORD_BY_ID,
     zValidator('param', wordIdSchema),
-    zValidator('json', wordInputSchema),
+    zValidator('json', wordApiInputSchema),
     async (context) => {
       const { id } = context.req.valid('param');
       const adminUserId = context.get('adminUserId');
