@@ -101,14 +101,22 @@ Server Component still reads the initial list with `listWords()` and passes it t
 TanStack Query initial data. Subsequent reads and mutations follow this path:
 
 ```text
-Client Component -> TanStack Query -> Words API wrapper -> Hono RPC -> Hono API
-                 -> src/features/*/server -> Drizzle -> PostgreSQL
+Client Component -> TanStack Query -> feature API wrapper -> typed Hono client
+                 -> Next.js API entry -> root Hono API -> feature route
+                 -> feature server layer -> Drizzle / external service
 ```
 
 Only the reusable API client instantiates `hc<ApiType>`. Components and query hooks do not know the
 Hono route structure, and feature database operations remain confined to server-only feature
 services. Shared authorization and profile helpers remain in `src/server`. Authentication and
 profile forms continue to use their existing Server Actions.
+
+The optional catch-all Next.js API entry only adapts the composed Hono application to Next.js. The
+root Hono module applies the `/api` base path, composes feature-owned Word, Category, and Word Image
+routers, and provides the unexpected-error fallback. Shared administrator middleware authenticates
+the request, resolves authorization from `user_roles`, and exposes `adminUserId` to protected route
+handlers. Expected duplicate errors are mapped by the owning feature router so domain responses stay
+accurate.
 
 ### App Router boundaries
 
