@@ -15,6 +15,10 @@ Both columns reference `auth.users.id` with `ON DELETE SET NULL`. Removing an ad
 therefore removes the audit association without deleting or reassigning dictionary content. These
 fields are audit metadata and are not used as ownership or authorization boundaries.
 
+Vocabulary topics use a normalized many-to-many model. `categories` stores the reusable topic
+name, URL slug, and display order, while `word_categories` links any word to any number of topics.
+Deleting a category cascades only to its link rows; it never deletes dictionary entries.
+
 ## Access model
 
 | Actor         | Current dictionary access                                       | Planned member capabilities                              |
@@ -55,6 +59,11 @@ authenticated users may select only their own role, and they may select and upda
 profile fields. No authenticated-user grant or policy permits direct role updates. The administrator
 policy permits dictionary management based on `user_roles`, and Hono mutation routes independently
 require the administrator role before calling the dictionary server functions.
+
+Category policies follow the same boundary. Guests and members can see only categories and
+relationships connected to public words. Administrators manage all categories and relationships.
+Public category pages still join through `words.is_public = true`, so a private word cannot be
+revealed through category navigation.
 
 ## Application flow
 

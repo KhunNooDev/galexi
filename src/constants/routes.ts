@@ -3,11 +3,17 @@ import { AUTH_MODE } from '@/constants/auth';
 export const ROUTES = {
   AUTH: '/auth',
   AUTH_CALLBACK: '/auth/callback',
+  CATEGORIES: '/categories',
+  MANAGE_CATEGORIES: '/admin/categories',
   HOME: '/',
   PROFILE: '/profile',
   WORDS: '/words',
   SEARCH_WORDS: '/words/search',
 } as const;
+
+export function getCategoryRoute(slug: string) {
+  return `${ROUTES.CATEGORIES}/${encodeURIComponent(slug)}`;
+}
 
 export function getWordRoute(id: number) {
   return `${ROUTES.WORDS}/${id}`;

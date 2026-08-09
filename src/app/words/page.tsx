@@ -7,6 +7,7 @@ import { WordManager } from '@/components/word-manager';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { getCurrentUserClaims } from '@/lib/supabase/auth';
+import { listCategories } from '@/server/categories';
 import { getUserRole } from '@/server/roles';
 import { listWords } from '@/server/words';
 
@@ -21,7 +22,11 @@ export default async function WordsPage() {
     redirect(ROUTES.SEARCH_WORDS);
   }
 
-  const [t, words] = await Promise.all([getTranslations(), listWords()]);
+  const [t, words, categories] = await Promise.all([
+    getTranslations(),
+    listWords(),
+    listCategories(),
+  ]);
 
   return (
     <main className='relative min-h-svh overflow-x-clip bg-background px-4 pb-4 sm:px-8 sm:pb-8'>
@@ -40,7 +45,7 @@ export default async function WordsPage() {
 
         <div className='mx-auto max-w-6xl'>
           <QueryProvider>
-            <WordManager initialWords={words} />
+            <WordManager initialWords={words} categories={categories} />
           </QueryProvider>
         </div>
       </div>

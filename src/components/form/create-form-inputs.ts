@@ -3,6 +3,7 @@ import { type FieldValues } from 'react-hook-form';
 import { InputCheckbox } from '@/components/form/input-checkbox';
 import { InputCombobox } from '@/components/form/input-combobox';
 import { InputFile } from '@/components/form/input-file';
+import { InputMultiCombobox } from '@/components/form/input-multi-combobox';
 import { InputPass } from '@/components/form/input-pass';
 import { InputTags } from '@/components/form/input-tags';
 import { InputText } from '@/components/form/input-text';
@@ -13,6 +14,7 @@ export function createFormInputs<TValues extends FieldValues>() {
     InputCheckbox: InputCheckbox<TValues>,
     InputCombobox: InputCombobox<TValues>,
     InputFile: InputFile<TValues>,
+    InputMultiCombobox: InputMultiCombobox<TValues>,
     InputPass: InputPass<TValues>,
     InputTags: InputTags<TValues>,
     InputText: InputText<TValues>,

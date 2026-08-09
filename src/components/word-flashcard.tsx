@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Eye, EyeOff, RotateCcw, Volume2 } from 'lucide-react';
 
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Button } from '@/components/ui/button';
-import { getWordImageRoute } from '@/constants/routes';
+import { getCategoryRoute, getWordImageRoute } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
 export type FlashcardWord = {
@@ -19,6 +20,7 @@ export type FlashcardWord = {
   exampleSentence: string;
   exampleSentenceMeaningTh: string;
   imageUrl: string;
+  categories: { id: number; name: string; slug: string }[];
 };
 
 export function WordFlashcard({ word }: { word: FlashcardWord }) {
@@ -90,6 +92,19 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
               <span className='mt-2 inline-flex rounded-full bg-primary/12 px-3 py-1 text-xs font-medium tracking-wide text-primary uppercase'>
                 {word.partOfSpeech}
               </span>
+            )}
+            {word.categories.length > 0 && (
+              <div className='mt-3 flex flex-wrap justify-center gap-2'>
+                {word.categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={getCategoryRoute(category.slug)}
+                    className='rounded-full border border-primary/25 px-3 py-1 text-xs font-medium text-primary transition hover:bg-primary/12'
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
             )}
             {(word.pronunciationIpa || word.pronunciationThai) && (
               <div className='mt-2 flex flex-wrap justify-center gap-2 text-sm text-muted-foreground sm:mt-3'>

@@ -48,7 +48,11 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/words/[id]` — administrator flashcard details
 - `/words/search` — public vocabulary directory for members and guests
 - `/words/search/[word]` — public flashcards for a word
+- `/categories` — public vocabulary topics
+- `/categories/[slug]` — public words within a topic
+- `/admin/categories` — administrator category manager
 - `/api/words` — administrator-only Hono CRUD API for global vocabulary entries
+- `/api/categories` — administrator-only Hono CRUD API for categories
 
 Guests and members can read published entries. Administrators can view and manage every entry,
 including unpublished entries. See [Architecture](docs/architecture.md) for the data model and

@@ -7,6 +7,14 @@ import { API_PATH } from '@/constants/api';
 import { USER_ROLE } from '@/constants/role';
 import { getStoredWordImagePath, WORD_LIMITS } from '@/constants/word';
 import { getCurrentUserId } from '@/lib/supabase/auth';
+import {
+  categoriesExist,
+  createCategory,
+  deleteCategory,
+  listCategories,
+  reorderCategories,
+  updateCategory,
+} from '@/server/categories';
 import { getUserRole } from '@/server/roles';
 import { getWordImageUrl, removeWordImage } from '@/server/word-images';
 import { createWord, deleteWord, getWordById, listWords, updateWord } from '@/server/words';
@@ -36,10 +44,34 @@ const wordInputSchema = z.object({
   exampleSentenceMeaningTh: optionalText(WORD_LIMITS.EXAMPLE_MAX_LENGTH),
   imageUrl: optionalText(WORD_LIMITS.IMAGE_URL_MAX_LENGTH).refine(isValidImageReference),
   isPublic: z.boolean().default(false),
+  categoryIds: z
+    .array(z.number().int().positive())
+    .max(20)
+    .default([])
+    .refine((ids) => new Set(ids).size === ids.length),
 });
 
 const wordIdSchema = z.object({
   id: z.coerce.number().int().positive(),
+});
+
+const categoryInputSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(80)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  sortOrder: z.number().int().min(0).max(10000),
+});
+
+const categoryIdSchema = z.object({ id: z.coerce.number().int().positive() });
+const categoryOrderSchema = z.object({
+  categoryIds: z
+    .array(z.number().int().positive())
+    .max(500)
+    .refine((ids) => new Set(ids).size === ids.length),
 });
 
 type ApiEnvironment = {
@@ -85,6 +117,40 @@ export const api = new Hono<ApiEnvironment>()
 
     return imageUrl ? context.redirect(imageUrl, 307) : context.notFound();
   })
+  .use(API_PATH.CATEGORIES, requireAdmin)
+  .use(API_PATH.CATEGORIES_WILDCARD, requireAdmin)
+  .get(API_PATH.CATEGORIES, async (context) =>
+    context.json({ categories: await listCategories() }, 200),
+  )
+  .post(API_PATH.CATEGORIES, zValidator('json', categoryInputSchema), async (context) =>
+    context.json({ category: await createCategory(context.req.valid('json')) }, 201),
+  )
+  .patch(API_PATH.CATEGORIES_REORDER, zValidator('json', categoryOrderSchema), async (context) =>
+    context.json(
+      { categories: await reorderCategories(context.req.valid('json').categoryIds) },
+      200,
+    ),
+  )
+  .patch(
+    API_PATH.CATEGORY_BY_ID,
+    zValidator('param', categoryIdSchema),
+    zValidator('json', categoryInputSchema),
+    async (context) => {
+      const category = await updateCategory(
+        context.req.valid('param').id,
+        context.req.valid('json'),
+      );
+      return category
+        ? context.json({ category }, 200)
+        : context.json({ error: 'Category not found' }, 404);
+    },
+  )
+  .delete(API_PATH.CATEGORY_BY_ID, zValidator('param', categoryIdSchema), async (context) => {
+    const category = await deleteCategory(context.req.valid('param').id);
+    return category
+      ? context.json(category, 200)
+      : context.json({ error: 'Category not found' }, 404);
+  })
   .use(API_PATH.WORDS, requireAdmin)
   .use(API_PATH.WORDS_WILDCARD, requireAdmin)
   .get(API_PATH.WORDS, async (context) => {
@@ -100,7 +166,13 @@ export const api = new Hono<ApiEnvironment>()
   })
   .post(API_PATH.WORDS, zValidator('json', wordInputSchema), async (context) => {
     const adminUserId = context.get('adminUserId');
-    const word = await createWord(adminUserId, context.req.valid('json'));
+    const values = context.req.valid('json');
+
+    if (!(await categoriesExist(values.categoryIds))) {
+      return context.json({ error: 'One or more categories do not exist' }, 400);
+    }
+
+    const word = await createWord(adminUserId, values);
 
     return context.json({ word }, 201);
   })
@@ -118,6 +190,10 @@ export const api = new Hono<ApiEnvironment>()
       }
 
       const values = context.req.valid('json');
+
+      if (!(await categoriesExist(values.categoryIds))) {
+        return context.json({ error: 'One or more categories do not exist' }, 400);
+      }
       const word = await updateWord(id, adminUserId, values);
 
       if (!word) {
@@ -161,7 +237,16 @@ export const api = new Hono<ApiEnvironment>()
   })
   .onError((error, context) => {
     if (typeof error === 'object' && error !== null && 'code' in error && error.code === '23505') {
-      return context.json({ error: 'Word already exists' }, 409);
+      const constraint = 'constraint' in error ? error.constraint : undefined;
+      return context.json(
+        {
+          error:
+            constraint === 'categories_slug_unique'
+              ? 'Category slug already exists'
+              : 'Word already exists',
+        },
+        409,
+      );
     }
 
     console.error(error);

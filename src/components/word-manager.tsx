@@ -16,6 +16,7 @@ import {
   Plus,
   Save,
   Search,
+  Tags,
   Trash2,
   TriangleAlert,
   X,
@@ -24,6 +25,7 @@ import { z } from 'zod';
 
 import { AlertDialog } from '@/components/alert-dialog';
 import { Dialog } from '@/components/dialog';
+import { FilterCombobox } from '@/components/filter-combobox';
 import { createFormInputs, Form } from '@/components/form';
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Tooltip } from '@/components/tooltip';
@@ -32,7 +34,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
-import { getSearchWordRoute, getWordImageRoute, getWordRoute } from '@/constants/routes';
+import { getSearchWordRoute, getWordImageRoute, getWordRoute, ROUTES } from '@/constants/routes';
 import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
 import {
   useCreateWord,
@@ -62,6 +64,7 @@ const defaultValues = {
   exampleSentenceMeaningTh: '',
   imageUrl: '',
   isPublic: false,
+  categoryIds: [] as number[],
 };
 
 function optionalText(maxLength: number, message: string) {
@@ -86,13 +89,21 @@ function createWordSchema(labels: WordLabels) {
     exampleSentenceMeaningTh: optionalText(WORD_LIMITS.EXAMPLE_MAX_LENGTH, labels.tooLong),
     imageUrl: optionalText(WORD_LIMITS.IMAGE_URL_MAX_LENGTH, labels.tooLong),
     isPublic: z.boolean(),
+    categoryIds: z.array(z.number().int().positive()).max(20),
   });
 }
 
 type WordFormValues = z.infer<ReturnType<typeof createWordSchema>>;
 
-const { InputCheckbox, InputCombobox, InputFile, InputTags, InputText, InputTextarea } =
-  createFormInputs<WordFormValues>();
+const {
+  InputCheckbox,
+  InputCombobox,
+  InputFile,
+  InputMultiCombobox,
+  InputTags,
+  InputText,
+  InputTextarea,
+} = createFormInputs<WordFormValues>();
 
 function getImageExtension(file: File) {
   const extension = file.name.split('.').pop()?.toLocaleLowerCase();
@@ -134,7 +145,13 @@ async function uploadWordImage(file: File) {
   return path;
 }
 
-export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
+export function WordManager({
+  categories,
+  initialWords,
+}: {
+  categories: { id: number; name: string }[];
+  initialWords: AdminWord[];
+}) {
   const t = useTranslations();
   const labels = useMemo<WordLabels>(
     () => ({
@@ -156,6 +173,8 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [partOfSpeechFilter, setPartOfSpeechFilter] = useState('');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -198,20 +217,35 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
   const filteredWords = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase();
 
-    if (!query) {
-      return words;
-    }
+    return words.filter((word) => {
+      const matchesQuery =
+        !query ||
+        [
+          word.word,
+          word.partOfSpeech,
+          word.pronunciationIpa,
+          word.pronunciationThai,
+          ...word.meaningsTh,
+        ].some((value) => value.toLocaleLowerCase().includes(query));
+      const matchesCategory =
+        !categoryFilter ||
+        word.categories.some((category) => category.id === Number(categoryFilter));
+      const matchesPartOfSpeech = !partOfSpeechFilter || word.partOfSpeech === partOfSpeechFilter;
 
-    return words.filter((word) =>
-      [
-        word.word,
-        word.partOfSpeech,
-        word.pronunciationIpa,
-        word.pronunciationThai,
-        ...word.meaningsTh,
-      ].some((value) => value.toLocaleLowerCase().includes(query)),
-    );
-  }, [searchQuery, words]);
+      return matchesQuery && matchesCategory && matchesPartOfSpeech;
+    });
+  }, [categoryFilter, partOfSpeechFilter, searchQuery, words]);
+  const categoryFilterOptions = useMemo(
+    () => [
+      { label: t('words.manager.allCategories'), value: '' },
+      ...categories.map((category) => ({ label: category.name, value: String(category.id) })),
+    ],
+    [categories, t],
+  );
+  const partOfSpeechFilterOptions = useMemo(
+    () => [{ label: t('words.manager.allPartsOfSpeech'), value: '' }, ...PART_OF_SPEECH_OPTIONS],
+    [t],
+  );
 
   function resetForm() {
     setEditingId(null);
@@ -343,6 +377,7 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
       exampleSentenceMeaningTh: word.exampleSentenceMeaningTh,
       imageUrl: word.imageUrl,
       isPublic: word.isPublic,
+      categoryIds: word.categories.map((category) => category.id),
     });
     openDialog();
   }
@@ -431,138 +466,176 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
           }
         }}
         title={
-          editingId === null
-            ? t('words.manager.createDialogTitle')
-            : t('words.manager.editDialogTitle')
+          <span className='flex items-center gap-3'>
+            <span className='inline-flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+              <BookOpenText aria-hidden='true' className='size-4.5' />
+            </span>
+            {editingId === null
+              ? t('words.manager.createDialogTitle')
+              : t('words.manager.editDialogTitle')}
+          </span>
         }
         closeLabel={t('words.manager.closeDialog')}
         closeDisabled={isSaving}
         initialFocusId='word'
         size='xl'
+        className='h-[calc(100svh-2rem)] grid-rows-[auto_minmax(0,1fr)]'
       >
         <Form
-          className='grid max-h-[calc(100svh-8rem)] gap-5 overflow-y-auto p-5 sm:grid-cols-2 sm:p-6'
+          className='flex min-h-0 flex-1 flex-col overflow-hidden'
           form={form}
           onSubmit={saveWord}
         >
-          {displayedRequestError && (
-            <Alert
-              variant='destructive'
-              className='rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger sm:col-span-2'
-            >
-              <AlertDescription className='text-danger'>{displayedRequestError}</AlertDescription>
-            </Alert>
-          )}
-          <InputText
-            field='word'
-            label={t('words.manager.wordLabel')}
-            placeholder={t('words.manager.wordPlaceholder')}
-            maxLength={WORD_LIMITS.WORD_MAX_LENGTH}
-            required
-          />
+          <div className='min-h-0 flex-1 scrollbar-gutter-stable overflow-y-auto p-5 sm:p-6'>
+            <div className='space-y-6'>
+              {displayedRequestError && (
+                <Alert
+                  variant='destructive'
+                  className='rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger'
+                >
+                  <AlertDescription className='text-danger'>
+                    {displayedRequestError}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-          <InputCombobox
-            field='partOfSpeech'
-            id='part-of-speech'
-            label={t('words.manager.partOfSpeechLabel')}
-            placeholder={t('words.manager.partOfSpeechPlaceholder')}
-            searchPlaceholder={t('words.manager.partOfSpeechSearchPlaceholder')}
-            noResultsLabel={t('words.manager.partOfSpeechNoResults')}
-            clearLabel={t('words.manager.partOfSpeechClear')}
-            options={PART_OF_SPEECH_OPTIONS}
-          />
+              <div className='grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,0.85fr)] lg:gap-7'>
+                <div className='grid content-start gap-5'>
+                  <InputText
+                    field='word'
+                    label={t('words.manager.wordLabel')}
+                    placeholder={t('words.manager.wordPlaceholder')}
+                    maxLength={WORD_LIMITS.WORD_MAX_LENGTH}
+                    required
+                  />
 
-          <InputText
-            field='pronunciationIpa'
-            id='pronunciation-ipa'
-            label={t('words.manager.pronunciationIpaLabel')}
-            placeholder={t('words.manager.pronunciationIpaPlaceholder')}
-            maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
-          />
+                  <InputMultiCombobox
+                    field='categoryIds'
+                    label={t('words.manager.categoriesLabel')}
+                    hint={t('words.manager.categoriesHint')}
+                    placeholder={t('words.manager.categoriesPlaceholder')}
+                    searchPlaceholder={t('words.manager.categoriesSearchPlaceholder')}
+                    noResultsLabel={t('words.manager.categoriesNoResults')}
+                    removeLabel={(name) => t('words.manager.removeCategory', { name })}
+                    options={categories.map((category) => ({
+                      label: category.name,
+                      value: category.id,
+                    }))}
+                  />
 
-          <InputText
-            field='pronunciationThai'
-            id='pronunciation-thai'
-            label={t('words.manager.pronunciationThaiLabel')}
-            placeholder={t('words.manager.pronunciationThaiPlaceholder')}
-            maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
-          />
+                  <InputTags
+                    field='meaningsTh'
+                    id='meaning-th'
+                    label={t('words.manager.meaningsThLabel')}
+                    hint={t('words.manager.meaningsThHint')}
+                    addLabel={t('words.manager.addMeaning')}
+                    removeLabel={(meaning) =>
+                      t('words.manager.removeMeaning', {
+                        meaning,
+                      })
+                    }
+                    placeholder={t('words.manager.meaningsThPlaceholder')}
+                    maxLength={WORD_LIMITS.MEANING_MAX_LENGTH}
+                    maxItems={WORD_LIMITS.MEANINGS_MAX_COUNT}
+                    required
+                  />
+                </div>
 
-          <InputTags
-            field='meaningsTh'
-            id='meaning-th'
-            label={t('words.manager.meaningsThLabel')}
-            hint={t('words.manager.meaningsThHint')}
-            wrapperClassName='sm:col-span-2'
-            addLabel={t('words.manager.addMeaning')}
-            removeLabel={(meaning) =>
-              t('words.manager.removeMeaning', {
-                meaning,
-              })
-            }
-            placeholder={t('words.manager.meaningsThPlaceholder')}
-            maxLength={WORD_LIMITS.MEANING_MAX_LENGTH}
-            maxItems={WORD_LIMITS.MEANINGS_MAX_COUNT}
-            required
-          />
+                <div className='grid content-start gap-5 lg:border-l lg:border-border lg:pl-7'>
+                  <InputCombobox
+                    field='partOfSpeech'
+                    id='part-of-speech'
+                    label={t('words.manager.partOfSpeechLabel')}
+                    placeholder={t('words.manager.partOfSpeechPlaceholder')}
+                    searchPlaceholder={t('words.manager.partOfSpeechSearchPlaceholder')}
+                    noResultsLabel={t('words.manager.partOfSpeechNoResults')}
+                    clearLabel={t('words.manager.partOfSpeechClear')}
+                    options={PART_OF_SPEECH_OPTIONS}
+                  />
 
-          <InputTextarea
-            field='exampleSentence'
-            id='example-sentence'
-            label={t('words.manager.exampleSentenceLabel')}
-            placeholder={t('words.manager.exampleSentencePlaceholder')}
-            maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
-          />
+                  <InputText
+                    field='pronunciationIpa'
+                    id='pronunciation-ipa'
+                    label={t('words.manager.pronunciationIpaLabel')}
+                    placeholder={t('words.manager.pronunciationIpaPlaceholder')}
+                    maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
+                  />
 
-          <InputTextarea
-            field='exampleSentenceMeaningTh'
-            id='example-sentence-meaning-th'
-            label={t('words.manager.exampleSentenceMeaningThLabel')}
-            placeholder={t('words.manager.exampleSentenceMeaningThPlaceholder')}
-            maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
-          />
+                  <InputText
+                    field='pronunciationThai'
+                    id='pronunciation-thai'
+                    label={t('words.manager.pronunciationThaiLabel')}
+                    placeholder={t('words.manager.pronunciationThaiPlaceholder')}
+                    maxLength={WORD_LIMITS.PRONUNCIATION_MAX_LENGTH}
+                  />
+                </div>
+              </div>
 
-          <InputFile
-            field='imageUrl'
-            id='image-file'
-            label={t('words.manager.imageUploadLabel')}
-            hint={t('words.manager.imageUploadHint')}
-            wrapperClassName='sm:col-span-2'
-            accept={WORD_IMAGE.ACCEPTED_TYPES.join(',')}
-            chooseLabel={t('words.manager.chooseImage')}
-            replaceLabel={t('words.manager.replaceImage')}
-            formatsLabel={t('words.manager.imageFormats')}
-            file={selectedImage}
-            currentFileLabel={t('words.manager.currentImage')}
-            description={
-              selectedImage ? t('words.manager.readyToUpload') : t('words.manager.uploadedImage')
-            }
-            removeLabel={t('words.manager.removeImage')}
-            onFileChange={selectImage}
-            preview={
-              selectedImagePreview || imageUrl ? (
-                <ImageWithSkeleton
-                  src={
-                    selectedImagePreview ??
-                    (editingId === null ? imageUrl : getWordImageRoute(editingId))
-                  }
-                  alt={t('words.manager.imagePreviewAlt')}
-                  className='object-cover'
+              <div className='grid gap-5 border-t border-border pt-6 sm:grid-cols-2'>
+                <InputTextarea
+                  field='exampleSentence'
+                  id='example-sentence'
+                  label={t('words.manager.exampleSentenceLabel')}
+                  placeholder={t('words.manager.exampleSentencePlaceholder')}
+                  maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
                 />
-              ) : undefined
-            }
-          />
 
-          <InputCheckbox
-            field='isPublic'
-            id='is-public'
-            wrapperClassName='sm:col-span-2'
-            label={t('words.manager.publicLabel')}
-            hint={t('words.manager.publicHint')}
-            icon={<Globe2 className='size-5' />}
-          />
+                <InputTextarea
+                  field='exampleSentenceMeaningTh'
+                  id='example-sentence-meaning-th'
+                  label={t('words.manager.exampleSentenceMeaningThLabel')}
+                  placeholder={t('words.manager.exampleSentenceMeaningThPlaceholder')}
+                  maxLength={WORD_LIMITS.EXAMPLE_MAX_LENGTH}
+                />
+              </div>
 
-          <div className='grid grid-cols-2 gap-3 sm:col-span-2 sm:flex sm:justify-end'>
+              <div className='border-t border-border pt-6'>
+                <InputFile
+                  field='imageUrl'
+                  id='image-file'
+                  label={t('words.manager.imageUploadLabel')}
+                  hint={t('words.manager.imageUploadHint')}
+                  accept={WORD_IMAGE.ACCEPTED_TYPES.join(',')}
+                  chooseLabel={t('words.manager.chooseImage')}
+                  replaceLabel={t('words.manager.replaceImage')}
+                  formatsLabel={t('words.manager.imageFormats')}
+                  file={selectedImage}
+                  currentFileLabel={t('words.manager.currentImage')}
+                  description={
+                    selectedImage
+                      ? t('words.manager.readyToUpload')
+                      : t('words.manager.uploadedImage')
+                  }
+                  removeLabel={t('words.manager.removeImage')}
+                  onFileChange={selectImage}
+                  preview={
+                    selectedImagePreview || imageUrl ? (
+                      <ImageWithSkeleton
+                        src={
+                          selectedImagePreview ??
+                          (editingId === null ? imageUrl : getWordImageRoute(editingId))
+                        }
+                        alt={t('words.manager.imagePreviewAlt')}
+                        className='object-cover'
+                      />
+                    ) : undefined
+                  }
+                />
+              </div>
+
+              <div className='border-t border-border pt-6'>
+                <InputCheckbox
+                  field='isPublic'
+                  id='is-public'
+                  label={t('words.manager.publicLabel')}
+                  hint={t('words.manager.publicHint')}
+                  icon={<Globe2 className='size-5' />}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className='grid shrink-0 grid-cols-2 gap-3 border-t border-border bg-surface/95 px-5 py-4 backdrop-blur sm:flex sm:justify-end sm:px-6'>
             <Button
               type='button'
               variant='outline'
@@ -608,7 +681,7 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
               </div>
             </div>
 
-            <div className='flex flex-col gap-3 sm:flex-row sm:items-center'>
+            <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center'>
               <label className='relative min-w-0 sm:w-64'>
                 <span className='sr-only'>{t('words.manager.searchLabel')}</span>
                 <Search
@@ -623,6 +696,24 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
                   onChange={(event) => setSearchQuery(event.target.value)}
                 />
               </label>
+              <FilterCombobox
+                value={categoryFilter}
+                ariaLabel={t('words.manager.categoryFilterLabel')}
+                className='sm:w-44'
+                options={categoryFilterOptions}
+                searchPlaceholder={t('words.manager.categoriesSearchPlaceholder')}
+                noResultsLabel={t('words.manager.categoriesNoResults')}
+                onValueChange={setCategoryFilter}
+              />
+              <FilterCombobox
+                value={partOfSpeechFilter}
+                ariaLabel={t('words.manager.partOfSpeechFilterLabel')}
+                className='sm:w-48'
+                options={partOfSpeechFilterOptions}
+                searchPlaceholder={t('words.manager.partOfSpeechSearchPlaceholder')}
+                noResultsLabel={t('words.manager.partOfSpeechNoResults')}
+                onValueChange={setPartOfSpeechFilter}
+              />
               <div className='flex items-center justify-between gap-3 sm:justify-start'>
                 <Badge
                   variant='secondary'
@@ -630,6 +721,12 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
                 >
                   {filteredWords.length}
                 </Badge>
+                <Button asChild type='button' variant='outline' className='h-11 rounded-full'>
+                  <Link href={ROUTES.MANAGE_CATEGORIES}>
+                    <Tags aria-hidden='true' className='size-4' />
+                    {t('words.manager.manageCategories')}
+                  </Link>
+                </Button>
                 <Button
                   type='button'
                   className='h-11 flex-1 cursor-pointer rounded-full bg-primary px-5 text-sm text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary-hover sm:flex-none'
@@ -712,6 +809,19 @@ export function WordManager({ initialWords }: { initialWords: AdminWord[] }) {
                     </Badge>
                   ))}
                 </div>
+
+                {word.categories.length > 0 && (
+                  <div className='mt-3 flex flex-wrap gap-2'>
+                    {word.categories.slice(0, 2).map((category) => (
+                      <Badge key={category.id} variant='outline' className='text-primary'>
+                        {category.name}
+                      </Badge>
+                    ))}
+                    {word.categories.length > 2 && (
+                      <Badge variant='outline'>+{word.categories.length - 2}</Badge>
+                    )}
+                  </div>
+                )}
 
                 {word.exampleSentence && (
                   <blockquote className='mt-5 rounded-2xl border-l-2 border-primary/50 bg-background/60 px-4 py-3 text-sm leading-6 text-surface-foreground'>

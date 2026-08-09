@@ -21,7 +21,8 @@ function createDatabase() {
   const databaseClient =
     globalForDatabase.galexiPostgresClient ??
     postgres(connectionString, {
-      max: 1,
+      // Concurrent Server Components must not queue behind an abandoned dev/HMR request.
+      max: 5,
       prepare: false,
     });
 
