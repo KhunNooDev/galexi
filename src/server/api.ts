@@ -8,8 +8,6 @@ import { CATEGORY_LIMITS } from '@/constants/category';
 import { USER_ROLE } from '@/constants/role';
 import { getStoredWordImagePath } from '@/constants/word';
 import { categoryInputSchema } from '@/features/categories/category.schema';
-import { wordInputSchema } from '@/features/words/word.schema';
-import { getCurrentUserId } from '@/lib/supabase/auth';
 import {
   categoriesExist,
   createCategory,
@@ -17,10 +15,18 @@ import {
   listCategories,
   reorderCategories,
   updateCategory,
-} from '@/server/categories';
+} from '@/features/categories/server/category.service';
+import {
+  createWord,
+  deleteWord,
+  getWordById,
+  listWords,
+  updateWord,
+} from '@/features/words/server/word.service';
+import { getWordImageUrl, removeWordImage } from '@/features/words/server/word-image.service';
+import { wordInputSchema } from '@/features/words/word.schema';
+import { getCurrentUserId } from '@/lib/supabase/auth';
 import { getUserRole } from '@/server/roles';
-import { getWordImageUrl, removeWordImage } from '@/server/word-images';
-import { createWord, deleteWord, getWordById, listWords, updateWord } from '@/server/words';
 
 function isValidImageReference(value: string) {
   if (!value) {

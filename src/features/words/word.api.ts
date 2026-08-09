@@ -27,17 +27,6 @@ export const wordsApi = {
     return data.words;
   },
 
-  async getById(id: number) {
-    const response = await wordRoute.$get({ param: { id: String(id) } });
-
-    if (response.status !== 200) {
-      return throwApiError(response);
-    }
-
-    const data = await response.json();
-    return data.word;
-  },
-
   async create(values: WordInput) {
     const response = await wordsRoute.$post({ json: values });
 

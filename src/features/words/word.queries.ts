@@ -2,8 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import {
+  type AdminWord,
+  type UpdateWordInput,
+  type WordInput,
+  wordsApi,
+} from '@/features/words/word.api';
 import { wordKeys } from '@/features/words/word.keys';
-import { type AdminWord, type UpdateWordInput, type WordInput, wordsApi } from '@/lib/api/words';
 
 export function useWords(initialData: AdminWord[]) {
   return useQuery({
@@ -39,12 +44,6 @@ export function useUpdateWord() {
       queryClient.setQueryData<AdminWord[]>(wordKeys.admin(), (current = []) =>
         current.map((word) => (word.id === updatedWord.id ? updatedWord : word)),
       );
-
-      const detailKey = wordKeys.detail(updatedWord.id);
-
-      if (queryClient.getQueryState(detailKey)) {
-        queryClient.setQueryData(detailKey, updatedWord);
-      }
     },
   });
 }
@@ -59,7 +58,6 @@ export function useDeleteWord() {
       queryClient.setQueryData<AdminWord[]>(wordKeys.admin(), (current = []) =>
         current.filter((word) => word.id !== id),
       );
-      queryClient.removeQueries({ queryKey: wordKeys.detail(id) });
     },
   });
 }

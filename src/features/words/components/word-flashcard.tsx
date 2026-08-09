@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { getCategoryRoute, getWordImageRoute } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
-export type FlashcardWord = {
+type FlashcardWord = {
   id: number;
   word: string;
   pronunciationIpa: string;

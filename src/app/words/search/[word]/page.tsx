@@ -2,9 +2,9 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
-import { WordFlashcard } from '@/components/word-flashcard';
 import { decodeWordRouteParam, ROUTES } from '@/constants/routes';
-import { listPublicWordEntries } from '@/server/words';
+import { WordFlashcard } from '@/features/words/components/word-flashcard';
+import { listPublicWordEntries } from '@/features/words/server/word.service';
 
 export default async function SearchWordPage({ params }: { params: Promise<{ word: string }> }) {
   const { word: wordParam } = await params;

@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import type { AdminCategory } from '@/features/categories/category.api';
 import {
   useCategories,
   useCreateCategory,
@@ -25,7 +26,6 @@ import {
   type CategoryFormValues,
   createCategoryFormSchema,
 } from '@/features/categories/category.schema';
-import type { AdminCategory } from '@/lib/api/categories';
 import { ApiError } from '@/lib/api/errors';
 
 const { InputText } = createFormInputs<CategoryFormInput>();

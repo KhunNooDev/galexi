@@ -5,7 +5,7 @@ import { BookOpenText } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
 import { getPublicWordRoute, ROUTES } from '@/constants/routes';
-import { listPublicWordSummaries } from '@/server/words';
+import { listPublicWordSummaries } from '@/features/words/server/word.service';
 
 export default async function SearchWordsPage() {
   await connection();

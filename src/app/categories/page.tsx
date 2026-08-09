@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ChevronRight, Search } from 'lucide-react';
 
-import { CategoryIcon } from '@/components/category-icon';
 import { PageHeader } from '@/components/page-header';
 import { Input } from '@/components/ui/input';
 import { getCategoryRoute, ROUTES } from '@/constants/routes';
-import { listPublicCategories } from '@/server/categories';
+import { CategoryIcon } from '@/features/categories/components/category-icon';
+import { listPublicCategories } from '@/features/categories/server/category.service';
 
 export default async function CategoriesPage({ searchParams }: PageProps<'/categories'>) {
   const filters = await searchParams;

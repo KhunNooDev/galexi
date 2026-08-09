@@ -2,8 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import {
+  type AdminCategory,
+  categoriesApi,
+  type CategoryInput,
+} from '@/features/categories/category.api';
 import { categoryKeys } from '@/features/categories/category.keys';
-import { type AdminCategory, categoriesApi, type CategoryInput } from '@/lib/api/categories';
 
 function sortCategories(categories: AdminCategory[]) {
   return [...categories].sort(

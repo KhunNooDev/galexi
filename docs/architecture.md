@@ -75,13 +75,25 @@ revealed through category navigation.
   administrator ID.
 - Word images are stored in Supabase Storage and referenced by the dictionary entry.
 
+### Feature ownership
+
+`src/app` remains the routing and page-composition layer. Word- and Category-specific UI, schemas,
+typed Hono RPC wrappers, TanStack Query hooks, and server-only database operations live under
+`src/features/words` and `src/features/categories`. Shared form controls and UI primitives remain in
+`src/components`, while database, Supabase, environment, internationalization, profile, and role
+infrastructure stay outside the product features.
+
+The dependency direction is App Router → features → shared UI and infrastructure. Feature client
+components can use their typed API wrappers, but cannot import the server-only service directories.
+Server Components call feature services directly rather than making HTTP requests to Galexi's API.
+
 ### Data access boundaries
 
 Server Components read application data directly through the server-only modules. They do not make
 HTTP requests back to the application's own API:
 
 ```text
-Server Component -> src/server/* -> Drizzle -> PostgreSQL
+Server Component -> src/features/*/server -> Drizzle -> PostgreSQL
 ```
 
 Interactive administrator Words CRUD uses a small client-side server-state layer. The `/admin/words`
@@ -90,11 +102,12 @@ TanStack Query initial data. Subsequent reads and mutations follow this path:
 
 ```text
 Client Component -> TanStack Query -> Words API wrapper -> Hono RPC -> Hono API
-                 -> src/server/* -> Drizzle -> PostgreSQL
+                 -> src/features/*/server -> Drizzle -> PostgreSQL
 ```
 
 Only the reusable API client instantiates `hc<ApiType>`. Components and query hooks do not know the
-Hono route structure, and database operations remain confined to `src/server/*`. Authentication and
+Hono route structure, and feature database operations remain confined to server-only feature
+services. Shared authorization and profile helpers remain in `src/server`. Authentication and
 profile forms continue to use their existing Server Actions.
 
 ### App Router boundaries

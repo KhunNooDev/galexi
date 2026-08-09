@@ -2,12 +2,12 @@ import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
-import { WordFlashcard } from '@/components/word-flashcard';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { WordFlashcard } from '@/features/words/components/word-flashcard';
+import { getWordById } from '@/features/words/server/word.service';
 import { getCurrentUserClaims } from '@/lib/supabase/auth';
 import { getUserRole } from '@/server/roles';
-import { getWordById } from '@/server/words';
 
 export default async function ManageWordDetailsPage({ params }: PageProps<'/admin/words/[id]'>) {
   const claims = await getCurrentUserClaims();

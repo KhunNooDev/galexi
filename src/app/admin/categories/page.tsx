@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-import { CategoryManager } from '@/components/category-manager';
 import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { CategoryManager } from '@/features/categories/components/category-manager';
+import { listCategories } from '@/features/categories/server/category.service';
 import { getCurrentUserClaims } from '@/lib/supabase/auth';
-import { listCategories } from '@/server/categories';
 import { getUserRole } from '@/server/roles';
 
 export default async function ManageCategoriesPage() {

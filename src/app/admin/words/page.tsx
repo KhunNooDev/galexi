@@ -3,13 +3,13 @@ import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
-import { WordManager } from '@/components/word-manager';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { listCategories } from '@/features/categories/server/category.service';
+import { WordManager } from '@/features/words/components/word-manager';
+import { listWords } from '@/features/words/server/word.service';
 import { getCurrentUserClaims } from '@/lib/supabase/auth';
-import { listCategories } from '@/server/categories';
 import { getUserRole } from '@/server/roles';
-import { listWords } from '@/server/words';
 
 export default async function ManageWordsPage() {
   const claims = await getCurrentUserClaims();

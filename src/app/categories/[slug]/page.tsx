@@ -1,13 +1,16 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
-import { CategoryIcon } from '@/components/category-icon';
-import { CategoryWordCard } from '@/components/category-word-card';
-import { CategoryWordFilters } from '@/components/category-word-filters';
 import { PageHeader } from '@/components/page-header';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
 import { getCategoryRoute, ROUTES } from '@/constants/routes';
-import { getPublicCategory, listPublicWordsByCategory } from '@/server/categories';
+import { CategoryIcon } from '@/features/categories/components/category-icon';
+import { CategoryWordCard } from '@/features/categories/components/category-word-card';
+import { CategoryWordFilters } from '@/features/categories/components/category-word-filters';
+import {
+  getPublicCategory,
+  listPublicWordsByCategory,
+} from '@/features/categories/server/category.service';
 
 export default async function CategoryPage({
   params,

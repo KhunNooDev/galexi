@@ -40,6 +40,7 @@ import {
   ROUTES,
 } from '@/constants/routes';
 import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
+import type { AdminWord } from '@/features/words/word.api';
 import {
   useCreateWord,
   useDeleteWord,
@@ -48,7 +49,6 @@ import {
 } from '@/features/words/word.queries';
 import { createWordFormSchema, type WordFormValues } from '@/features/words/word.schema';
 import { ApiError } from '@/lib/api/errors';
-import type { AdminWord } from '@/lib/api/words';
 import { createClient as createSupabaseClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
