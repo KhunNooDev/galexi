@@ -232,7 +232,7 @@
       "lastPage": "Last page",
       "goToPage": "Go to page {page}",
       "pageSizeLabel": "Words per page",
-      "showingResults": "Showing {from}–{to} of {total}",
+      "showingResults": "Showing {from}-{to} of {total}",
       "gridView": "Grid view",
       "listView": "List view",
       "visibility": "Visibility",

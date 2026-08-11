@@ -4,6 +4,10 @@ import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
 import { wordCategories, words } from '@/db/schema';
+import {
+  ensureWordImageExists,
+  getWordImageLockQuery,
+} from '@/features/words/server/word-image.service';
 import type { WordInput } from '@/features/words/word.schema';
 
 const baseWordColumns = {
@@ -57,6 +61,11 @@ export async function getWordById(id: number) {
 export async function createWord(adminUserId: string, values: WordInput) {
   const { categoryIds, ...wordValues } = values;
   const wordId = await getDatabase().transaction(async (transaction) => {
+    if (wordValues.imageUrl) {
+      await transaction.execute(getWordImageLockQuery(wordValues.imageUrl));
+      await ensureWordImageExists(wordValues.imageUrl);
+    }
+
     const [createdWord] = await transaction
       .insert(words)
       .values({ ...wordValues, createdBy: adminUserId, updatedBy: adminUserId })
@@ -77,6 +86,24 @@ export async function createWord(adminUserId: string, values: WordInput) {
 export async function updateWord(id: number, adminUserId: string, values: WordInput) {
   const { categoryIds, ...wordValues } = values;
   const updated = await getDatabase().transaction(async (transaction) => {
+    if (wordValues.imageUrl) {
+      await transaction.execute(getWordImageLockQuery(wordValues.imageUrl));
+
+      const [currentWord] = await transaction
+        .select({ imageUrl: words.imageUrl })
+        .from(words)
+        .where(eq(words.id, id))
+        .limit(1);
+
+      if (!currentWord) {
+        return null;
+      }
+
+      if (currentWord.imageUrl !== wordValues.imageUrl) {
+        await ensureWordImageExists(wordValues.imageUrl);
+      }
+    }
+
     const [updatedWord] = await transaction
       .update(words)
       .set({ ...wordValues, updatedBy: adminUserId })

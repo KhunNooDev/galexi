@@ -5,6 +5,7 @@ import { throwApiError } from '@/lib/api/errors';
 
 const wordsRoute = apiClient.api.words;
 const wordRoute = wordsRoute[':id'];
+const wordImageCleanupRoute = apiClient.api['word-images'].cleanup;
 
 type WordsResponse = InferResponseType<typeof wordsRoute.$get, 200>;
 
@@ -54,6 +55,18 @@ export const wordsApi = {
 
   async remove(id: number) {
     const response = await wordRoute.$delete({ param: { id: String(id) } });
+
+    if (response.status !== 200) {
+      return throwApiError(response);
+    }
+
+    return response.json();
+  },
+};
+
+export const wordImagesApi = {
+  async cleanup(imageUrl: string) {
+    const response = await wordImageCleanupRoute.$post({ json: { imageUrl } });
 
     if (response.status !== 200) {
       return throwApiError(response);

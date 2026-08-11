@@ -41,8 +41,8 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
 import { getManageWordRoute, getPublicWordRoute, getWordImageRoute } from '@/constants/routes';
-import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
-import type { AdminWord } from '@/features/words/word.api';
+import { WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
+import { type AdminWord, wordImagesApi } from '@/features/words/word.api';
 import {
   useCreateWord,
   useDeleteWord,
@@ -86,27 +86,13 @@ const PAGE_SIZE_OPTIONS = [
 type WordView = 'grid' | 'list';
 
 function getImageExtension(file: File) {
-  const extension = file.name.split('.').pop()?.toLocaleLowerCase();
+  const extension = file.type.split('/')[1]?.toLocaleLowerCase();
 
-  if (extension?.match(/^[a-z0-9]+$/)) {
-    return extension;
+  if (extension && WORD_IMAGE.ACCEPTED_TYPES.some((type) => type === file.type)) {
+    return extension === 'jpeg' ? 'jpg' : extension;
   }
 
-  return file.type.split('/')[1] ?? 'jpg';
-}
-
-async function removeStoredImage(imageUrl: string) {
-  const path = getStoredWordImagePath(imageUrl);
-
-  if (!path) {
-    return;
-  }
-
-  const { error } = await createSupabaseClient().storage.from(WORD_IMAGE.BUCKET).remove([path]);
-
-  if (error) {
-    throw error;
-  }
+  throw new Error('Unsupported Word image type');
 }
 
 async function uploadWordImage(file: File) {
@@ -344,9 +330,9 @@ export function WordManager({
     } catch (error) {
       if (uploadedImagePath) {
         try {
-          await removeStoredImage(uploadedImagePath);
-        } catch (error) {
-          console.error('Unable to remove an unused word image', error);
+          await wordImagesApi.cleanup(uploadedImagePath);
+        } catch (cleanupError) {
+          console.error('Unable to request cleanup for an unused Word image', cleanupError);
         }
       }
 
@@ -1104,10 +1090,10 @@ export function WordManager({
                       </div>
                     </div>
                     <span className='truncate text-sm text-surface-foreground'>
-                      {word.partOfSpeech || '—'}
+                      {word.partOfSpeech || '-'}
                     </span>
                     <span className='truncate text-sm text-muted-foreground'>
-                      {word.categories.map((category) => category.name).join(', ') || '—'}
+                      {word.categories.map((category) => category.name).join(', ') || '-'}
                     </span>
                     <Badge
                       variant='secondary'

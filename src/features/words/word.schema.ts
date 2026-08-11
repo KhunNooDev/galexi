@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { WORD_LIMITS } from '@/constants/word';
+import { getStoredWordImagePath, WORD_LIMITS } from '@/constants/word';
 
 type WordValidationMessages = {
   meaningsRequired: string;
@@ -47,6 +47,31 @@ export function createWordFormSchema(messages: WordValidationMessages) {
 }
 
 const wordBaseSchema = z.object(createWordFields());
+
+export const optionalWordImageReferenceSchema = z
+  .string()
+  .trim()
+  .max(WORD_LIMITS.IMAGE_URL_MAX_LENGTH)
+  .transform((value, context) => {
+    if (!value) {
+      return '';
+    }
+
+    const path = getStoredWordImagePath(value);
+
+    if (!path) {
+      context.addIssue({ code: 'custom', message: 'Invalid Word image reference' });
+      return z.NEVER;
+    }
+
+    return path;
+  });
+
+const wordImageReferenceSchema = optionalWordImageReferenceSchema.pipe(z.string().min(1));
+
+export const wordImageCleanupSchema = z.object({
+  imageUrl: wordImageReferenceSchema,
+});
 
 export const wordInputSchema = wordBaseSchema.extend({
   pronunciationIpa: wordBaseSchema.shape.pronunciationIpa.default(''),

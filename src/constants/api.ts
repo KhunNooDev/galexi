@@ -7,6 +7,7 @@ export const API_PATH = {
   CATEGORY_BY_ID: '/categories/:id',
   //========================================
   WORD_IMAGE_BY_ID: '/word-images/:id',
+  WORD_IMAGE_CLEANUP: '/word-images/cleanup',
   WORD_BY_ID: '/words/:id',
   WORDS: '/words',
   WORDS_WILDCARD: '/words/*',

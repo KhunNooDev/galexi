@@ -75,6 +75,21 @@ revealed through category navigation.
   administrator ID.
 - Word images are stored in Supabase Storage and referenced by the dictionary entry.
 
+### Word image consistency
+
+The browser uploads a candidate image directly to the private `word-images` bucket before saving
+the Word. PostgreSQL remains authoritative: `words.image_url` determines whether a Storage object is
+in use. If a save has an uncertain client outcome, the browser may request cleanup, but only the
+server decides whether removal is safe by checking the current dictionary references first.
+
+Image replacement and Word deletion commit their database changes before the previous image becomes
+a cleanup candidate. Every automatic cleanup path uses the same database-aware service and retains
+any referenced object. Saves and cleanup coordinate with the same path-scoped PostgreSQL advisory
+lock. A save that introduces an image reference verifies the Storage object while holding that lock,
+so cleanup cannot race a pending save into committing a missing image. Cleanup is idempotent and
+best-effort; a temporary Storage failure may leave an orphan object, which is preferable to a
+dictionary row referencing a missing image.
+
 ### Feature ownership
 
 `src/app` remains the routing and page-composition layer. Word- and Category-specific UI, schemas,

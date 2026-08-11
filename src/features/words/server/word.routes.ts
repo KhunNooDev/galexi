@@ -4,7 +4,6 @@ import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
 
 import { API_PATH } from '@/constants/api';
-import { getStoredWordImagePath } from '@/constants/word';
 import { categoriesExist } from '@/features/categories/server/category.service';
 import {
   createWord,
@@ -13,25 +12,15 @@ import {
   listWords,
   updateWord,
 } from '@/features/words/server/word.service';
-import { removeWordImage } from '@/features/words/server/word-image.service';
-import { wordInputSchema } from '@/features/words/word.schema';
+import { cleanupUnreferencedWordImage } from '@/features/words/server/word-image.service';
+import { optionalWordImageReferenceSchema, wordInputSchema } from '@/features/words/word.schema';
 import { isUniqueConstraintViolation } from '@/server/api/errors';
 import { requireAdmin } from '@/server/api/middleware/require-admin';
 import type { ApiEnvironment } from '@/server/api/types';
 import { idParamSchema } from '@/server/api/validation';
 
-function isValidImageReference(value: string) {
-  if (!value) {
-    return true;
-  }
-
-  const path = getStoredWordImagePath(value);
-
-  return Boolean(path && /^words\/[0-9a-f-]+\.(avif|gif|jpe?g|png|webp)$/i.test(path));
-}
-
 const wordApiInputSchema = wordInputSchema.extend({
-  imageUrl: wordInputSchema.shape.imageUrl.refine(isValidImageReference),
+  imageUrl: optionalWordImageReferenceSchema,
 });
 
 export const wordRoutes = new Hono<ApiEnvironment>()
@@ -86,7 +75,7 @@ export const wordRoutes = new Hono<ApiEnvironment>()
 
       if (previousWord.imageUrl && previousWord.imageUrl !== values.imageUrl) {
         try {
-          await removeWordImage(previousWord.imageUrl);
+          await cleanupUnreferencedWordImage(previousWord.imageUrl);
         } catch (error) {
           console.error('Unable to remove the replaced word image', error);
         }
@@ -111,7 +100,7 @@ export const wordRoutes = new Hono<ApiEnvironment>()
 
     if (word.imageUrl) {
       try {
-        await removeWordImage(word.imageUrl);
+        await cleanupUnreferencedWordImage(word.imageUrl);
       } catch (error) {
         console.error('Unable to remove the deleted word image', error);
       }
