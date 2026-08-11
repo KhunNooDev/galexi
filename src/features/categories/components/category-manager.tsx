@@ -4,7 +4,17 @@ import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowDown, ArrowUp, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Search,
+  Tags,
+  Trash2,
+  X,
+} from 'lucide-react';
 
 import { AlertDialog } from '@/components/alert-dialog';
 import { Dialog } from '@/components/dialog';
@@ -13,6 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { AdminCategory } from '@/features/categories/category.api';
 import {
   useCategories,
@@ -49,6 +60,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
   const deleteMutation = useDeleteCategory();
   const reorderMutation = useReorderCategories();
   const [query, setQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [editing, setEditing] = useState<AdminCategory | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState<AdminCategory | null>(null);
@@ -109,6 +121,65 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
       .catch(() => setRequestError(t('categories.manager.requestError')));
   }
 
+  function renderCategoryActions(category: AdminCategory, index: number) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon'
+            className='shrink-0 cursor-pointer rounded-xl text-muted-foreground hover:bg-secondary-hover hover:text-foreground'
+            aria-label={t('categories.manager.actions', { name: category.name })}
+          >
+            <MoreVertical aria-hidden='true' className='size-5' />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align='end' sideOffset={6} className='w-56 p-2'>
+          <Button
+            type='button'
+            variant='ghost'
+            className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-surface-foreground hover:bg-secondary-hover'
+            disabled={isFiltering || index === 0 || reorderMutation.isPending}
+            onClick={() => move(category, -1)}
+          >
+            <ArrowUp aria-hidden='true' className='size-4 text-muted-foreground' />
+            {t('categories.manager.moveUp', { name: category.name })}
+          </Button>
+          <Button
+            type='button'
+            variant='ghost'
+            className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-surface-foreground hover:bg-secondary-hover'
+            disabled={isFiltering || index === categories.length - 1 || reorderMutation.isPending}
+            onClick={() => move(category, 1)}
+          >
+            <ArrowDown aria-hidden='true' className='size-4 text-muted-foreground' />
+            {t('categories.manager.moveDown', { name: category.name })}
+          </Button>
+          <Button
+            type='button'
+            variant='ghost'
+            className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-surface-foreground hover:bg-secondary-hover'
+            onClick={() => openEdit(category)}
+          >
+            <Pencil aria-hidden='true' className='size-4 text-muted-foreground' />
+            {t('categories.manager.edit', { name: category.name })}
+          </Button>
+          <div className='my-1 h-px bg-border' />
+          <Button
+            type='button'
+            variant='ghost'
+            className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-danger hover:bg-danger/10 hover:text-danger'
+            onClick={() => setDeleting(category)}
+          >
+            <Trash2 aria-hidden='true' className='size-4' />
+            {t('categories.manager.delete', { name: category.name })}
+          </Button>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
   return (
     <section aria-labelledby='category-manager-title'>
       {(requestError || categoriesQuery.error) && (
@@ -118,83 +189,100 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
           </AlertDescription>
         </Alert>
       )}
-      <div className='flex flex-col gap-4 rounded-3xl border border-border bg-surface/80 p-5 sm:flex-row sm:items-center sm:justify-between'>
-        <div>
-          <h1 id='category-manager-title' className='text-2xl font-semibold'>
-            {t('categories.manager.title')}
-          </h1>
-          <p className='mt-1 text-sm text-muted-foreground'>{t('categories.manager.subtitle')}</p>
+      <div className='galexi-toolbar space-y-4 p-4 sm:p-5'>
+        <div className='flex flex-wrap items-center justify-between gap-3'>
+          <div className='flex min-w-0 items-center gap-3'>
+            <span className='inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
+              <Tags aria-hidden='true' className='size-5' />
+            </span>
+            <div className='min-w-0'>
+              <h1
+                id='category-manager-title'
+                className='truncate text-xl font-semibold text-surface-foreground'
+              >
+                {t('categories.manager.title')}
+              </h1>
+              <p className='mt-0.5 text-sm text-muted-foreground'>
+                {t('categories.manager.resultCount', { count: filtered.length })}
+              </p>
+            </div>
+          </div>
+          <Button
+            type='button'
+            className='h-11 cursor-pointer rounded-xl bg-primary px-4 text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary-hover'
+            onClick={openCreate}
+          >
+            <Plus aria-hidden='true' className='size-4' />
+            {t('categories.manager.add')}
+          </Button>
         </div>
-        <Button className='h-11 rounded-full px-5' onClick={openCreate}>
-          <Plus className='size-4' /> {t('categories.manager.add')}
-        </Button>
+
+        <form
+          className='flex items-center gap-2'
+          role='search'
+          onSubmit={(event) => {
+            event.preventDefault();
+            setQuery(searchInput);
+          }}
+        >
+          <label className='relative min-w-0 flex-1'>
+            <span className='sr-only'>{t('categories.manager.searchLabel')}</span>
+            <Search
+              aria-hidden='true'
+              className='pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground'
+            />
+            <Input
+              type='search'
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder={t('categories.manager.searchPlaceholder')}
+              className='h-12 w-full rounded-2xl border border-border bg-field pr-4 pl-12 text-sm text-surface-foreground shadow-xs outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20 dark:bg-field'
+            />
+          </label>
+          <Button
+            type='submit'
+            size='icon-lg'
+            className='size-12 cursor-pointer rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary-hover'
+            aria-label={t('categories.manager.searchAction')}
+          >
+            <Search aria-hidden='true' className='size-5' />
+          </Button>
+        </form>
       </div>
 
-      <label className='relative mt-5 block'>
-        <span className='sr-only'>{t('categories.manager.searchLabel')}</span>
-        <Search className='pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground' />
-        <Input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={t('categories.manager.searchPlaceholder')}
-          className='h-11 rounded-full bg-surface pl-10'
-        />
-      </label>
-
       {filtered.length === 0 ? (
-        <p className='mt-5 rounded-3xl border border-dashed border-border p-10 text-center text-muted-foreground'>
+        <p className='galexi-empty mt-4'>
           {query ? t('categories.manager.noResults') : t('categories.manager.empty')}
         </p>
       ) : (
-        <ul className='mt-5 divide-y divide-border overflow-hidden rounded-3xl border border-border bg-surface'>
+        <ul className='mt-4 grid gap-4 lg:grid-cols-2'>
           {filtered.map((category) => {
             const index = categories.findIndex((item) => item.id === category.id);
             return (
-              <li key={category.id} className='flex flex-wrap items-center gap-3 p-4 sm:px-5'>
-                <div className='min-w-0 flex-1'>
-                  <p className='font-semibold'>{category.name}</p>
-                  <p className='mt-0.5 text-sm text-muted-foreground'>/{category.slug}</p>
+              <li
+                key={category.id}
+                className='group flex min-h-44 gap-4 rounded-3xl border border-border bg-surface p-4 shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8 sm:p-5'
+              >
+                <span className='inline-flex size-20 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-secondary-hover text-primary sm:size-24'>
+                  <Tags aria-hidden='true' className='size-7' />
+                </span>
+                <div className='flex min-w-0 flex-1 flex-col'>
+                  <div className='flex items-start gap-2'>
+                    <div className='min-w-0 flex-1'>
+                      <h2 className='text-lg font-semibold wrap-break-word text-surface-foreground sm:text-xl'>
+                        {category.name}
+                      </h2>
+                      <p className='mt-1 text-sm text-muted-foreground'>/{category.slug}</p>
+                    </div>
+                    {renderCategoryActions(category, index)}
+                  </div>
+                  <Badge
+                    variant='secondary'
+                    className='mt-4 w-fit bg-primary/10 px-2.5 py-1 text-primary'
+                  >
+                    {t('categories.wordCount', { count: category.wordCount })}
+                  </Badge>
                 </div>
-                <Badge variant='secondary'>
-                  {t('categories.wordCount', { count: category.wordCount })}
-                </Badge>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  aria-label={t('categories.manager.moveUp', { name: category.name })}
-                  disabled={isFiltering || index === 0 || reorderMutation.isPending}
-                  onClick={() => move(category, -1)}
-                >
-                  <ArrowUp className='size-4' />
-                </Button>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  aria-label={t('categories.manager.moveDown', { name: category.name })}
-                  disabled={
-                    isFiltering || index === categories.length - 1 || reorderMutation.isPending
-                  }
-                  onClick={() => move(category, 1)}
-                >
-                  <ArrowDown className='size-4' />
-                </Button>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  aria-label={t('categories.manager.edit', { name: category.name })}
-                  onClick={() => openEdit(category)}
-                >
-                  <Pencil className='size-4' />
-                </Button>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  className='text-danger hover:bg-danger/10 hover:text-danger'
-                  aria-label={t('categories.manager.delete', { name: category.name })}
-                  onClick={() => setDeleting(category)}
-                >
-                  <Trash2 className='size-4' />
-                </Button>
               </li>
             );
           })}

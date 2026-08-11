@@ -36,16 +36,18 @@ export default async function ManageWordDetailsPage({ params }: PageProps<'/admi
   const t = await getTranslations();
 
   return (
-    <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
+    <main className='min-h-svh bg-background pb-10'>
       <div className='mx-auto max-w-7xl'>
         <PageHeader
           backHref={ROUTES.MANAGE_WORDS}
           backLabel={t('words.flashcard.backToWords')}
-          className='mb-8'
+          isAdmin
           user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}
         />
 
-        <WordFlashcard word={word} />
+        <div className='px-4 py-8 sm:px-8 lg:py-10'>
+          <WordFlashcard word={word} />
+        </div>
       </div>
     </main>
   );

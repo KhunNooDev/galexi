@@ -7,16 +7,23 @@ import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   BookOpenText,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ExternalLink,
   Eye,
   Globe2,
+  Grid2X2,
   ImageIcon,
+  List,
   LockKeyhole,
+  MoreVertical,
   Pencil,
   Plus,
   Save,
   Search,
-  Tags,
+  SlidersHorizontal,
   Trash2,
   TriangleAlert,
   X,
@@ -27,18 +34,13 @@ import { Dialog } from '@/components/dialog';
 import { FilterCombobox } from '@/components/filter-combobox';
 import { createFormInputs, Form } from '@/components/form';
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
-import { Tooltip } from '@/components/tooltip';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
-import {
-  getManageWordRoute,
-  getPublicWordRoute,
-  getWordImageRoute,
-  ROUTES,
-} from '@/constants/routes';
+import { getManageWordRoute, getPublicWordRoute, getWordImageRoute } from '@/constants/routes';
 import { getStoredWordImagePath, WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
 import type { AdminWord } from '@/features/words/word.api';
 import {
@@ -74,6 +76,14 @@ const {
   InputText,
   InputTextarea,
 } = createFormInputs<WordFormValues>();
+
+const PAGE_SIZE_OPTIONS = [
+  { label: '6', value: '6' },
+  { label: '12', value: '12' },
+  { label: '24', value: '24' },
+] as const;
+
+type WordView = 'grid' | 'list';
 
 function getImageExtension(file: File) {
   const extension = file.name.split('.').pop()?.toLocaleLowerCase();
@@ -142,9 +152,14 @@ export function WordManager({
   const [editingId, setEditingId] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [partOfSpeechFilter, setPartOfSpeechFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+  const [view, setView] = useState<WordView>('grid');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -216,6 +231,13 @@ export function WordManager({
     () => [{ label: t('words.manager.allPartsOfSpeech'), value: '' }, ...PART_OF_SPEECH_OPTIONS],
     [t],
   );
+  const totalPages = Math.max(1, Math.ceil(filteredWords.length / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+  const paginatedWords = filteredWords.slice((activePage - 1) * pageSize, activePage * pageSize);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter(
+    (page) => page === 1 || page === totalPages || Math.abs(page - activePage) <= 1,
+  );
+  const activeFilterCount = Number(Boolean(categoryFilter)) + Number(Boolean(partOfSpeechFilter));
 
   function resetForm() {
     setEditingId(null);
@@ -366,6 +388,97 @@ export function WordManager({
     } catch {
       // The mutation exposes a normalized error for the existing alert UI.
     }
+  }
+
+  function renderWordThumbnail(word: AdminWord, className: string) {
+    return (
+      <div
+        className={cn(
+          'relative shrink-0 overflow-hidden rounded-2xl border border-border bg-secondary-hover',
+          className,
+        )}
+      >
+        {word.imageUrl ? (
+          <ImageWithSkeleton
+            src={getWordImageRoute(word.id)}
+            alt={t('words.flashcard.imageAlt', { word: word.word })}
+            className='object-cover'
+          />
+        ) : (
+          <span className='grid size-full place-items-center text-muted-foreground'>
+            <ImageIcon aria-hidden='true' className='size-7' />
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  function renderWordActions(word: AdminWord) {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type='button'
+            variant='ghost'
+            size='icon'
+            className='cursor-pointer rounded-xl text-muted-foreground hover:bg-secondary-hover hover:text-surface-foreground'
+            aria-label={`${t('words.manager.actions')}: ${word.word}`}
+          >
+            <MoreVertical aria-hidden='true' className='size-5' />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align='end' sideOffset={6} className='w-56 p-2'>
+          <Link
+            href={getManageWordRoute(word.id)}
+            className='flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
+          >
+            <Eye aria-hidden='true' className='size-4 text-muted-foreground' />
+            {t('words.manager.openDetails')}
+          </Link>
+          {word.isPublic && (
+            <Link
+              href={getPublicWordRoute(word.word)}
+              className='flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
+            >
+              <Globe2 aria-hidden='true' className='size-4 text-muted-foreground' />
+              {t('words.manager.openPublicPage')}
+            </Link>
+          )}
+          {word.imageUrl && (
+            <a
+              href={getWordImageRoute(word.id)}
+              target='_blank'
+              rel='noreferrer'
+              className='flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
+            >
+              <ImageIcon aria-hidden='true' className='size-4 text-muted-foreground' />
+              {t('words.manager.openImage')}
+              <ExternalLink aria-hidden='true' className='ml-auto size-3.5 text-muted-foreground' />
+            </a>
+          )}
+          <Button
+            type='button'
+            variant='ghost'
+            className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-surface-foreground hover:bg-secondary-hover'
+            onClick={() => editWord(word)}
+          >
+            <Pencil aria-hidden='true' className='size-4 text-muted-foreground' />
+            {t('words.manager.edit')}
+          </Button>
+          <div className='my-1 h-px bg-border' />
+          <Button
+            type='button'
+            variant='ghost'
+            className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-danger hover:bg-danger/10 hover:text-danger'
+            disabled={deletingId === word.id}
+            onClick={() => requestDeleteWord(word)}
+          >
+            <Trash2 aria-hidden='true' className='size-4' />
+            {t('words.manager.delete')}
+          </Button>
+        </PopoverContent>
+      </Popover>
+    );
   }
 
   return (
@@ -632,230 +745,394 @@ export function WordManager({
         </Form>
       </Dialog>
 
-      <section className='space-y-5' aria-labelledby='word-list-title'>
-        <div className='rounded-3xl border border-border bg-surface/80 p-4 shadow-sm backdrop-blur-xl sm:p-5'>
-          <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-            <div>
-              <div className='flex items-center gap-3'>
-                <span className='inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
-                  <BookOpenText aria-hidden='true' className='size-5' />
-                </span>
-                <div>
-                  <h2
-                    id='word-list-title'
-                    className='text-xl font-semibold text-surface-foreground'
-                  >
-                    {t('words.manager.listTitle')}
-                  </h2>
-                </div>
+      <section className='space-y-4' aria-labelledby='word-list-title'>
+        <div className='galexi-toolbar space-y-4 p-4 sm:p-5'>
+          <div className='flex flex-wrap items-center justify-between gap-3'>
+            <div className='flex min-w-0 items-center gap-3'>
+              <span className='inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
+                <BookOpenText aria-hidden='true' className='size-5' />
+              </span>
+              <div className='min-w-0'>
+                <h2
+                  id='word-list-title'
+                  className='truncate text-xl font-semibold text-surface-foreground'
+                >
+                  {t('words.manager.listTitle')}
+                </h2>
+                <p className='mt-0.5 text-sm text-muted-foreground'>
+                  {t('words.manager.resultCount', { count: filteredWords.length })}
+                </p>
               </div>
             </div>
 
-            <div className='flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center'>
-              <label className='relative min-w-0 sm:w-64'>
-                <span className='sr-only'>{t('words.manager.searchLabel')}</span>
-                <Search
-                  aria-hidden='true'
-                  className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground'
-                />
-                <Input
-                  type='search'
-                  className='h-11 w-full rounded-full border border-border bg-background pr-4 pl-10 text-sm text-surface-foreground outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20'
-                  value={searchQuery}
-                  placeholder={t('words.manager.searchPlaceholder')}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                />
-              </label>
+            <div className='flex items-center gap-2'>
+              <Button
+                type='button'
+                className='h-11 cursor-pointer rounded-xl bg-primary px-4 text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary-hover'
+                onClick={openCreateDialog}
+              >
+                <Plus aria-hidden='true' className='size-4' />
+                {t('words.manager.create')}
+              </Button>
+            </div>
+          </div>
+
+          <form
+            className='flex items-center gap-2'
+            role='search'
+            onSubmit={(event) => {
+              event.preventDefault();
+              setSearchQuery(searchInput);
+              setCurrentPage(1);
+            }}
+          >
+            <label className='relative min-w-0 flex-1'>
+              <span className='sr-only'>{t('words.manager.searchLabel')}</span>
+              <Search
+                aria-hidden='true'
+                className='pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground'
+              />
+              <Input
+                type='search'
+                className='h-12 w-full rounded-2xl border border-border bg-field pr-4 pl-12 text-sm text-surface-foreground shadow-xs outline-none placeholder:text-muted-foreground focus:border-focus focus:ring-2 focus:ring-focus/20 dark:bg-field'
+                value={searchInput}
+                placeholder={t('words.manager.searchPlaceholder')}
+                onChange={(event) => setSearchInput(event.target.value)}
+              />
+            </label>
+            <Button
+              type='button'
+              variant='outline'
+              size='icon-lg'
+              className={cn(
+                'relative size-12 cursor-pointer rounded-2xl border-border bg-surface text-muted-foreground shadow-xs hover:bg-secondary-hover dark:bg-surface',
+                isFilterPanelOpen && 'border-primary text-primary ring-2 ring-primary/15',
+              )}
+              aria-label={t('words.manager.filters')}
+              aria-expanded={isFilterPanelOpen}
+              onClick={() => setIsFilterPanelOpen((open) => !open)}
+            >
+              <SlidersHorizontal aria-hidden='true' className='size-5' />
+              {activeFilterCount > 0 && (
+                <span className='absolute -top-1 -right-1 grid size-5 place-items-center rounded-full bg-primary text-[0.65rem] font-semibold text-primary-foreground'>
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+            <Button
+              type='submit'
+              size='icon-lg'
+              className='size-12 cursor-pointer rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary-hover'
+              aria-label={t('words.manager.searchAction')}
+            >
+              <Search aria-hidden='true' className='size-5' />
+            </Button>
+          </form>
+
+          {isFilterPanelOpen && (
+            <div className='grid animate-in gap-3 border-t border-border pt-4 duration-150 fade-in-0 slide-in-from-top-1 sm:grid-cols-2'>
               <FilterCombobox
                 value={categoryFilter}
                 ariaLabel={t('words.manager.categoryFilterLabel')}
-                className='sm:w-44'
                 options={categoryFilterOptions}
                 searchPlaceholder={t('words.manager.categoriesSearchPlaceholder')}
                 noResultsLabel={t('words.manager.categoriesNoResults')}
-                onValueChange={setCategoryFilter}
+                onValueChange={(value) => {
+                  setCategoryFilter(value);
+                  setCurrentPage(1);
+                }}
               />
               <FilterCombobox
                 value={partOfSpeechFilter}
                 ariaLabel={t('words.manager.partOfSpeechFilterLabel')}
-                className='sm:w-48'
                 options={partOfSpeechFilterOptions}
                 searchPlaceholder={t('words.manager.partOfSpeechSearchPlaceholder')}
                 noResultsLabel={t('words.manager.partOfSpeechNoResults')}
-                onValueChange={setPartOfSpeechFilter}
+                onValueChange={(value) => {
+                  setPartOfSpeechFilter(value);
+                  setCurrentPage(1);
+                }}
               />
-              <div className='flex items-center justify-between gap-3 sm:justify-start'>
-                <Badge
-                  variant='secondary'
-                  className='h-10 min-w-10 rounded-full bg-secondary-hover px-3 text-sm text-muted-foreground'
+            </div>
+          )}
+        </div>
+
+        {filteredWords.length > 0 && (
+          <div className='galexi-panel flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4'>
+            <nav
+              className='order-2 flex items-center justify-center gap-1 sm:order-1 sm:justify-start'
+              aria-label={t('words.manager.paginationLabel')}
+            >
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                className='hidden cursor-pointer rounded-xl border-border bg-surface sm:inline-flex dark:bg-surface'
+                aria-label={t('words.manager.firstPage')}
+                disabled={activePage === 1}
+                onClick={() => setCurrentPage(1)}
+              >
+                <ChevronsLeft aria-hidden='true' className='size-4' />
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                className='cursor-pointer rounded-xl border-border bg-surface dark:bg-surface'
+                aria-label={t('words.manager.previousPage')}
+                disabled={activePage === 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              >
+                <ChevronLeft aria-hidden='true' className='size-4' />
+              </Button>
+              {pageNumbers.map((page) => (
+                <Button
+                  key={page}
+                  type='button'
+                  variant={page === activePage ? 'default' : 'ghost'}
+                  size='icon'
+                  className={cn(
+                    'cursor-pointer rounded-xl',
+                    page !== activePage && 'hidden sm:inline-flex',
+                    page === activePage && 'shadow-md shadow-primary/20',
+                  )}
+                  aria-label={t('words.manager.goToPage', { page })}
+                  aria-current={page === activePage ? 'page' : undefined}
+                  onClick={() => setCurrentPage(page)}
                 >
-                  {filteredWords.length}
-                </Badge>
-                <Button asChild type='button' variant='outline' className='h-11 rounded-full'>
-                  <Link href={ROUTES.MANAGE_CATEGORIES}>
-                    <Tags aria-hidden='true' className='size-4' />
-                    {t('words.manager.manageCategories')}
-                  </Link>
+                  {page}
+                </Button>
+              ))}
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                className='cursor-pointer rounded-xl border-border bg-surface dark:bg-surface'
+                aria-label={t('words.manager.nextPage')}
+                disabled={activePage === totalPages}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              >
+                <ChevronRight aria-hidden='true' className='size-4' />
+              </Button>
+              <Button
+                type='button'
+                variant='outline'
+                size='icon'
+                className='hidden cursor-pointer rounded-xl border-border bg-surface sm:inline-flex dark:bg-surface'
+                aria-label={t('words.manager.lastPage')}
+                disabled={activePage === totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+              >
+                <ChevronsRight aria-hidden='true' className='size-4' />
+              </Button>
+            </nav>
+
+            <div className='order-1 flex items-center justify-between gap-2 border-b border-border pb-3 sm:order-2 sm:justify-end sm:gap-3 sm:border-0 sm:pb-0'>
+              <p className='min-w-0 flex-1 truncate text-xs text-muted-foreground sm:flex-none sm:text-sm'>
+                {t('words.manager.showingResults', {
+                  from: (activePage - 1) * pageSize + 1,
+                  to: Math.min(activePage * pageSize, filteredWords.length),
+                  total: filteredWords.length,
+                })}
+              </p>
+              <FilterCombobox
+                value={String(pageSize)}
+                ariaLabel={t('words.manager.pageSizeLabel')}
+                className='w-18 shrink-0 sm:w-20'
+                options={[...PAGE_SIZE_OPTIONS]}
+                searchPlaceholder={t('words.manager.pageSizeLabel')}
+                noResultsLabel={t('words.manager.pageSizeLabel')}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                  setCurrentPage(1);
+                }}
+              />
+              <div className='flex rounded-xl border border-border bg-surface p-1 dark:bg-surface'>
+                <Button
+                  type='button'
+                  variant={view === 'grid' ? 'default' : 'ghost'}
+                  size='icon-sm'
+                  className='cursor-pointer rounded-lg'
+                  aria-label={t('words.manager.gridView')}
+                  aria-pressed={view === 'grid'}
+                  onClick={() => setView('grid')}
+                >
+                  <Grid2X2 aria-hidden='true' className='size-4' />
                 </Button>
                 <Button
                   type='button'
-                  className='h-11 flex-1 cursor-pointer rounded-full bg-primary px-5 text-sm text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 hover:bg-primary-hover sm:flex-none'
-                  onClick={openCreateDialog}
+                  variant={view === 'list' ? 'default' : 'ghost'}
+                  size='icon-sm'
+                  className='cursor-pointer rounded-lg'
+                  aria-label={t('words.manager.listView')}
+                  aria-pressed={view === 'list'}
+                  onClick={() => setView('list')}
                 >
-                  <Plus aria-hidden='true' className='size-4' />
-                  {t('words.manager.create')}
+                  <List aria-hidden='true' className='size-4' />
                 </Button>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {words.length === 0 ? (
           <EmptyState>{t('words.manager.empty')}</EmptyState>
         ) : filteredWords.length === 0 ? (
           <EmptyState>{t('words.manager.noSearchResults')}</EmptyState>
-        ) : (
-          <ul className='grid gap-4 md:grid-cols-2'>
-            {filteredWords.map((word) => (
+        ) : view === 'grid' ? (
+          <ul className='grid gap-4 lg:grid-cols-2'>
+            {paginatedWords.map((word) => (
               <li
                 key={word.id}
-                className='group relative flex min-h-64 flex-col overflow-hidden rounded-3xl border border-border bg-surface p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8 sm:p-6'
+                className='group flex min-h-36 gap-3 rounded-3xl border border-border bg-surface p-4 shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8'
               >
-                <div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100' />
+                {renderWordThumbnail(word, 'size-20 sm:size-24')}
+                <div className='flex min-w-0 flex-1 flex-col'>
+                  <div className='flex items-start gap-2'>
+                    <div className='min-w-0 flex-1'>
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <h3 className='text-lg font-semibold wrap-break-word text-surface-foreground sm:text-xl'>
+                          {word.word}
+                        </h3>
+                        {word.partOfSpeech && (
+                          <Badge variant='secondary' className='bg-secondary-hover text-primary'>
+                            {word.partOfSpeech}
+                          </Badge>
+                        )}
+                      </div>
+                      {(word.pronunciationIpa || word.pronunciationThai) && (
+                        <p className='mt-1 text-sm leading-5 text-muted-foreground'>
+                          {[word.pronunciationIpa, word.pronunciationThai]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                    {renderWordActions(word)}
+                  </div>
 
-                <div className='flex items-start gap-3'>
-                  <span className='inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
-                    <BookOpenText aria-hidden='true' className='size-5' />
-                  </span>
+                  <div className='mt-2.5 flex flex-wrap gap-1.5'>
+                    <Badge
+                      variant='secondary'
+                      className={cn(
+                        'gap-1 px-2.5 py-1',
+                        word.isPublic
+                          ? 'bg-primary/12 text-primary'
+                          : 'bg-secondary-hover text-muted-foreground',
+                      )}
+                    >
+                      {word.isPublic ? (
+                        <Globe2 aria-hidden='true' className='size-3' />
+                      ) : (
+                        <LockKeyhole aria-hidden='true' className='size-3' />
+                      )}
+                      {word.isPublic
+                        ? t('words.manager.publicBadge')
+                        : t('words.manager.unpublishedBadge')}
+                    </Badge>
+                    {word.meaningsTh.slice(0, 2).map((meaning) => (
+                      <Badge key={meaning} className='bg-primary/10 text-primary'>
+                        {meaning}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  {word.categories.length > 0 && (
+                    <p className='mt-auto pt-3 text-xs text-muted-foreground'>
+                      {word.categories.map((category) => category.name).join(' · ')}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <>
+            <ul className='grid gap-3 lg:hidden'>
+              {paginatedWords.map((word) => (
+                <li
+                  key={word.id}
+                  className='flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-[0_12px_35px_rgb(34_74_150/6%)]'
+                >
+                  {renderWordThumbnail(word, 'size-18')}
                   <div className='min-w-0 flex-1'>
-                    <div className='flex flex-wrap items-center gap-2'>
-                      <h3 className='text-xl font-semibold wrap-break-word text-surface-foreground'>
+                    <div className='flex items-center gap-2'>
+                      <h3 className='truncate font-semibold text-surface-foreground'>
                         {word.word}
                       </h3>
                       {word.partOfSpeech && (
                         <Badge
                           variant='secondary'
-                          className='bg-secondary-hover text-muted-foreground'
+                          className='shrink-0 bg-secondary-hover text-primary'
                         >
                           {word.partOfSpeech}
                         </Badge>
                       )}
                     </div>
-                    {(word.pronunciationIpa || word.pronunciationThai) && (
-                      <p className='mt-1.5 text-sm leading-5 text-muted-foreground'>
-                        {[word.pronunciationIpa, word.pronunciationThai]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                    )}
+                    <p className='mt-1 truncate text-sm text-muted-foreground'>
+                      {word.meaningsTh.join(' · ')}
+                    </p>
                   </div>
-                  <Badge
-                    variant='secondary'
-                    className={cn(
-                      'shrink-0 gap-1 px-2.5 py-1',
-                      word.isPublic
-                        ? 'bg-primary/12 text-primary'
-                        : 'bg-secondary-hover text-muted-foreground',
-                    )}
-                  >
-                    {word.isPublic ? (
-                      <Globe2 aria-hidden='true' className='size-3' />
-                    ) : (
-                      <LockKeyhole aria-hidden='true' className='size-3' />
-                    )}
-                    {word.isPublic
-                      ? t('words.manager.publicBadge')
-                      : t('words.manager.unpublishedBadge')}
-                  </Badge>
-                </div>
+                  {renderWordActions(word)}
+                </li>
+              ))}
+            </ul>
 
-                <div className='mt-5 flex flex-wrap gap-2'>
-                  {word.meaningsTh.map((meaning) => (
+            <div className='hidden overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_18px_50px_rgb(34_74_150/7%)] lg:block'>
+              <div className='grid grid-cols-[minmax(14rem,2fr)_minmax(8rem,1fr)_minmax(10rem,1.3fr)_8rem_3rem] items-center gap-4 border-b border-border bg-secondary-hover/45 px-5 py-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase'>
+                <span>{t('words.manager.wordLabel')}</span>
+                <span>{t('words.manager.partOfSpeechLabel')}</span>
+                <span>{t('words.manager.categoriesLabel')}</span>
+                <span>{t('words.manager.visibility')}</span>
+                <span className='sr-only'>{t('words.manager.actions')}</span>
+              </div>
+              <ul className='divide-y divide-border'>
+                {paginatedWords.map((word) => (
+                  <li
+                    key={word.id}
+                    className='grid grid-cols-[minmax(14rem,2fr)_minmax(8rem,1fr)_minmax(10rem,1.3fr)_8rem_3rem] items-center gap-4 px-5 py-4 transition-colors hover:bg-secondary-hover/35'
+                  >
+                    <div className='flex min-w-0 items-center gap-3'>
+                      {renderWordThumbnail(word, 'size-12 rounded-xl')}
+                      <div className='min-w-0'>
+                        <p className='truncate font-semibold text-surface-foreground'>
+                          {word.word}
+                        </p>
+                        <p className='mt-0.5 truncate text-xs text-muted-foreground'>
+                          {word.meaningsTh.join(' · ')}
+                        </p>
+                      </div>
+                    </div>
+                    <span className='truncate text-sm text-surface-foreground'>
+                      {word.partOfSpeech || '—'}
+                    </span>
+                    <span className='truncate text-sm text-muted-foreground'>
+                      {word.categories.map((category) => category.name).join(', ') || '—'}
+                    </span>
                     <Badge
-                      key={meaning}
-                      className='border-primary/10 bg-primary/10 px-3 py-1 text-sm text-primary'
+                      variant='secondary'
+                      className={cn(
+                        'w-fit gap-1 px-2.5 py-1',
+                        word.isPublic
+                          ? 'bg-primary/12 text-primary'
+                          : 'bg-secondary-hover text-muted-foreground',
+                      )}
                     >
-                      {meaning}
+                      {word.isPublic ? (
+                        <Globe2 aria-hidden='true' className='size-3' />
+                      ) : (
+                        <LockKeyhole aria-hidden='true' className='size-3' />
+                      )}
+                      {word.isPublic
+                        ? t('words.manager.publicBadge')
+                        : t('words.manager.unpublishedBadge')}
                     </Badge>
-                  ))}
-                </div>
-
-                {word.categories.length > 0 && (
-                  <div className='mt-3 flex flex-wrap gap-2'>
-                    {word.categories.slice(0, 2).map((category) => (
-                      <Badge key={category.id} variant='outline' className='text-primary'>
-                        {category.name}
-                      </Badge>
-                    ))}
-                    {word.categories.length > 2 && (
-                      <Badge variant='outline'>+{word.categories.length - 2}</Badge>
-                    )}
-                  </div>
-                )}
-
-                {word.exampleSentence && (
-                  <blockquote className='mt-5 rounded-2xl border-l-2 border-primary/50 bg-background/60 px-4 py-3 text-sm leading-6 text-surface-foreground'>
-                    {word.exampleSentence}
-                    {word.exampleSentenceMeaningTh && (
-                      <span className='mt-1 block text-muted-foreground'>
-                        {word.exampleSentenceMeaningTh}
-                      </span>
-                    )}
-                  </blockquote>
-                )}
-
-                {word.imageUrl && (
-                  <a
-                    href={getWordImageRoute(word.id)}
-                    target='_blank'
-                    rel='noreferrer'
-                    className='mt-4 inline-flex w-fit items-center gap-2 text-sm font-medium text-primary hover:underline'
-                  >
-                    <ImageIcon aria-hidden='true' className='size-4' />
-                    {t('words.manager.openImage')}
-                    <ExternalLink aria-hidden='true' className='size-3.5' />
-                  </a>
-                )}
-
-                <div className='mt-auto flex items-center justify-end gap-1 border-t border-border pt-4'>
-                  {word.isPublic && (
-                    <Tooltip label={t('words.manager.openPublicPage')}>
-                      <Link
-                        href={getPublicWordRoute(word.word)}
-                        className='inline-flex size-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/12'
-                        aria-label={`${t('words.manager.openPublicPage')}: ${word.word}`}
-                      >
-                        <Globe2 aria-hidden='true' className='size-4' />
-                      </Link>
-                    </Tooltip>
-                  )}
-                  <Tooltip label={t('words.manager.openDetails')}>
-                    <Link
-                      href={getManageWordRoute(word.id)}
-                      className='inline-flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary-hover hover:text-surface-foreground'
-                      aria-label={`${t('words.manager.openDetails')}: ${word.word}`}
-                    >
-                      <Eye aria-hidden='true' className='size-4' />
-                    </Link>
-                  </Tooltip>
-                  <IconButton
-                    label={`${t('words.manager.edit')}: ${word.word}`}
-                    onClick={() => editWord(word)}
-                  >
-                    <Pencil aria-hidden='true' className='size-4' />
-                  </IconButton>
-                  <IconButton
-                    label={`${t('words.manager.delete')}: ${word.word}`}
-                    danger
-                    disabled={deletingId === word.id}
-                    onClick={() => requestDeleteWord(word)}
-                  >
-                    <Trash2 aria-hidden='true' className='size-4' />
-                  </IconButton>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    {renderWordActions(word)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
         )}
       </section>
     </div>
@@ -863,44 +1140,5 @@ export function WordManager({
 }
 
 function EmptyState({ children }: { children: React.ReactNode }) {
-  return (
-    <p className='rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground'>
-      {children}
-    </p>
-  );
-}
-
-function IconButton({
-  children,
-  danger = false,
-  disabled = false,
-  label,
-  onClick,
-}: {
-  children: React.ReactNode;
-  danger?: boolean;
-  disabled?: boolean;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <Tooltip label={label}>
-      <Button
-        type='button'
-        variant='ghost'
-        size='icon'
-        className={cn(
-          'cursor-pointer rounded-lg disabled:cursor-wait disabled:opacity-60',
-          danger
-            ? 'text-danger hover:bg-danger hover:text-danger-foreground'
-            : 'text-muted-foreground hover:bg-secondary-hover hover:text-surface-foreground',
-        )}
-        aria-label={label}
-        disabled={disabled}
-        onClick={onClick}
-      >
-        {children}
-      </Button>
-    </Tooltip>
-  );
+  return <p className='galexi-empty'>{children}</p>;
 }

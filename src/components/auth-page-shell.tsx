@@ -23,7 +23,7 @@ export function AuthPageShell({ backLabel, children, themeLabel }: AuthPageShell
         sizes='100vw'
         className='object-cover object-[52%_30%] dark:brightness-45 dark:saturate-125'
       />
-      <div className='absolute inset-0 bg-auth-overlay' />
+      <div className='absolute inset-0 bg-auth-overlay backdrop-saturate-110' />
 
       <div className='absolute top-5 left-5 z-20 sm:top-7 sm:left-7'>
         <Tooltip label={backLabel} side='bottom'>
@@ -41,7 +41,7 @@ export function AuthPageShell({ backLabel, children, themeLabel }: AuthPageShell
         <ThemeToggle label={themeLabel} />
       </div>
 
-      <div className='relative z-10 flex min-h-svh items-end justify-center pt-24 sm:pt-40 md:items-center md:justify-end md:px-[8vw] md:py-12'>
+      <div className='relative z-10 flex min-h-svh items-end justify-center pt-24 sm:pt-40 md:items-center md:justify-end md:px-[6vw] md:py-12 lg:px-[8vw]'>
         {children}
       </div>
     </main>

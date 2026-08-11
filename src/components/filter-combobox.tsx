@@ -95,7 +95,7 @@ export function FilterCombobox({
           aria-haspopup='listbox'
           aria-expanded={open}
           className={cn(
-            'h-11 min-w-0 justify-between rounded-full border-border bg-background px-4 font-normal text-surface-foreground shadow-none hover:bg-secondary-hover dark:bg-background',
+            'h-11 min-w-0 justify-between rounded-2xl border-border bg-field px-4 font-normal text-surface-foreground shadow-none hover:bg-secondary-hover dark:bg-field',
             className,
           )}
         >

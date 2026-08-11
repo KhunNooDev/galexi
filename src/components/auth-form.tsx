@@ -97,19 +97,19 @@ export function AuthForm({ action, mode }: AuthFormProps) {
   return (
     <div
       className={cn(
-        'w-full max-w-lg animate-in rounded-t-4xl border border-auth-field-border bg-auth-card p-4 shadow-[0_-16px_50px_rgb(90_67_115/12%)] ease-out animation-duration-300 fill-mode-both fade-in motion-reduce:animate-none sm:p-8 md:rounded-4xl md:p-10 md:shadow-[0_24px_80px_rgb(90_67_115/18%)]',
+        'mx-3 w-[calc(100%-1.5rem)] max-w-lg animate-in rounded-t-4xl border border-auth-field-border bg-auth-card p-5 shadow-[0_-16px_50px_rgb(34_74_150/16%)] ease-out animation-duration-300 fill-mode-both fade-in motion-reduce:animate-none sm:mx-6 sm:w-[calc(100%-3rem)] sm:p-8 md:mx-0 md:w-full md:rounded-4xl md:p-10 md:shadow-[0_24px_80px_rgb(34_74_150/18%)]',
         mode === AUTH_MODE.SIGN_IN ? 'slide-in-from-left-3' : 'slide-in-from-right-3',
       )}
     >
       <nav
-        className='mb-4 grid grid-cols-2 rounded-full border border-auth-field-border bg-auth-field p-1 sm:mb-8'
+        className='mb-5 grid grid-cols-2 rounded-2xl border border-auth-field-border bg-auth-field p-1 sm:mb-8'
         aria-label={t('auth.navigationLabel')}
       >
         <Link
           href={AUTH_ROUTES.SIGN_IN}
           scroll={false}
           className={cn(
-            'rounded-full px-4 py-2 text-center text-sm font-medium transition-all duration-300 sm:py-2.5',
+            'rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-all duration-300',
             mode === AUTH_MODE.SIGN_IN
               ? 'text-white shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground',
@@ -123,7 +123,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           href={AUTH_ROUTES.SIGN_UP}
           scroll={false}
           className={cn(
-            'rounded-full px-4 py-2 text-center text-sm font-medium transition-all duration-300 sm:py-2.5',
+            'rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-all duration-300',
             mode === AUTH_MODE.SIGN_UP
               ? 'text-white shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground',
@@ -223,7 +223,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         <Button
           type='submit'
           disabled={pending}
-          className='mt-4 h-11 w-full cursor-pointer rounded-full px-4 font-medium text-white shadow-[0_12px_28px_rgb(190_128_205/28%)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait sm:h-13'
+          className='mt-4 h-12 w-full cursor-pointer rounded-2xl px-4 font-medium text-white shadow-[0_12px_28px_rgb(34_74_150/24%)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait sm:h-13'
           style={{ background: 'var(--auth-gradient)' }}
         >
           <Icon aria-hidden='true' className='size-4' />

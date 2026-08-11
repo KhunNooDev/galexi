@@ -70,7 +70,7 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
 
   return (
     <div className='mx-auto w-full max-w-lg'>
-      <article className='flex aspect-3/4 w-full flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/14%)]'>
+      <article className='flex aspect-3/4 w-full flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(34_74_150/12%)]'>
         <div className='flex min-h-0 flex-1 flex-col p-4 sm:p-6'>
           <div className='shrink-0 text-center'>
             <div className='flex items-center justify-center gap-2'>
@@ -210,7 +210,7 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
             key='question'
             data-flashcard-state
             hidden={isRevealed}
-            className='flex min-h-0 flex-1 animate-in flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-background/40 p-3 text-center duration-200 fade-in-0 slide-in-from-bottom-2 sm:p-5'
+            className='flex min-h-0 flex-1 animate-in flex-col items-center justify-center rounded-3xl border border-dashed border-primary/25 bg-primary/3 p-3 text-center duration-200 fade-in-0 slide-in-from-bottom-2 sm:p-5'
           >
             <span className='inline-flex size-10 items-center justify-center rounded-full bg-primary/12 text-primary sm:size-12'>
               <EyeOff aria-hidden='true' className='size-5' />
@@ -221,7 +221,7 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
             <Button
               ref={revealButtonRef}
               type='button'
-              className='mt-3 h-10 cursor-pointer rounded-full bg-primary px-5 font-medium text-primary-foreground hover:bg-primary-hover sm:mt-4 sm:h-11 sm:px-6'
+              className='mt-3 h-11 cursor-pointer rounded-xl bg-primary px-5 font-medium text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary-hover sm:mt-4 sm:px-6'
               onClick={(event) => setRevealed(true, event.detail === 0)}
             >
               <Eye aria-hidden='true' className='size-4' />
@@ -236,7 +236,7 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
           ref={studyAgainButtonRef}
           type='button'
           variant='outline'
-          className='mt-4 h-11 w-full animate-in cursor-pointer rounded-full border-border bg-surface font-medium text-surface-foreground duration-200 fade-in-0 slide-in-from-top-2 hover:bg-secondary-hover dark:bg-surface dark:hover:bg-secondary-hover'
+          className='mt-4 h-11 w-full animate-in cursor-pointer rounded-xl border-border bg-surface font-medium text-surface-foreground duration-200 fade-in-0 slide-in-from-top-2 hover:bg-secondary-hover dark:bg-surface dark:hover:bg-secondary-hover'
           onClick={(event) => setRevealed(false, event.detail === 0)}
         >
           <RotateCcw aria-hidden='true' className='size-4' />

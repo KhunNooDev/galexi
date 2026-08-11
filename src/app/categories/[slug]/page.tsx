@@ -36,20 +36,20 @@ export default async function CategoryPage({
   return (
     <main className='min-h-svh bg-background pb-12'>
       <PageHeader backHref={ROUTES.CATEGORIES} backLabel={t('categories.backToCategories')} />
-      <div className='mx-auto max-w-7xl px-5 py-10 sm:px-8'>
-        <div className='flex items-center gap-4'>
+      <div className='mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:py-12'>
+        <section className='galexi-toolbar flex items-center gap-4 sm:p-6'>
           <span className='grid size-14 place-items-center rounded-2xl bg-primary/12 text-primary'>
             <CategoryIcon slug={category.slug} className='size-7' />
           </span>
           <div>
-            <h1 className='text-3xl font-semibold text-surface-foreground sm:text-4xl'>
+            <h1 className='text-2xl font-semibold tracking-tight text-surface-foreground sm:text-3xl'>
               {category.name}
             </h1>
             <p className='mt-1 text-muted-foreground'>
               {t('categories.wordCount', { count: category.wordCount })}
             </p>
           </div>
-        </div>
+        </section>
 
         <CategoryWordFilters
           key={`${query}:${partOfSpeech}`}
@@ -66,11 +66,9 @@ export default async function CategoryPage({
         />
 
         {entries.length === 0 ? (
-          <p className='mt-8 rounded-3xl border border-dashed border-border p-10 text-center text-muted-foreground'>
-            {t('categories.noWords')}
-          </p>
+          <p className='galexi-empty mt-8'>{t('categories.noWords')}</p>
         ) : (
-          <ul className='mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+          <ul className='mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3'>
             {entries.map((word) => (
               <li key={word.id} className='h-full'>
                 <CategoryWordCard

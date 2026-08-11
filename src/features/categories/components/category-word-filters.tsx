@@ -41,7 +41,7 @@ export function CategoryWordFilters({
     <Form
       action={action}
       scroll={false}
-      className='mt-8 grid gap-3 rounded-3xl border border-border bg-surface/70 p-4 shadow-sm backdrop-blur-xl sm:grid-cols-[minmax(0,1fr)_15rem_auto]'
+      className='galexi-toolbar mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_15rem_auto]'
     >
       <label className='relative min-w-0'>
         <span className='sr-only'>{searchLabel}</span>
@@ -54,7 +54,7 @@ export function CategoryWordFilters({
           name='q'
           defaultValue={defaultQuery}
           placeholder={searchPlaceholder}
-          className='h-11 rounded-full border-border bg-background pr-4 pl-10 dark:bg-background'
+          className='h-11 rounded-2xl border-border bg-field pr-4 pl-10 dark:bg-field'
         />
       </label>
 
@@ -69,7 +69,7 @@ export function CategoryWordFilters({
         onValueChange={setPartOfSpeech}
       />
 
-      <Button type='submit' className='h-11 rounded-full px-6 shadow-lg shadow-primary/15'>
+      <Button type='submit' className='h-11 rounded-xl px-6 shadow-lg shadow-primary/15'>
         <SlidersHorizontal aria-hidden='true' className='size-4' />
         {filterLabel}
       </Button>

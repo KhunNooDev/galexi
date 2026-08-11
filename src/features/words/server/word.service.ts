@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { asc, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
 import { wordCategories, words } from '@/db/schema';
@@ -110,8 +110,9 @@ export async function deleteWord(id: number) {
   return deletedWord ?? null;
 }
 
-export function listPublicWordSummaries() {
+export function listPublicWordSummaries(query = '') {
   const normalizedWord = sql<string>`lower(${words.word})`;
+  const normalizedQuery = query.trim();
 
   return getDatabase()
     .select({
@@ -119,7 +120,11 @@ export function listPublicWordSummaries() {
       entries: sql<number>`count(*)::int`,
     })
     .from(words)
-    .where(eq(words.isPublic, true))
+    .where(
+      normalizedQuery
+        ? and(eq(words.isPublic, true), ilike(words.word, `%${normalizedQuery}%`))
+        : eq(words.isPublic, true),
+    )
     .groupBy(normalizedWord)
     .orderBy(asc(normalizedWord));
 }

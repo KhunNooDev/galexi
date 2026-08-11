@@ -13,7 +13,7 @@ export default async function NotFound() {
       <section
         aria-describedby='not-found-description'
         aria-labelledby='not-found-title'
-        className='w-full max-w-lg rounded-3xl border border-border bg-surface p-7 text-center shadow-xl shadow-primary/5 sm:p-10'
+        className='galexi-panel w-full max-w-lg p-7 text-center sm:p-10'
       >
         <span className='mx-auto grid size-12 place-items-center rounded-2xl bg-primary/12 text-primary'>
           <SearchX aria-hidden='true' className='size-6' />

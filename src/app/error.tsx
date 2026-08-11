@@ -27,7 +27,7 @@ export default function Error({ error, unstable_retry }: ErrorProps) {
       <section
         aria-describedby='error-description'
         aria-labelledby='error-title'
-        className='w-full max-w-lg rounded-3xl border border-border bg-surface p-7 text-center shadow-xl shadow-primary/5 sm:p-10'
+        className='galexi-panel w-full max-w-lg p-7 text-center sm:p-10'
         role='alert'
       >
         <span className='mx-auto grid size-12 place-items-center rounded-2xl bg-danger/10 text-danger'>
