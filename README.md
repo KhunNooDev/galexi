@@ -59,8 +59,10 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/api/categories`: administrator-only Hono CRUD API for categories
 
 Public visitors, guests, and members can read published entries. Administrators can view and manage
-every entry, including unpublished entries. See [Architecture](docs/architecture.md) for the data
-model and permission boundaries.
+every entry, including unpublished entries. Guests and permanent users share the same server-only
+learning persistence model, ready for future onboarding and lesson flows. Guest persistence requires
+Anonymous Sign-Ins to be enabled in the connected Supabase Auth project. See
+[Architecture](docs/architecture.md) for the data model and permission boundaries.
 
 ## Identity boundary
 
@@ -75,7 +77,7 @@ avatar. `user_roles` separately controls what that user is allowed to do through
 metadata, or client-side state.
 
 - Guests can read public dictionary entries and try the learning experience.
-- Members can read public entries; correction reports and learning progress are planned for later.
+- Members can read public entries. Learning persistence is available for future learning UI.
 - Administrators can manage the shared Global Dictionary.
 
 ## Scripts

@@ -27,8 +27,43 @@ Deleting a category cascades only to its link rows; it never deletes dictionary 
 | Member        | Read public entries and try the learning experience             | Report incorrect information and track learning progress |
 | Administrator | Read and manage all Global Dictionary entries, including drafts | None                                                     |
 
-The planned member capabilities are not implemented yet and do not affect the current permission
-model.
+The learning persistence foundation is implemented, but learning UI and curriculum flows are not.
+Correction reports remain planned and do not affect the current permission model.
+
+## Learning data
+
+Guest and permanent identities use the same ownership model for learning state. Every learning row
+references `auth.users.id`; a guest who links an identity while retaining the same Auth user ID keeps
+all learning data without a database migration.
+
+The connected Supabase Auth project must have Anonymous Sign-Ins enabled before the application can
+create Guest identities. RLS treats those anonymous Auth users as `authenticated` and still isolates
+every row by `auth.uid()`.
+
+| Table                | Purpose                                        | Ownership key         |
+| -------------------- | ---------------------------------------------- | --------------------- |
+| `learning_profiles`  | Goal, level, and onboarding completion         | `user_id` primary key |
+| `learning_sessions`  | Resumable and historical lesson session state  | `user_id`             |
+| `user_word_progress` | Long-term counts and mastery for a global Word | `(user_id, word_id)`  |
+
+Learning goals and levels use small PostgreSQL enums matching the application-supported values.
+Session status is `in_progress`, `completed`, or `abandoned`; current step and score ranges are
+database constrained, session JSON is limited to 32 KiB, and completion timestamps must agree with
+completed status. Word progress counters cannot be negative and mastery is an integer from 0 to 100.
+
+All learning references to `auth.users` use `ON DELETE CASCADE`. Deleting a dictionary Word also
+cascades its progress rows because progress has no meaning without its global dictionary entry. The
+dictionary remains system-wide and is never owned by a learner.
+
+RLS grants authenticated guests and permanent users `SELECT`, `INSERT`, and column-scoped `UPDATE`
+access only where `(select auth.uid()) = user_id`. There is no direct learning-row DELETE or TRUNCATE
+privilege. Lifecycle deletion occurs through the user and Word foreign keys. The server-only
+learning services independently derive the current identity and include the owner predicate in
+every query; they never accept a client-provided owner ID.
+
+The first-flow indexes support current session lookup by user, status, and recent update; session
+history by user and start time; recent Word progress by user and last-seen time; and efficient Word
+foreign-key cleanup. The composite progress primary key already supports exact user-and-Word lookup.
 
 ## Identity, profiles, and authorization
 
@@ -107,11 +142,11 @@ dictionary row referencing a missing image.
 
 ### Feature ownership
 
-`src/app` remains the routing and page-composition layer. Word- and Category-specific UI, schemas,
-typed Hono RPC wrappers, TanStack Query hooks, and server-only database operations live under
-`src/features/words` and `src/features/categories`. Shared form controls and UI primitives remain in
-`src/components`, while database, Supabase, environment, internationalization, profile, and role
-infrastructure stay outside the product features.
+`src/app` remains the routing and page-composition layer. Word-, Category-, and Learning-specific
+schemas and server-only database operations live under their matching feature directories. Word and
+Category UI, typed Hono RPC wrappers, and TanStack Query hooks remain feature-owned. Shared form
+controls and UI primitives remain in `src/components`, while database, Supabase, environment,
+internationalization, profile, and role infrastructure stay outside the product features.
 
 The dependency direction is App Router → features → shared UI and infrastructure. Feature client
 components can use their typed API wrappers, but cannot import the server-only service directories.
