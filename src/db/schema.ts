@@ -6,6 +6,7 @@ import {
   pgEnum,
   pgPolicy,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -134,5 +135,63 @@ export const words = pgTable(
   ],
 ).enableRLS();
 
+export const categories = pgTable(
+  'categories',
+  {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar('name', { length: 80 }).notNull(),
+    slug: varchar('slug', { length: 80 }).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex('categories_slug_unique').on(sql`lower(${table.slug})`),
+    index('categories_sort_order_idx').on(table.sortOrder, table.name),
+    pgPolicy('Admins can manage categories', {
+      for: 'all',
+      to: authenticatedRole,
+      using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+      withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+    }),
+    pgPolicy('Public can view categories for published words', {
+      for: 'select',
+      to: [anonRole, authenticatedRole],
+      using: sql`exists (select 1 from word_categories wc join words w on w.id = wc.word_id where wc.category_id = ${table.id} and w.is_public = true)`,
+    }),
+  ],
+).enableRLS();
+
+export const wordCategories = pgTable(
+  'word_categories',
+  {
+    wordId: integer('word_id')
+      .notNull()
+      .references(() => words.id, { onDelete: 'cascade' }),
+    categoryId: integer('category_id')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.wordId, table.categoryId] }),
+    index('word_categories_category_id_idx').on(table.categoryId, table.wordId),
+    pgPolicy('Admins can manage word categories', {
+      for: 'all',
+      to: authenticatedRole,
+      using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+      withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+    }),
+    pgPolicy('Public can view categories for published words', {
+      for: 'select',
+      to: [anonRole, authenticatedRole],
+      using: sql`exists (select 1 from ${words} where ${words.id} = ${table.wordId} and ${words.isPublic} = true)`,
+    }),
+  ],
+).enableRLS();
+
 export type NewWord = typeof words.$inferInsert;
+export type Category = typeof categories.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;

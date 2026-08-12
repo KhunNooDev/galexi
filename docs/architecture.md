@@ -15,6 +15,10 @@ Both columns reference `auth.users.id` with `ON DELETE SET NULL`. Removing an ad
 therefore removes the audit association without deleting or reassigning dictionary content. These
 fields are audit metadata and are not used as ownership or authorization boundaries.
 
+Vocabulary topics use a normalized many-to-many model. `categories` stores the reusable topic
+name, URL slug, and display order, while `word_categories` links any word to any number of topics.
+Deleting a category cascades only to its link rows; it never deletes dictionary entries.
+
 ## Access model
 
 | Actor         | Current dictionary access                                       | Planned member capabilities                              |
@@ -56,6 +60,11 @@ profile fields. No authenticated-user grant or policy permits direct role update
 policy permits dictionary management based on `user_roles`, and Hono mutation routes independently
 require the administrator role before calling the dictionary server functions.
 
+Category policies follow the same boundary. Guests and members can see only categories and
+relationships connected to public words. Administrators manage all categories and relationships.
+Public category pages still join through `words.is_public = true`, so a private word cannot be
+revealed through category navigation.
+
 ## Application flow
 
 - Public search and flashcard queries always filter on `is_public = true`.
@@ -65,3 +74,70 @@ require the administrator role before calling the dictionary server functions.
 - Updating an entry leaves `created_by` unchanged and sets `updated_by` to the current
   administrator ID.
 - Word images are stored in Supabase Storage and referenced by the dictionary entry.
+
+### Word image consistency
+
+The browser uploads a candidate image directly to the private `word-images` bucket before saving
+the Word. PostgreSQL remains authoritative: `words.image_url` determines whether a Storage object is
+in use. If a save has an uncertain client outcome, the browser may request cleanup, but only the
+server decides whether removal is safe by checking the current dictionary references first.
+
+Image replacement and Word deletion commit their database changes before the previous image becomes
+a cleanup candidate. Every automatic cleanup path uses the same database-aware service and retains
+any referenced object. Saves and cleanup coordinate with the same path-scoped PostgreSQL advisory
+lock. A save that introduces an image reference verifies the Storage object while holding that lock,
+so cleanup cannot race a pending save into committing a missing image. Cleanup is idempotent and
+best-effort; a temporary Storage failure may leave an orphan object, which is preferable to a
+dictionary row referencing a missing image.
+
+### Feature ownership
+
+`src/app` remains the routing and page-composition layer. Word- and Category-specific UI, schemas,
+typed Hono RPC wrappers, TanStack Query hooks, and server-only database operations live under
+`src/features/words` and `src/features/categories`. Shared form controls and UI primitives remain in
+`src/components`, while database, Supabase, environment, internationalization, profile, and role
+infrastructure stay outside the product features.
+
+The dependency direction is App Router → features → shared UI and infrastructure. Feature client
+components can use their typed API wrappers, but cannot import the server-only service directories.
+Server Components call feature services directly rather than making HTTP requests to Galexi's API.
+
+### Data access boundaries
+
+Server Components read application data directly through the server-only modules. They do not make
+HTTP requests back to the application's own API:
+
+```text
+Server Component -> src/features/*/server -> Drizzle -> PostgreSQL
+```
+
+Interactive administrator Words CRUD uses a small client-side server-state layer. The `/admin/words`
+Server Component still reads the initial list with `listWords()` and passes it to the client as
+TanStack Query initial data. Subsequent reads and mutations follow this path:
+
+```text
+Client Component -> TanStack Query -> feature API wrapper -> typed Hono client
+                 -> Next.js API entry -> root Hono API -> feature route
+                 -> feature server layer -> Drizzle / external service
+```
+
+Only the reusable API client instantiates `hc<ApiType>`. Components and query hooks do not know the
+Hono route structure, and feature database operations remain confined to server-only feature
+services. Shared authorization and profile helpers remain in `src/server`. Authentication and
+profile forms continue to use their existing Server Actions.
+
+The optional catch-all Next.js API entry only adapts the composed Hono application to Next.js. The
+root Hono module applies the `/api` base path, composes feature-owned Word, Category, and Word Image
+routers, and provides the unexpected-error fallback. Shared administrator middleware authenticates
+the request, resolves authorization from `user_roles`, and exposes `adminUserId` to protected route
+handlers. Expected duplicate errors are mapped by the owning feature router so domain responses stay
+accurate.
+
+### App Router boundaries
+
+- `loading.tsx` represents expected pending work and keeps shared layouts interactive.
+- `notFound()` represents a genuinely missing public resource or administrator dictionary entry.
+- `error.tsx` handles unexpected runtime failures without exposing internal error details.
+- Authentication failures redirect to sign in; they are not presented as missing resources.
+- Authenticated users without administrator access redirect to public vocabulary; route names do
+  not replace server-side authorization checks.

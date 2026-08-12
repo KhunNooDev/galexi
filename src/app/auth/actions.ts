@@ -70,7 +70,7 @@ export async function signIn(_state: AuthState, formData: FormData): Promise<Aut
     return { error: t('auth.validation.incorrectCredentials') };
   }
 
-  redirect(ROUTES.WORDS);
+  redirect(ROUTES.MANAGE_WORDS);
 }
 
 export async function signUp(_state: AuthState, formData: FormData): Promise<AuthState> {
@@ -112,7 +112,7 @@ export async function signUp(_state: AuthState, formData: FormData): Promise<Aut
     return { success: t('auth.validation.checkEmail') };
   }
 
-  redirect(ROUTES.WORDS);
+  redirect(ROUTES.MANAGE_WORDS);
 }
 
 export async function signOut() {

@@ -1,14 +1,14 @@
 :root {
-  --background: #f4f8ff;
+  --background: #f6f9ff;
   --foreground: #111a33;
   --surface: #ffffff;
   --surface-foreground: #10182d;
-  --field: #f4f8ff;
+  --field: #f8faff;
   --muted-foreground: #5b6680;
-  --border: rgb(59 90 160 / 14%);
-  --primary: #335cff;
+  --border: rgb(60 86 145 / 16%);
+  --primary: #1769ff;
   --primary-foreground: #ffffff;
-  --primary-hover: #2448d8;
+  --primary-hover: #0957e8;
   --secondary-hover: #edf3ff;
   --focus: #5276ff;
   --danger: #dc2626;
@@ -31,11 +31,11 @@
 :root.dark {
   --background: #050816;
   --foreground: #eaf1ff;
-  --surface: #090d20;
+  --surface: #090e22;
   --surface-foreground: #f1f5ff;
-  --field: #050816;
+  --field: #070b1c;
   --muted-foreground: #9ca8c8;
-  --border: rgb(130 162 255 / 18%);
+  --border: rgb(130 162 255 / 20%);
   --primary: #7aa2ff;
   --primary-foreground: #081126;
   --primary-hover: #9ab8ff;

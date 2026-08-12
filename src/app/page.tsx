@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { ArrowRight, BookOpenText, Globe2, Languages, ShieldCheck } from 'lucide-react';
+import { ArrowRight, BookOpenText, Globe2, Languages, Search, ShieldCheck } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
@@ -26,21 +26,21 @@ export default async function Home() {
   ];
 
   return (
-    <main className='relative min-h-svh overflow-x-clip bg-background px-4 pb-6 sm:px-8'>
+    <main className='relative min-h-svh overflow-x-clip bg-background'>
       <div className='pointer-events-none absolute inset-0'>
         <div className='absolute -top-40 left-1/2 size-96 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl' />
         <div className='absolute top-1/3 -right-32 size-80 rounded-full bg-[#22d3ee]/10 blur-3xl' />
       </div>
 
-      <div className='relative mx-auto flex min-h-[calc(100svh-1.5rem)] max-w-7xl flex-col'>
+      <div className='relative mx-auto flex min-h-svh max-w-7xl flex-col'>
         <PageHeader brand />
 
-        <section className='flex flex-1 flex-col justify-center py-16 sm:py-24'>
+        <section className='flex flex-1 flex-col justify-center px-5 py-14 sm:px-8 sm:py-20'>
           <div className='mx-auto max-w-3xl text-center'>
             <p className='mb-5 text-sm font-semibold tracking-[0.2em] text-primary uppercase'>
               {t('home.eyebrow')}
             </p>
-            <h1 className='text-4xl leading-tight font-semibold tracking-tight text-foreground sm:text-6xl sm:leading-tight'>
+            <h1 className='text-4xl leading-tight font-semibold tracking-[-0.035em] text-foreground sm:text-6xl sm:leading-tight'>
               {t('home.heading')}
             </h1>
             <p className='mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8'>
@@ -55,27 +55,27 @@ export default async function Home() {
                 <ArrowRight aria-hidden='true' className='size-4' />
               </Link>
               <Link
-                href={ROUTES.WORDS}
-                className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
+                href={ROUTES.PUBLIC_WORDS}
+                className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-secondary-hover'
               >
-                <BookOpenText aria-hidden='true' className='size-4' />
+                <Search aria-hidden='true' className='size-4' />
                 {t('home.openWords')}
               </Link>
               <Link
-                href={ROUTES.SEARCH_WORDS}
-                className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground transition-colors hover:bg-secondary-hover'
+                href={ROUTES.CATEGORIES}
+                className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-secondary-hover'
               >
                 <Globe2 aria-hidden='true' className='size-4' />
-                {t('home.browsePublicWords')}
+                {t('home.browseCategories')}
               </Link>
             </div>
           </div>
 
-          <div className='mx-auto mt-16 grid w-full max-w-4xl gap-4 md:grid-cols-3'>
+          <div className='mx-auto mt-14 grid w-full max-w-5xl gap-4 md:grid-cols-3'>
             {features.map(({ description, icon: Icon, title }) => (
               <article
                 key={title}
-                className='rounded-3xl border border-border bg-surface/80 p-6 shadow-sm backdrop-blur-sm'
+                className='rounded-3xl border border-border bg-surface/90 p-6 shadow-[0_18px_55px_rgb(34_74_150/7%)] backdrop-blur-sm'
               >
                 <span className='mb-4 inline-flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary'>
                   <Icon aria-hidden='true' className='size-5' />

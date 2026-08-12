@@ -3,6 +3,24 @@
     "title": "Galexi",
     "description": "An admin-managed global dictionary with public vocabulary flashcards."
   },
+  "boundaries": {
+    "loading": "Loading Galexi...",
+    "adminLoading": "Loading dictionary management...",
+    "categoriesLoading": "Loading vocabulary topics...",
+    "error": {
+      "title": "Something went wrong",
+      "description": "We could not load this page. Try again, or return home."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page or vocabulary entry you requested does not exist or is not available."
+    },
+    "actions": {
+      "retry": "Try again",
+      "home": "Return home",
+      "browseWords": "Browse vocabulary"
+    }
+  },
   "home": {
     "brand": "Galexi",
     "eyebrow": "Your vocabulary universe",
@@ -10,7 +28,7 @@
     "description": "Study a shared dictionary of pronunciations, meanings, and examples maintained by administrators.",
     "getStarted": "Get started",
     "openWords": "Open words",
-    "browsePublicWords": "Search words",
+    "browseCategories": "Browse topics",
     "profile": "Profile",
     "secureTitle": "Role-protected editing",
     "secureDescription": "Administrators maintain the dictionary while every learner can study published words.",
@@ -22,7 +40,9 @@
   },
   "header": {
     "accountMenu": "Open account menu",
-    "signedInAs": "Signed in as"
+    "adminNavigation": "Dictionary management",
+    "categories": "Categories",
+    "words": "Words"
   },
   "auth": {
     "signInTitle": "Welcome back",
@@ -81,9 +101,6 @@
     "createdAt": "Account created",
     "lastSignIn": "Last sign-in",
     "notAvailable": "Not available",
-    "backHome": "Back home",
-    "manageWords": "Manage words",
-    "searchWords": "Search words",
     "validation": {
       "displayNameTooLong": "Display name must be {maxLength} characters or fewer.",
       "invalidAvatarUrl": "Enter a valid HTTP or HTTPS URL.",
@@ -91,8 +108,66 @@
       "unauthorized": "Sign in again before updating your profile."
     }
   },
-  "words": {
+  "categories": {
     "backHome": "Back home",
+    "backToCategories": "Back to categories",
+    "pageTitle": "Learn vocabulary",
+    "pageDescription": "What do you want to learn?",
+    "searchLabel": "Search topics",
+    "searchPlaceholder": "Search topics...",
+    "wordCount": "{count, plural, one {# word} other {# words}}",
+    "empty": "No public vocabulary topics are available yet.",
+    "noResults": "No topics match your search.",
+    "searchWithinLabel": "Search within this category",
+    "searchWithin": "Search {category}...",
+    "partOfSpeechFilter": "Filter by part of speech",
+    "partOfSpeechSearchPlaceholder": "Search parts of speech...",
+    "partOfSpeechNoResults": "No matching part of speech.",
+    "allPartsOfSpeech": "All parts of speech",
+    "filter": "Filter",
+    "openFlashcard": "Study flashcard",
+    "noWords": "No public words match these filters.",
+    "errorTitle": "Categories could not be loaded",
+    "errorDescription": "Please try again in a moment.",
+    "tryAgain": "Try again",
+    "manager": {
+      "title": "Categories",
+      "add": "Add category",
+      "actions": "Category actions: {name}",
+      "resultCount": "{count, plural, one {# category} other {# categories}}",
+      "searchLabel": "Search categories",
+      "searchPlaceholder": "Search categories...",
+      "searchAction": "Search categories",
+      "noResults": "No categories match your search.",
+      "empty": "No categories yet.",
+      "moveUp": "Move {name} up",
+      "moveDown": "Move {name} down",
+      "edit": "Edit {name}",
+      "delete": "Delete {name}",
+      "createTitle": "Add category",
+      "editTitle": "Edit category",
+      "close": "Close category dialog",
+      "name": "Name",
+      "slug": "Slug",
+      "slugHint": "Use lowercase letters, numbers, and hyphens.",
+      "sortOrder": "Sort order",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "deleteTitle": "Delete this category?",
+      "deleteDescription": "“{name}” will be removed from its words. The vocabulary words themselves will not be deleted.",
+      "confirmDelete": "Delete category",
+      "duplicateSlug": "That category slug is already in use.",
+      "requestError": "The category request failed. Please try again.",
+      "validation": {
+        "nameRequired": "Category name is required.",
+        "required": "This field is required.",
+        "invalidSlug": "Use lowercase letters, numbers, and single hyphens only.",
+        "sortOrderInvalid": "Enter a whole number from 0 to 10000.",
+        "tooLong": "Use 80 characters or fewer."
+      }
+    }
+  },
+  "words": {
     "manager": {
       "wordLabel": "Word",
       "wordPlaceholder": "e.g. galaxy",
@@ -105,6 +180,16 @@
       "partOfSpeechSearchPlaceholder": "Search parts of speech...",
       "partOfSpeechNoResults": "No matching part of speech.",
       "partOfSpeechClear": "Clear selection",
+      "categoriesLabel": "Categories",
+      "categoriesPlaceholder": "Select categories",
+      "categoriesHint": "Search and select one or more categories.",
+      "categoriesSearchPlaceholder": "Search categories...",
+      "categoriesNoResults": "No matching categories.",
+      "removeCategory": "Remove {name}",
+      "categoryFilterLabel": "Filter by category",
+      "allCategories": "All categories",
+      "partOfSpeechFilterLabel": "Filter by part of speech",
+      "allPartsOfSpeech": "All parts of speech",
       "meaningsThLabel": "Thai meanings",
       "meaningsThPlaceholder": "Type a meaning and press Enter",
       "meaningsThHint": "Press Enter or the plus button to add each meaning.",
@@ -137,6 +222,21 @@
       "listTitle": "Vocabulary",
       "searchLabel": "Search words",
       "searchPlaceholder": "Search vocabulary...",
+      "searchAction": "Search vocabulary",
+      "filters": "Show filters",
+      "resultCount": "{count, plural, one {# word} other {# words}}",
+      "paginationLabel": "Vocabulary pages",
+      "firstPage": "First page",
+      "previousPage": "Previous page",
+      "nextPage": "Next page",
+      "lastPage": "Last page",
+      "goToPage": "Go to page {page}",
+      "pageSizeLabel": "Words per page",
+      "showingResults": "Showing {from}-{to} of {total}",
+      "gridView": "Grid view",
+      "listView": "List view",
+      "visibility": "Visibility",
+      "actions": "Word actions",
       "empty": "No words yet. Add your first word.",
       "noSearchResults": "No words match your search.",
       "edit": "Edit word",
@@ -151,8 +251,6 @@
       "openDetails": "Open flashcard",
       "openPublicPage": "Open public page",
       "openImage": "Open image",
-      "loading": "Loading words...",
-      "loadError": "Words could not be loaded.",
       "requestError": "The word request failed. Please try again.",
       "validation": {
         "wordRequired": "Word is required.",
@@ -166,7 +264,6 @@
     },
     "flashcard": {
       "backToWords": "Back to words",
-      "backHome": "Back home",
       "imageAlt": "Visual for {word}",
       "listen": "Listen to {word}",
       "ipaLabel": "IPA",
@@ -181,6 +278,10 @@
     "search": {
       "pageTitle": "Search vocabulary",
       "pageDescription": "Explore flashcards published by Galexi administrators.",
+      "searchLabel": "Search public vocabulary",
+      "searchPlaceholder": "Search by word...",
+      "resultCount": "{count, plural, one {# word found} other {# words found}}",
+      "noResults": "No published words match your search.",
       "empty": "No public words have been published yet.",
       "backHome": "Back home",
       "backToSearch": "Back to word search",

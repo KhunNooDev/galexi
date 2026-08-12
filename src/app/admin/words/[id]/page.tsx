@@ -2,21 +2,14 @@ import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
-import { WordFlashcard } from '@/components/word-flashcard';
 import { USER_ROLE } from '@/constants/role';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { WordFlashcard } from '@/features/words/components/word-flashcard';
+import { getWordById } from '@/features/words/server/word.service';
 import { getCurrentUserClaims } from '@/lib/supabase/auth';
 import { getUserRole } from '@/server/roles';
-import { getWordById } from '@/server/words';
 
-export default async function WordDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: idParam } = await params;
-  const id = Number(idParam);
-
-  if (!Number.isSafeInteger(id) || id <= 0) {
-    notFound();
-  }
-
+export default async function ManageWordDetailsPage({ params }: PageProps<'/admin/words/[id]'>) {
   const claims = await getCurrentUserClaims();
 
   if (!claims) {
@@ -24,7 +17,14 @@ export default async function WordDetailsPage({ params }: { params: Promise<{ id
   }
 
   if ((await getUserRole(claims.sub)) !== USER_ROLE.ADMIN) {
-    redirect(ROUTES.SEARCH_WORDS);
+    redirect(ROUTES.PUBLIC_WORDS);
+  }
+
+  const { id: idParam } = await params;
+  const id = Number(idParam);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    notFound();
   }
 
   const word = await getWordById(id);
@@ -36,16 +36,18 @@ export default async function WordDetailsPage({ params }: { params: Promise<{ id
   const t = await getTranslations();
 
   return (
-    <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
+    <main className='min-h-svh bg-background pb-10'>
       <div className='mx-auto max-w-7xl'>
         <PageHeader
-          backHref={ROUTES.WORDS}
+          backHref={ROUTES.MANAGE_WORDS}
           backLabel={t('words.flashcard.backToWords')}
-          className='mb-8'
+          isAdmin
           user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}
         />
 
-        <WordFlashcard word={word} />
+        <div className='px-4 py-8 sm:px-8 lg:py-10'>
+          <WordFlashcard word={word} />
+        </div>
       </div>
     </main>
   );

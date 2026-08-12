@@ -15,7 +15,6 @@ type ProfileMenuProps = {
   profileLabel: string;
   signInLabel: string;
   signOutLabel: string;
-  signedInAsLabel: string;
 };
 
 export function ProfileMenu({
@@ -25,7 +24,6 @@ export function ProfileMenu({
   profileLabel,
   signInLabel,
   signOutLabel,
-  signedInAsLabel,
 }: ProfileMenuProps) {
   return (
     <Popover>
@@ -34,7 +32,7 @@ export function ProfileMenu({
           type='button'
           variant='outline'
           size='icon-lg'
-          className='cursor-pointer rounded-full border-border bg-surface text-muted-foreground shadow-sm hover:bg-secondary-hover hover:text-foreground dark:bg-surface dark:hover:bg-secondary-hover'
+          className='size-10 cursor-pointer rounded-full border-border bg-surface text-muted-foreground shadow-sm hover:bg-secondary-hover hover:text-foreground dark:bg-surface dark:hover:bg-secondary-hover'
           aria-label={accountMenuLabel}
         >
           <UserRound aria-hidden='true' className='size-4' />
@@ -45,8 +43,7 @@ export function ProfileMenu({
           <>
             {email && (
               <div className='border-b border-border px-3 py-2.5'>
-                <p className='text-xs text-muted-foreground'>{signedInAsLabel}</p>
-                <p className='mt-1 truncate text-sm font-medium text-surface-foreground'>{email}</p>
+                <p className='truncate text-sm font-medium text-surface-foreground'>{email}</p>
               </div>
             )}
             <div className='py-1'>

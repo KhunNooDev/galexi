@@ -3,22 +3,28 @@ import { AUTH_MODE } from '@/constants/auth';
 export const ROUTES = {
   AUTH: '/auth',
   AUTH_CALLBACK: '/auth/callback',
+  CATEGORIES: '/categories',
+  MANAGE_CATEGORIES: '/admin/categories',
+  MANAGE_WORDS: '/admin/words',
   HOME: '/',
   PROFILE: '/profile',
-  WORDS: '/words',
-  SEARCH_WORDS: '/words/search',
+  PUBLIC_WORDS: '/words/search',
 } as const;
 
-export function getWordRoute(id: number) {
-  return `${ROUTES.WORDS}/${id}`;
+export function getCategoryRoute(slug: string) {
+  return `${ROUTES.CATEGORIES}/${encodeURIComponent(slug)}`;
+}
+
+export function getManageWordRoute(id: number) {
+  return `${ROUTES.MANAGE_WORDS}/${id}`;
 }
 
 export function getWordImageRoute(id: number) {
   return `/api/word-images/${id}`;
 }
 
-export function getSearchWordRoute(word: string) {
-  return `${ROUTES.SEARCH_WORDS}/${encodeURIComponent(word)}`;
+export function getPublicWordRoute(word: string) {
+  return `${ROUTES.PUBLIC_WORDS}/${encodeURIComponent(word)}`;
 }
 
 export function decodeWordRouteParam(word: string) {

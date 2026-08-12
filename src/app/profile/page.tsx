@@ -1,8 +1,6 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import {
-  BookOpenText,
   CalendarDays,
   CheckCircle2,
   Clock3,
@@ -17,7 +15,7 @@ import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { PageHeader } from '@/components/page-header';
 import { ProfileForm } from '@/components/profile-form';
 import { USER_ROLE } from '@/constants/role';
-import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { AUTH_ROUTES } from '@/constants/routes';
 import { getCurrentUser } from '@/lib/supabase/auth';
 import { getOrCreateProfile } from '@/server/profiles';
 import { getUserRole } from '@/server/roles';
@@ -82,27 +80,11 @@ export default async function ProfilePage() {
   ];
 
   return (
-    <main className='min-h-svh bg-background px-4 pb-6 sm:px-8 sm:pb-10'>
+    <main className='min-h-svh bg-background pb-10'>
       <div className='mx-auto max-w-7xl'>
-        <PageHeader
-          backHref={ROUTES.HOME}
-          backLabel={t('profile.backHome')}
-          className='mb-8'
-          user={{ email: user.email }}
-          actions={
-            <Link
-              href={role === USER_ROLE.ADMIN ? ROUTES.WORDS : ROUTES.SEARCH_WORDS}
-              className='inline-flex h-10 items-center gap-2 rounded-full border border-border px-4 text-sm font-medium transition-colors hover:bg-secondary-hover'
-            >
-              <BookOpenText aria-hidden='true' className='size-4' />
-              <span className='hidden sm:inline'>
-                {role === USER_ROLE.ADMIN ? t('profile.manageWords') : t('profile.searchWords')}
-              </span>
-            </Link>
-          }
-        />
+        <PageHeader brand isAdmin={role === USER_ROLE.ADMIN} user={{ email: user.email }} />
 
-        <section className='mx-auto max-w-4xl overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
+        <section className='mx-auto mt-8 max-w-4xl overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
           <div className='flex items-center gap-5 border-b border-border bg-[linear-gradient(135deg,rgb(56_189_248/16%),rgb(79_124_255/14%),rgb(113_88_232/14%))] px-6 py-8 sm:gap-6 sm:px-10 sm:py-10'>
             <div className='inline-flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-primary text-2xl font-semibold text-primary-foreground shadow-lg shadow-primary/20 sm:size-24'>
               {profile.avatarUrl ? (
