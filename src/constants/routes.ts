@@ -23,6 +23,10 @@ export function getManageWordRoute(id: number) {
   return `${ROUTES.MANAGE_WORDS}/${id}`;
 }
 
+export function getLessonRoute(lessonKey: string) {
+  return `/learn/lesson/${encodeURIComponent(lessonKey)}`;
+}
+
 export function getWordImageRoute(id: number) {
   return `/api/word-images/${id}`;
 }

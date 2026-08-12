@@ -5,8 +5,9 @@ import { ArrowRight, CircleCheck, Target } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { IDENTITY_KIND } from '@/constants/identity';
-import { ROUTES } from '@/constants/routes';
+import { getLessonRoute, ROUTES } from '@/constants/routes';
 import { OnboardingShell } from '@/features/learning/components/onboarding-shell';
+import { FIRST_LESSON_KEY } from '@/features/learning/lessons/lesson-catalog';
 import {
   ensureCurrentLearningOnboardingComplete,
   getOrCreateCurrentLearningProfile,
@@ -63,7 +64,7 @@ export default async function LearningReadyPage() {
         </div>
       </div>
       <Button asChild className='mt-7 h-12 rounded-full px-6'>
-        <Link href={ROUTES.PUBLIC_WORDS}>
+        <Link href={getLessonRoute(FIRST_LESSON_KEY)}>
           {t('learning.ready.browseWords')}
           <ArrowRight aria-hidden='true' />
         </Link>

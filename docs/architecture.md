@@ -27,8 +27,9 @@ Deleting a category cascades only to its link rows; it never deletes dictionary 
 | Member        | Read public entries and try the learning experience             | Report incorrect information and track learning progress |
 | Administrator | Read and manage all Global Dictionary entries, including drafts | None                                                     |
 
-The learning onboarding UI and persistence foundation are implemented. Lesson curriculum and
-correction reports remain planned and do not affect the current permission model.
+The learning onboarding UI, first vocabulary lesson, and persistence foundation are implemented.
+Practice activities and correction reports remain planned and do not affect the current permission
+model.
 
 ## Learning data
 
@@ -119,7 +120,7 @@ revealed through category navigation.
 
 ## Application flow
 
-### Learning onboarding
+### Learning onboarding and Lesson 1
 
 - The landing page remains public and does not create an Auth user during rendering.
 - Choosing Start learning creates a Supabase anonymous Guest only when no existing session is
@@ -128,8 +129,17 @@ revealed through category navigation.
 - Goal and level selections are validated and persisted immediately through authenticated Server
   Actions. The browser does not keep canonical onboarding state in local storage or the URL.
 - Selecting a level completes onboarding only when the current user's persisted goal exists.
-- `/learn/start/ready` is the current handoff boundary. Lesson content is intentionally outside this
-  implementation.
+- `/learn/start/ready` hands the learner into the code-defined Lesson 1 catalog.
+- `/learn/lesson/[lessonKey]` loads only published Global Dictionary entries. A curated lesson fails
+  closed if any required Word is missing or unpublished.
+- Lesson entry resumes the latest owned `in_progress` session or creates one under a transaction
+  advisory lock. Older duplicate sessions for the same user and lesson are abandoned.
+- Advancing a card saves the authoritative position before the client moves. Expected Word and step
+  values make retries and stale tabs idempotent instead of skipping cards or moving progress back.
+- First exposure updates only `seen_count` and `last_seen_at`. Learn does not change correctness,
+  incorrectness, score, or mastery.
+- Completing Learn changes the session phase to the Practice handoff while leaving the session
+  `in_progress`. Practice questions and scoring remain intentionally unimplemented.
 
 - Public search and flashcard queries always filter on `is_public = true`.
 - Administrator list and detail queries operate on the complete global dictionary and never filter
