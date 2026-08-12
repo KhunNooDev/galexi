@@ -27,8 +27,8 @@ Deleting a category cascades only to its link rows; it never deletes dictionary 
 | Member        | Read public entries and try the learning experience             | Report incorrect information and track learning progress |
 | Administrator | Read and manage all Global Dictionary entries, including drafts | None                                                     |
 
-The learning persistence foundation is implemented, but learning UI and curriculum flows are not.
-Correction reports remain planned and do not affect the current permission model.
+The learning onboarding UI and persistence foundation are implemented. Lesson curriculum and
+correction reports remain planned and do not affect the current permission model.
 
 ## Learning data
 
@@ -55,11 +55,13 @@ All learning references to `auth.users` use `ON DELETE CASCADE`. Deleting a dict
 cascades its progress rows because progress has no meaning without its global dictionary entry. The
 dictionary remains system-wide and is never owned by a learner.
 
-RLS grants authenticated guests and permanent users `SELECT`, `INSERT`, and column-scoped `UPDATE`
-access only where `(select auth.uid()) = user_id`. There is no direct learning-row DELETE or TRUNCATE
-privilege. Lifecycle deletion occurs through the user and Word foreign keys. The server-only
-learning services independently derive the current identity and include the owner predicate in
-every query; they never accept a client-provided owner ID.
+RLS isolates authenticated guests and permanent users to rows where
+`(select auth.uid()) = user_id`. Direct clients have read-only access to learning profiles and cannot
+mutate goal, level, or onboarding completion state. All onboarding mutations run through the
+server-only learning service, which independently derives the current identity and includes the
+owner predicate in every query; it never accepts a client-provided owner ID. There is no direct
+learning-row DELETE or TRUNCATE privilege. Lifecycle deletion occurs through the user and Word
+foreign keys.
 
 The first-flow indexes support current session lookup by user, status, and recent update; session
 history by user and start time; recent Word progress by user and last-seen time; and efficient Word
@@ -70,12 +72,12 @@ foreign-key cleanup. The composite progress primary key already supports exact u
 Supabase `auth.users` remains the source of authentication data. The application deliberately keeps
 descriptive profile data and authorization state in separate tables:
 
-| Identity | Resolution rule                                      | Application access                    |
-| -------- | ---------------------------------------------------- | ------------------------------------- |
-| Public   | No Supabase user or session                          | Published dictionary content          |
-| Guest    | Supabase user has `is_anonymous = true`              | Published content and future learning |
-| Member   | Permanent user has the `member` role in `user_roles` | Member account and profile            |
-| Admin    | Permanent user has the `admin` role in `user_roles`  | Dictionary management                 |
+| Identity | Resolution rule                                      | Application access                   |
+| -------- | ---------------------------------------------------- | ------------------------------------ |
+| Public   | No Supabase user or session                          | Published dictionary content         |
+| Guest    | Supabase user has `is_anonymous = true`              | Published content and learning setup |
+| Member   | Permanent user has the `member` role in `user_roles` | Member account and profile           |
+| Admin    | Permanent user has the `admin` role in `user_roles`  | Dictionary management                |
 
 The server-only identity resolver checks the anonymous Auth state before reading or creating a role.
 This prevents an anonymous user from being converted into an application member as a side effect of
@@ -116,6 +118,18 @@ Public category pages still join through `words.is_public = true`, so a private 
 revealed through category navigation.
 
 ## Application flow
+
+### Learning onboarding
+
+- The landing page remains public and does not create an Auth user during rendering.
+- Choosing Start learning creates a Supabase anonymous Guest only when no existing session is
+  present. Existing Guest, Member, and Admin sessions are reused.
+- `/learn/start` reads `learning_profiles` and resumes at the first missing choice.
+- Goal and level selections are validated and persisted immediately through authenticated Server
+  Actions. The browser does not keep canonical onboarding state in local storage or the URL.
+- Selecting a level completes onboarding only when the current user's persisted goal exists.
+- `/learn/start/ready` is the current handoff boundary. Lesson content is intentionally outside this
+  implementation.
 
 - Public search and flashcard queries always filter on `is_public = true`.
 - Administrator list and detail queries operate on the complete global dictionary and never filter

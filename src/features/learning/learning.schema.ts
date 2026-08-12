@@ -19,14 +19,8 @@ const sessionStateSchema = z
     'Session state is too large',
   );
 
-export const learningProfileUpdateSchema = z
-  .object({
-    goal: learningGoalSchema.nullable(),
-    level: learningLevelSchema.nullable(),
-    onboardingCompletedAt: z.coerce.date().nullable(),
-  })
-  .partial()
-  .refine((values) => Object.keys(values).length > 0, 'At least one profile field is required');
+export const learningGoalInputSchema = z.object({ goal: learningGoalSchema });
+export const learningLevelInputSchema = z.object({ level: learningLevelSchema });
 
 export const createLearningSessionInputSchema = z.object({
   lessonKey: z.string().trim().min(1).max(LEARNING_LIMITS.LESSON_KEY_MAX_LENGTH),

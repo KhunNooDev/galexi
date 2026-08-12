@@ -26,7 +26,8 @@
     "eyebrow": "Your vocabulary universe",
     "heading": "Keep new words in orbit.",
     "description": "Study a shared dictionary of pronunciations, meanings, and examples maintained by administrators.",
-    "getStarted": "Get started",
+    "startLearning": "Start learning",
+    "noAccountRequired": "No account required",
     "openWords": "Open words",
     "browseCategories": "Browse topics",
     "profile": "Profile",
@@ -37,6 +38,88 @@
     "languageTitle": "Ready to translate",
     "languageDescription": "Built with internationalization from the start, with English enabled today.",
     "themeToggle": "Toggle light and dark mode"
+  },
+  "learning": {
+    "back": "Back",
+    "backHome": "Back home",
+    "retry": "Try again",
+    "loading": "Loading your learning setup...",
+    "starting": "Starting...",
+    "saving": "Saving your choice...",
+    "progress": {
+      "start": "Learning setup",
+      "step": "Step {current} of {total}",
+      "complete": "Setup complete"
+    },
+    "start": {
+      "title": "Start learning in a few taps",
+      "description": "Choose your goal and current level so Galexi can prepare the right learning path for you.",
+      "action": "Begin learning",
+      "guestNote": "Your progress is saved to a private Guest session on this device."
+    },
+    "goal": {
+      "eyebrow": "Your goal",
+      "title": "Why are you learning English?",
+      "description": "Choose the one that matters most right now. You can change it later.",
+      "legend": "Choose your learning goal",
+      "options": {
+        "daily_conversation": {
+          "title": "Daily conversation",
+          "description": "Speak more naturally in everyday situations."
+        },
+        "travel": {
+          "title": "Travel",
+          "description": "Navigate trips and connect with people confidently."
+        },
+        "work": {
+          "title": "Work",
+          "description": "Communicate clearly in professional settings."
+        },
+        "school_exam": {
+          "title": "School or exams",
+          "description": "Build vocabulary for study and test preparation."
+        }
+      }
+    },
+    "level": {
+      "eyebrow": "Your level",
+      "title": "How does English feel today?",
+      "description": "Pick the closest match. There is no test and no wrong answer.",
+      "legend": "Choose your current English level",
+      "options": {
+        "starter": {
+          "title": "Just starting",
+          "description": "I know a few words and simple phrases."
+        },
+        "beginner": {
+          "title": "Beginner",
+          "description": "I can understand and use basic sentences."
+        },
+        "intermediate": {
+          "title": "Intermediate",
+          "description": "I can handle familiar conversations and texts."
+        },
+        "advanced": {
+          "title": "Advanced",
+          "description": "I communicate well and want more precision."
+        }
+      }
+    },
+    "ready": {
+      "title": "You are ready for your first lesson",
+      "description": "Your learning preferences are saved. Galexi will use them when the first lesson experience is added.",
+      "nextTitle": "First lesson handoff",
+      "nextDescription": "The lesson experience is the next focused feature. Your setup will be waiting when it is ready.",
+      "browseWords": "Study vocabulary now"
+    },
+    "errors": {
+      "guestSession": "We could not start a Guest session. Please try again.",
+      "sessionLost": "Your learning session is no longer available. Return to the start and try again.",
+      "invalidChoice": "Choose one of the available options.",
+      "update": "We could not save your choice. Please try again.",
+      "pageTitle": "Your learning setup could not load",
+      "pageDescription": "Try again. If your Guest session expired, return home and start learning again."
+    }
   },
   "header": {
     "accountMenu": "Open account menu",

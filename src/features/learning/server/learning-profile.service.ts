@@ -1,10 +1,13 @@
 import 'server-only';
 
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
 import { learningProfiles } from '@/db/schema';
-import { learningProfileUpdateSchema } from '@/features/learning/learning.schema';
+import {
+  learningGoalInputSchema,
+  learningLevelInputSchema,
+} from '@/features/learning/learning.schema';
 import { requireLearningIdentity } from '@/features/learning/server/learning-identity';
 
 const learningProfileColumns = {
@@ -37,15 +40,15 @@ export async function getOrCreateCurrentLearningProfile() {
   return profile;
 }
 
-export async function updateCurrentLearningProfile(input: unknown) {
+export async function saveCurrentLearningGoal(input: unknown) {
   const { userId } = await requireLearningIdentity();
-  const values = learningProfileUpdateSchema.parse(input);
+  const { goal } = learningGoalInputSchema.parse(input);
   const [profile] = await getDatabase()
     .insert(learningProfiles)
-    .values({ userId, ...values })
+    .values({ goal, userId })
     .onConflictDoUpdate({
       target: learningProfiles.userId,
-      set: { ...values, updatedAt: new Date() },
+      set: { goal, updatedAt: new Date() },
     })
     .returning(learningProfileColumns);
 
@@ -54,4 +57,61 @@ export async function updateCurrentLearningProfile(input: unknown) {
   }
 
   return profile;
+}
+
+export async function saveCurrentLearningLevelAndComplete(input: unknown) {
+  const { userId } = await requireLearningIdentity();
+  const { level } = learningLevelInputSchema.parse(input);
+  const database = getDatabase();
+
+  return database.transaction(async (transaction) => {
+    const [currentProfile] = await transaction
+      .select({
+        goal: learningProfiles.goal,
+        onboardingCompletedAt: learningProfiles.onboardingCompletedAt,
+      })
+      .from(learningProfiles)
+      .where(eq(learningProfiles.userId, userId))
+      .limit(1);
+
+    if (!currentProfile?.goal) {
+      throw new Error('Learning goal required');
+    }
+
+    const now = new Date();
+    const [profile] = await transaction
+      .update(learningProfiles)
+      .set({
+        level,
+        onboardingCompletedAt: currentProfile.onboardingCompletedAt ?? now,
+        updatedAt: now,
+      })
+      .where(eq(learningProfiles.userId, userId))
+      .returning(learningProfileColumns);
+
+    if (!profile) {
+      throw new Error('Unable to complete learning onboarding');
+    }
+
+    return profile;
+  });
+}
+
+export async function ensureCurrentLearningOnboardingComplete() {
+  const { userId } = await requireLearningIdentity();
+  const database = getDatabase();
+  const profile = await getOrCreateCurrentLearningProfile();
+
+  if (!profile.goal || !profile.level || profile.onboardingCompletedAt) {
+    return profile;
+  }
+
+  const now = new Date();
+  const [completedProfile] = await database
+    .update(learningProfiles)
+    .set({ onboardingCompletedAt: now, updatedAt: now })
+    .where(and(eq(learningProfiles.userId, userId), isNull(learningProfiles.onboardingCompletedAt)))
+    .returning(learningProfileColumns);
+
+  return completedProfile ?? getOrCreateCurrentLearningProfile();
 }

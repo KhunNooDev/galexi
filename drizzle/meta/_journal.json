@@ -141,6 +141,20 @@
       "when": 1786548720290,
       "tag": "0019_quiet_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786549912107,
+      "tag": "0020_restrict_onboarding_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786550709708,
+      "tag": "0021_restrict_learning_profile_mutations",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,10 @@ export const ROUTES = {
   MANAGE_CATEGORIES: '/admin/categories',
   MANAGE_WORDS: '/admin/words',
   HOME: '/',
+  LEARN_GOAL: '/learn/start/goal',
+  LEARN_LEVEL: '/learn/start/level',
+  LEARN_READY: '/learn/start/ready',
+  LEARN_START: '/learn/start',
   PROFILE: '/profile',
   PUBLIC_WORDS: '/words/search',
 } as const;

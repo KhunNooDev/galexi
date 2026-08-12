@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { ArrowRight, BookOpenText, Globe2, Languages, Search, ShieldCheck } from 'lucide-react';
+import { BookOpenText, Globe2, Languages, Search, ShieldCheck } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
-import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { ROUTES } from '@/constants/routes';
+import { StartLearningForm } from '@/features/learning/components/start-learning-form';
 
 export default async function Home() {
   const t = await getTranslations();
@@ -46,14 +47,14 @@ export default async function Home() {
             <p className='mx-auto mt-6 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8'>
               {t('home.description')}
             </p>
-            <div className='mt-8 flex flex-col justify-center gap-3 sm:flex-row'>
-              <Link
-                href={AUTH_ROUTES.SIGN_IN}
-                className='inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-colors hover:bg-primary-hover'
-              >
-                {t('home.getStarted')}
-                <ArrowRight aria-hidden='true' className='size-4' />
-              </Link>
+            <div className='mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:items-start'>
+              <div>
+                <StartLearningForm
+                  label={t('home.startLearning')}
+                  pendingLabel={t('learning.starting')}
+                />
+                <p className='mt-2 text-xs text-muted-foreground'>{t('home.noAccountRequired')}</p>
+              </div>
               <Link
                 href={ROUTES.PUBLIC_WORDS}
                 className='inline-flex h-12 items-center justify-center gap-2 rounded-full border border-border bg-surface px-6 font-medium text-surface-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-secondary-hover'

@@ -25,9 +25,9 @@ pnpm install
 
 Copy `.env.example` to `.env.local` and set the Supabase database and public Auth values.
 
-Enable Anonymous Sign-Ins in the Supabase Auth provider settings before wiring a learning entry
-point to the guest session helper. Anonymous accounts are created only when that entry point calls
-the helper, never during ordinary page visits.
+Enable Anonymous Sign-Ins in the Supabase Auth provider settings before using the learning
+onboarding flow. Anonymous accounts are created only when a visitor chooses to start learning,
+never during ordinary page visits.
 
 Apply the existing database migrations:
 
@@ -54,14 +54,18 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/words/search/[word]`: public flashcards for a word
 - `/categories`: public vocabulary topics
 - `/categories/[slug]`: public words within a topic
+- `/learn/start`: learning entry and durable onboarding resume
+- `/learn/start/goal`: learning goal selection
+- `/learn/start/level`: current English level selection
+- `/learn/start/ready`: completed onboarding handoff
 - `/admin/categories`: administrator category manager
 - `/api/words`: administrator-only Hono CRUD API for global vocabulary entries
 - `/api/categories`: administrator-only Hono CRUD API for categories
 
 Public visitors, guests, and members can read published entries. Administrators can view and manage
 every entry, including unpublished entries. Guests and permanent users share the same server-only
-learning persistence model, ready for future onboarding and lesson flows. Guest persistence requires
-Anonymous Sign-Ins to be enabled in the connected Supabase Auth project. See
+learning onboarding and persistence model. Guest persistence requires Anonymous Sign-Ins to be
+enabled in the connected Supabase Auth project. See
 [Architecture](docs/architecture.md) for the data model and permission boundaries.
 
 ## Identity boundary
@@ -77,7 +81,7 @@ avatar. `user_roles` separately controls what that user is allowed to do through
 metadata, or client-side state.
 
 - Guests can read public dictionary entries and try the learning experience.
-- Members can read public entries. Learning persistence is available for future learning UI.
+- Members can read public entries and use the same learning onboarding flow.
 - Administrators can manage the shared Global Dictionary.
 
 ## Scripts
