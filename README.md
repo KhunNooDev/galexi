@@ -25,6 +25,10 @@ pnpm install
 
 Copy `.env.example` to `.env.local` and set the Supabase database and public Auth values.
 
+Enable Anonymous Sign-Ins in the Supabase Auth provider settings before wiring a learning entry
+point to the guest session helper. Anonymous accounts are created only when that entry point calls
+the helper, never during ordinary page visits.
+
 Apply the existing database migrations:
 
 ```bash
@@ -54,16 +58,21 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/api/words`: administrator-only Hono CRUD API for global vocabulary entries
 - `/api/categories`: administrator-only Hono CRUD API for categories
 
-Guests and members can read published entries. Administrators can view and manage every entry,
-including unpublished entries. See [Architecture](docs/architecture.md) for the data model and
-permission boundaries.
+Public visitors, guests, and members can read published entries. Administrators can view and manage
+every entry, including unpublished entries. See [Architecture](docs/architecture.md) for the data
+model and permission boundaries.
 
 ## Identity boundary
 
-`profiles` describes a user through application-facing fields such as display name and avatar.
-`user_roles` separately controls what that user is allowed to do through the `member` and `admin`
-roles. Galexi never derives authorization from profile data, email addresses, Supabase user metadata,
-or client-side state.
+Galexi resolves every request to one application identity: `public`, `guest`, `member`, or `admin`.
+Public visitors have no Supabase session. Guests use Supabase Anonymous Sign-In and have an Auth user
+ID, but they are not members and do not receive profile or role rows. Permanent accounts use
+`user_roles` as the authorization source.
+
+`profiles` describes a permanent user through application-facing fields such as display name and
+avatar. `user_roles` separately controls what that user is allowed to do through the `member` and
+`admin` roles. Galexi never derives authorization from profile data, email addresses, Supabase user
+metadata, or client-side state.
 
 - Guests can read public dictionary entries and try the learning experience.
 - Members can read public entries; correction reports and learning progress are planned for later.

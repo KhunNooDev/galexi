@@ -35,6 +35,19 @@ model.
 Supabase `auth.users` remains the source of authentication data. The application deliberately keeps
 descriptive profile data and authorization state in separate tables:
 
+| Identity | Resolution rule                                      | Application access                    |
+| -------- | ---------------------------------------------------- | ------------------------------------- |
+| Public   | No Supabase user or session                          | Published dictionary content          |
+| Guest    | Supabase user has `is_anonymous = true`              | Published content and future learning |
+| Member   | Permanent user has the `member` role in `user_roles` | Member account and profile            |
+| Admin    | Permanent user has the `admin` role in `user_roles`  | Dictionary management                 |
+
+The server-only identity resolver checks the anonymous Auth state before reading or creating a role.
+This prevents an anonymous user from being converted into an application member as a side effect of
+rendering a header or checking a route. Guest sessions are created only by an explicit learning entry
+action. Existing guest and permanent sessions are reused, and a permanent session is never replaced
+with an anonymous session.
+
 | Table        | Responsibility                          | Fields                                              |
 | ------------ | --------------------------------------- | --------------------------------------------------- |
 | `profiles`   | Describes the user inside Galexi        | `user_id`, `display_name`, `avatar_url`, timestamps |
@@ -45,20 +58,22 @@ database policy. Profile fields, Auth email addresses, user metadata, and client
 never authorization sources. Profile mutations accept only `display_name` and `avatar_url`; role
 changes require a separate future admin-only workflow.
 
-Profiles are created lazily on the server and use the Auth user ID as their primary key. Authenticated
-users can read and update only their own profile through row-level security. Deleting an Auth user
-cascades to the related profile and role records.
+Profiles are created lazily on the server for permanent accounts and use the Auth user ID as their
+primary key. Permanent users can read and update only their own profile through row-level security.
+Deleting an Auth user cascades to the related profile and role records.
 
-Role and profile lifecycles are independent. A missing role record is created as `member` without
-reading or changing `profiles`; a missing profile is created with empty application fields without
-reading or changing `user_roles`. Pages that need both load them independently and combine the
-results only for presentation.
+Role and profile lifecycles are independent. A missing role record for a permanent account is created
+as `member` without reading or changing `profiles`; a missing profile is created with empty
+application fields without reading or changing `user_roles`. Anonymous accounts create neither.
+Pages that need both load them independently and combine the results only for presentation.
 
-Row-level security mirrors this model: anonymous and authenticated users can select published rows,
-authenticated users may select only their own role, and they may select and update only their own
-profile fields. No authenticated-user grant or policy permits direct role updates. The administrator
-policy permits dictionary management based on `user_roles`, and Hono mutation routes independently
-require the administrator role before calling the dictionary server functions.
+Row-level security mirrors this model: public and authenticated users can select published rows,
+while only permanent authenticated users may select their own role or select and update their own
+profile fields. These permanent-user policies check the Supabase `is_anonymous` JWT claim because
+Supabase guests also use the PostgreSQL `authenticated` role. No authenticated-user grant or policy
+permits direct role updates. The administrator policy permits dictionary management based on
+`user_roles`, and Hono mutation routes independently require the administrator identity before
+calling the dictionary server functions.
 
 Category policies follow the same boundary. Guests and members can see only categories and
 relationships connected to public words. Administrators manage all categories and relationships.

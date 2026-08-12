@@ -4,9 +4,10 @@ import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
+import { IDENTITY_KIND } from '@/constants/identity';
 import { PROFILE_LIMITS } from '@/constants/profile';
 import { ROUTES } from '@/constants/routes';
-import { getCurrentUserId } from '@/lib/supabase/auth';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 import { updateProfile } from '@/server/profiles';
 
 export type ProfileFormState = {
@@ -44,13 +45,13 @@ export async function saveProfile(
   _state: ProfileFormState,
   formData: FormData,
 ): Promise<ProfileFormState> {
-  const [t, userId] = await Promise.all([getTranslations(), getCurrentUserId()]);
+  const [t, identity] = await Promise.all([getTranslations(), getCurrentIdentity()]);
   const values = {
     avatarUrl: getTextValue(formData, 'avatarUrl'),
     displayName: getTextValue(formData, 'displayName'),
   };
 
-  if (!userId) {
+  if (identity.kind !== IDENTITY_KIND.MEMBER && identity.kind !== IDENTITY_KIND.ADMIN) {
     return { error: t('profile.validation.unauthorized'), values };
   }
 
@@ -85,7 +86,7 @@ export async function saveProfile(
   }
 
   try {
-    await updateProfile(userId, result.data);
+    await updateProfile(identity, result.data);
   } catch (error) {
     console.error('Unable to update profile', error);
     return { error: t('profile.updateError'), values: result.data };

@@ -20,6 +20,7 @@ import { USER_ROLE } from '@/constants/role';
 import { WORD_LIMITS } from '@/constants/word';
 
 export const appRole = pgEnum('app_role', [USER_ROLE.MEMBER, USER_ROLE.ADMIN]);
+const isPermanentAuthUser = sql`(((select auth.jwt()) ->> 'is_anonymous')::boolean) is false`;
 
 // Authorization state only: this table controls what a user is allowed to do.
 export const userRoles = pgTable(
@@ -34,7 +35,7 @@ export const userRoles = pgTable(
     pgPolicy('Users can view their own role', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`${authUid} = ${table.userId}`,
+      using: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
     }),
   ],
 ).enableRLS();
@@ -59,13 +60,13 @@ export const profiles = pgTable(
     pgPolicy('Users can view their own profile', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`${authUid} = ${table.userId}`,
+      using: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
     }),
     pgPolicy('Users can update their own profile', {
       for: 'update',
       to: authenticatedRole,
-      using: sql`${authUid} = ${table.userId}`,
-      withCheck: sql`${authUid} = ${table.userId}`,
+      using: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
+      withCheck: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
     }),
   ],
 ).enableRLS();

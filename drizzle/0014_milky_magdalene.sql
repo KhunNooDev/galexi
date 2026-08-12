@@ -1,0 +1,3 @@
+ALTER POLICY "Users can view their own profile" ON "profiles" TO authenticated USING ((select auth.uid()) = "profiles"."user_id" and ((auth.jwt() ->> 'is_anonymous')::boolean) is false);--> statement-breakpoint
+ALTER POLICY "Users can update their own profile" ON "profiles" TO authenticated USING ((select auth.uid()) = "profiles"."user_id" and ((auth.jwt() ->> 'is_anonymous')::boolean) is false) WITH CHECK ((select auth.uid()) = "profiles"."user_id" and ((auth.jwt() ->> 'is_anonymous')::boolean) is false);--> statement-breakpoint
+ALTER POLICY "Users can view their own role" ON "user_roles" TO authenticated USING ((select auth.uid()) = "user_roles"."user_id" and ((auth.jwt() ->> 'is_anonymous')::boolean) is false);

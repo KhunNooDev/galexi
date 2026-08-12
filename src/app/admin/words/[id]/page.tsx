@@ -2,21 +2,20 @@ import { notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
-import { USER_ROLE } from '@/constants/role';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { WordFlashcard } from '@/features/words/components/word-flashcard';
 import { getWordById } from '@/features/words/server/word.service';
-import { getCurrentUserClaims } from '@/lib/supabase/auth';
-import { getUserRole } from '@/server/roles';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 export default async function ManageWordDetailsPage({ params }: PageProps<'/admin/words/[id]'>) {
-  const claims = await getCurrentUserClaims();
+  const identity = await getCurrentIdentity();
 
-  if (!claims) {
+  if (identity.kind === IDENTITY_KIND.PUBLIC || identity.kind === IDENTITY_KIND.GUEST) {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  if ((await getUserRole(claims.sub)) !== USER_ROLE.ADMIN) {
+  if (identity.kind !== IDENTITY_KIND.ADMIN) {
     redirect(ROUTES.PUBLIC_WORDS);
   }
 
@@ -41,8 +40,7 @@ export default async function ManageWordDetailsPage({ params }: PageProps<'/admi
         <PageHeader
           backHref={ROUTES.MANAGE_WORDS}
           backLabel={t('words.flashcard.backToWords')}
-          isAdmin
-          user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}
+          identity={identity}
         />
 
         <div className='px-4 py-8 sm:px-8 lg:py-10'>

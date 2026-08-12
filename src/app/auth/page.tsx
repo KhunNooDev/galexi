@@ -5,8 +5,9 @@ import { signIn, signUp } from '@/app/auth/actions';
 import { AuthForm } from '@/components/auth-form';
 import { AuthPageShell } from '@/components/auth-page-shell';
 import { AUTH_MODE } from '@/constants/auth';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { ROUTES } from '@/constants/routes';
-import { getCurrentUserId } from '@/lib/supabase/auth';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 type AuthPageProps = {
   searchParams: Promise<{
@@ -15,8 +16,14 @@ type AuthPageProps = {
 };
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
-  if (await getCurrentUserId()) {
+  const identity = await getCurrentIdentity();
+
+  if (identity.kind === IDENTITY_KIND.ADMIN) {
     redirect(ROUTES.MANAGE_WORDS);
+  }
+
+  if (identity.kind === IDENTITY_KIND.MEMBER) {
+    redirect(ROUTES.PUBLIC_WORDS);
   }
 
   const { mode: requestedMode } = await searchParams;

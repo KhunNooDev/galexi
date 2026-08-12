@@ -42,6 +42,8 @@
     "accountMenu": "Open account menu",
     "adminNavigation": "Dictionary management",
     "categories": "Categories",
+    "guest": "Guest",
+    "guestDescription": "Your temporary learning session is active on this device.",
     "words": "Words"
   },
   "auth": {

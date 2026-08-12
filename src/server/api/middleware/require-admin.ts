@@ -2,22 +2,21 @@ import 'server-only';
 
 import type { MiddlewareHandler } from 'hono';
 
-import { USER_ROLE } from '@/constants/role';
-import { getCurrentUserId } from '@/lib/supabase/auth';
+import { IDENTITY_KIND } from '@/constants/identity';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 import type { ApiEnvironment } from '@/server/api/types';
-import { getUserRole } from '@/server/roles';
 
 export const requireAdmin: MiddlewareHandler<ApiEnvironment> = async (context, next) => {
-  const adminUserId = await getCurrentUserId();
+  const identity = await getCurrentIdentity();
 
-  if (!adminUserId) {
+  if (identity.kind === IDENTITY_KIND.PUBLIC || identity.kind === IDENTITY_KIND.GUEST) {
     return context.json({ error: 'Unauthorized' }, 401);
   }
 
-  if ((await getUserRole(adminUserId)) !== USER_ROLE.ADMIN) {
+  if (identity.kind !== IDENTITY_KIND.ADMIN) {
     return context.json({ error: 'Forbidden' }, 403);
   }
 
-  context.set('adminUserId', adminUserId);
+  context.set('adminUserId', identity.userId);
   await next();
 };

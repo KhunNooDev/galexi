@@ -6,8 +6,17 @@ import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
 import { AUTH_PASSWORD_MIN_LENGTH } from '@/constants/auth';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/server';
+
+async function redirectAfterAuthentication(): Promise<never> {
+  const identity = await getCurrentIdentity();
+  return redirect(
+    identity.kind === IDENTITY_KIND.ADMIN ? ROUTES.MANAGE_WORDS : ROUTES.PUBLIC_WORDS,
+  );
+}
 
 function createSignInSchema(messages: { invalidEmail: string; passwordRequired: string }) {
   return z.object({
@@ -70,7 +79,7 @@ export async function signIn(_state: AuthState, formData: FormData): Promise<Aut
     return { error: t('auth.validation.incorrectCredentials') };
   }
 
-  redirect(ROUTES.MANAGE_WORDS);
+  return redirectAfterAuthentication();
 }
 
 export async function signUp(_state: AuthState, formData: FormData): Promise<AuthState> {
@@ -112,7 +121,7 @@ export async function signUp(_state: AuthState, formData: FormData): Promise<Aut
     return { success: t('auth.validation.checkEmail') };
   }
 
-  redirect(ROUTES.MANAGE_WORDS);
+  return redirectAfterAuthentication();
 }
 
 export async function signOut() {

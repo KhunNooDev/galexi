@@ -2,17 +2,18 @@ import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
-import { USER_ROLE } from '@/constants/role';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { CategoryManager } from '@/features/categories/components/category-manager';
 import { listCategories } from '@/features/categories/server/category.service';
-import { getCurrentUserClaims } from '@/lib/supabase/auth';
-import { getUserRole } from '@/server/roles';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 export default async function ManageCategoriesPage() {
-  const claims = await getCurrentUserClaims();
-  if (!claims) redirect(AUTH_ROUTES.SIGN_IN);
-  if ((await getUserRole(claims.sub)) !== USER_ROLE.ADMIN) redirect(ROUTES.CATEGORIES);
+  const identity = await getCurrentIdentity();
+  if (identity.kind === IDENTITY_KIND.PUBLIC || identity.kind === IDENTITY_KIND.GUEST) {
+    redirect(AUTH_ROUTES.SIGN_IN);
+  }
+  if (identity.kind !== IDENTITY_KIND.ADMIN) redirect(ROUTES.CATEGORIES);
   const categories = await listCategories();
 
   return (
@@ -23,11 +24,7 @@ export default async function ManageCategoriesPage() {
       </div>
 
       <div className='relative mx-auto max-w-7xl'>
-        <PageHeader
-          brand
-          isAdmin
-          user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}
-        />
+        <PageHeader brand identity={identity} />
         <div className='px-4 py-8 sm:px-8 lg:py-10'>
           <QueryProvider>
             <CategoryManager initialCategories={categories} />

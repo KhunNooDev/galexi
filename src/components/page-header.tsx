@@ -5,40 +5,28 @@ import { ArrowLeft, Orbit } from 'lucide-react';
 import { AdminNavigation } from '@/components/admin-navigation';
 import { ProfileMenu } from '@/components/profile-menu';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { USER_ROLE } from '@/constants/role';
+import type { AppIdentity } from '@/constants/identity';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { ROUTES } from '@/constants/routes';
-import { getCurrentUserClaims } from '@/lib/supabase/auth';
-import { getUserRole } from '@/server/roles';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 type PageHeaderProps = {
   backHref?: string;
   backLabel?: string;
   brand?: boolean;
-  isAdmin?: boolean;
-  user?: {
-    email?: string;
-  } | null;
+  identity?: AppIdentity;
 };
 
 export async function PageHeader({
   backHref,
   backLabel,
   brand = false,
-  isAdmin,
-  user,
+  identity,
 }: PageHeaderProps) {
-  const [claims, t] = await Promise.all([
-    user === undefined ? getCurrentUserClaims() : Promise.resolve(null),
+  const [resolvedIdentity, t] = await Promise.all([
+    identity ?? getCurrentIdentity(),
     getTranslations(),
   ]);
-  const resolvedUser =
-    user === undefined
-      ? claims
-        ? { email: typeof claims.email === 'string' ? claims.email : undefined }
-        : null
-      : user;
-  const resolvedIsAdmin =
-    isAdmin ?? (claims ? (await getUserRole(claims.sub)) === USER_ROLE.ADMIN : false);
 
   return (
     <header
@@ -79,7 +67,7 @@ export async function PageHeader({
         )}
 
         <div className='flex shrink-0 items-center gap-2'>
-          {resolvedIsAdmin && (
+          {resolvedIdentity.kind === IDENTITY_KIND.ADMIN && (
             <AdminNavigation
               categoriesLabel={t('header.categories')}
               menuLabel={t('header.adminNavigation')}
@@ -90,8 +78,10 @@ export async function PageHeader({
             <ThemeToggle label={t('home.themeToggle')} />
             <ProfileMenu
               accountMenuLabel={t('header.accountMenu')}
-              email={resolvedUser?.email}
-              isAuthenticated={resolvedUser !== null}
+              email={resolvedIdentity.email ?? undefined}
+              guestDescription={t('header.guestDescription')}
+              guestLabel={t('header.guest')}
+              identityKind={resolvedIdentity.kind}
               profileLabel={t('home.profile')}
               signInLabel={t('auth.signIn')}
               signOutLabel={t('auth.signOut')}

@@ -14,24 +14,28 @@ import {
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { PageHeader } from '@/components/page-header';
 import { ProfileForm } from '@/components/profile-form';
-import { USER_ROLE } from '@/constants/role';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES } from '@/constants/routes';
-import { getCurrentUser } from '@/lib/supabase/auth';
+import { getCurrentIdentity, getCurrentUser } from '@/lib/supabase/auth';
 import { getOrCreateProfile } from '@/server/profiles';
-import { getUserRole } from '@/server/roles';
 
 export default async function ProfilePage() {
-  const user = await getCurrentUser();
+  const identity = await getCurrentIdentity();
 
-  if (!user) {
+  if (identity.kind !== IDENTITY_KIND.MEMBER && identity.kind !== IDENTITY_KIND.ADMIN) {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  const [t, role, formatter, profile] = await Promise.all([
+  const user = await getCurrentUser();
+
+  if (!user || user.is_anonymous) {
+    redirect(AUTH_ROUTES.SIGN_IN);
+  }
+
+  const [t, formatter, profile] = await Promise.all([
     getTranslations(),
-    getUserRole(user.id),
     getFormatter(),
-    getOrCreateProfile(user.id),
+    getOrCreateProfile(identity),
   ]);
   const notAvailable = t('profile.notAvailable');
   const formatDate = (value: string | undefined) =>
@@ -82,7 +86,7 @@ export default async function ProfilePage() {
   return (
     <main className='min-h-svh bg-background pb-10'>
       <div className='mx-auto max-w-7xl'>
-        <PageHeader brand isAdmin={role === USER_ROLE.ADMIN} user={{ email: user.email }} />
+        <PageHeader brand identity={identity} />
 
         <section className='mx-auto mt-8 max-w-4xl overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(51_92_255/10%)]'>
           <div className='flex items-center gap-5 border-b border-border bg-[linear-gradient(135deg,rgb(56_189_248/16%),rgb(79_124_255/14%),rgb(113_88_232/14%))] px-6 py-8 sm:gap-6 sm:px-10 sm:py-10'>

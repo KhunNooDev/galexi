@@ -2,22 +2,21 @@ import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
-import { USER_ROLE } from '@/constants/role';
+import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { listCategories } from '@/features/categories/server/category.service';
 import { WordManager } from '@/features/words/components/word-manager';
 import { listWords } from '@/features/words/server/word.service';
-import { getCurrentUserClaims } from '@/lib/supabase/auth';
-import { getUserRole } from '@/server/roles';
+import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 export default async function ManageWordsPage() {
-  const claims = await getCurrentUserClaims();
+  const identity = await getCurrentIdentity();
 
-  if (!claims) {
+  if (identity.kind === IDENTITY_KIND.PUBLIC || identity.kind === IDENTITY_KIND.GUEST) {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  if ((await getUserRole(claims.sub)) !== USER_ROLE.ADMIN) {
+  if (identity.kind !== IDENTITY_KIND.ADMIN) {
     redirect(ROUTES.PUBLIC_WORDS);
   }
 
@@ -31,11 +30,7 @@ export default async function ManageWordsPage() {
       </div>
 
       <div className='relative mx-auto max-w-7xl'>
-        <PageHeader
-          brand
-          isAdmin
-          user={{ email: typeof claims.email === 'string' ? claims.email : undefined }}
-        />
+        <PageHeader brand identity={identity} />
 
         <div className='px-4 py-8 sm:px-8 lg:py-10'>
           <QueryProvider>
