@@ -7,6 +7,7 @@ export const ROUTES = {
   MANAGE_CATEGORIES: '/admin/categories',
   MANAGE_WORDS: '/admin/words',
   HOME: '/',
+  LEARN_HOME: '/learn',
   LEARN_GOAL: '/learn/start/goal',
   LEARN_LEVEL: '/learn/start/level',
   LEARN_READY: '/learn/start/ready',
@@ -25,6 +26,10 @@ export function getManageWordRoute(id: number) {
 
 export function getLessonRoute(lessonKey: string) {
   return `/learn/lesson/${encodeURIComponent(lessonKey)}`;
+}
+
+export function getLessonResultRoute(lessonKey: string, sessionId: string) {
+  return `${getLessonRoute(lessonKey)}/result/${encodeURIComponent(sessionId)}`;
 }
 
 export function getWordImageRoute(id: number) {

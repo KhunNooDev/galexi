@@ -1,21 +1,14 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-  Eye,
-  ImageIcon,
-  RotateCcw,
-  Volume2,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, ImageIcon, RotateCcw, Volume2 } from 'lucide-react';
 
 import { advanceLessonAction } from '@/app/learn/lesson/[lessonKey]/actions';
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Button } from '@/components/ui/button';
-import { getWordImageRoute } from '@/constants/routes';
+import { getLessonResultRoute, getWordImageRoute } from '@/constants/routes';
 import { ConversationPlayer } from '@/features/learning/components/conversation-player';
 import { PracticePlayer } from '@/features/learning/components/practice-player';
 import { LESSON_PHASE, type LessonSessionState } from '@/features/learning/lesson.schema';
@@ -43,6 +36,7 @@ export function LessonPlayer({
   words,
 }: LessonPlayerProps) {
   const t = useTranslations('learning.lesson');
+  const router = useRouter();
   const [phase, setPhase] = useState(initialState.phase);
   const [wordIndex, setWordIndex] = useState(initialState.wordIndex);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -50,12 +44,21 @@ export function LessonPlayer({
   const [isPending, startTransition] = useTransition();
   const word = words[wordIndex];
 
+  function handlePhaseChange(nextPhase: typeof phase) {
+    if (nextPhase === LESSON_PHASE.RESULT) {
+      router.push(getLessonResultRoute(lessonKey, sessionId));
+      return;
+    }
+
+    setPhase(nextPhase);
+  }
+
   if (phase === LESSON_PHASE.PRACTICE) {
     return (
       <PracticePlayer
         initialAnsweredCount={initialState.practice.answers.length}
         lessonKey={lessonKey}
-        onPhaseChange={setPhase}
+        onPhaseChange={handlePhaseChange}
         questions={practiceQuestions}
         sessionId={sessionId}
       />
@@ -67,29 +70,10 @@ export function LessonPlayer({
       <ConversationPlayer
         initialResponses={initialState.conversation.responses}
         lessonKey={lessonKey}
-        onPhaseChange={setPhase}
+        onPhaseChange={handlePhaseChange}
         sessionId={sessionId}
         turns={conversation}
       />
-    );
-  }
-
-  if (phase === LESSON_PHASE.RESULT) {
-    return (
-      <section className='galexi-panel mx-auto w-full max-w-2xl p-6 text-center sm:p-10'>
-        <span className='mx-auto grid size-14 place-items-center rounded-2xl bg-primary/12 text-primary'>
-          <CheckCircle2 aria-hidden='true' className='size-7' />
-        </span>
-        <p className='mt-5 text-xs font-semibold tracking-[0.16em] text-primary uppercase'>
-          {t('result.eyebrow')}
-        </p>
-        <h2 className='mt-2 text-3xl font-semibold tracking-tight text-surface-foreground'>
-          {t('result.title')}
-        </h2>
-        <p className='mx-auto mt-3 max-w-lg leading-7 text-muted-foreground'>
-          {t('result.description')}
-        </p>
-      </section>
     );
   }
 

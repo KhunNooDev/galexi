@@ -112,6 +112,57 @@
       "nextDescription": "Learn six useful words with Thai meanings and clear examples. Your progress saves as you go.",
       "browseWords": "Start Lesson 1"
     },
+    "lessons": {
+      "learningMomentum": "Learning momentum"
+    },
+    "home": {
+      "eyebrow": "Your learning",
+      "title": "Keep moving forward",
+      "description": "Continue where you left off or review your latest lesson result.",
+      "continueEyebrow": "Continue learning",
+      "startEyebrow": "Ready when you are",
+      "setupEyebrow": "Finish your setup",
+      "setupTitle": "Set up your learning path",
+      "completeEyebrow": "Available lessons complete",
+      "allCompleteTitle": "You are caught up",
+      "allCompleteDescription": "You have completed every lesson currently available. Your results are ready whenever you want to review them.",
+      "setupDescription": "Complete your learning preferences before starting your lesson.",
+      "lessonDescription": "Your lesson progress is saved. Continue from the exact activity you reached.",
+      "resultDescription": "Your activities are complete. Open the result to finish this lesson.",
+      "progress": "Lesson progress",
+      "finishSetup": "Finish setup",
+      "startLesson": "Start lesson",
+      "continueLesson": "Continue lesson",
+      "viewResult": "View result",
+      "moreLessonsSoon": "More lessons are coming soon",
+      "lessonsCompleted": "Lessons completed",
+      "wordsPracticed": "Words practiced",
+      "recentLesson": "Recent lesson",
+      "recentScore": "{score}% practice accuracy",
+      "guestTitle": "Learning as Guest",
+      "guestDescription": "Your progress stays with this Guest session. Account conversion is not available yet.",
+      "createAccount": "Create an account"
+    },
+    "result": {
+      "eyebrow": "Lesson complete",
+      "title": "Nice work",
+      "lessonCompleted": "{lesson} completed on {date}",
+      "accuracy": "Accuracy",
+      "practice": "Practice",
+      "correctCount": "{correct}/{total} correct",
+      "conversation": "Conversation",
+      "turnCount": "{count, plural, one {# turn} other {# turns}}",
+      "vocabularyTitle": "Lesson vocabulary",
+      "vocabularyDescription": "Mastery shown here is a snapshot from lesson completion.",
+      "continue": "Continue to learning home",
+      "mastery": {
+        "new": "New",
+        "practicing": "Practicing",
+        "developing": "Developing",
+        "familiar": "Familiar",
+        "strong": "Strong"
+      }
+    },
     "lesson": {
       "eyebrow": "Lesson 1",
       "title": "Learning momentum",
@@ -199,14 +250,10 @@
             }
           }
         }
-      },
-      "result": {
-        "eyebrow": "Activities complete",
-        "title": "Your result is ready",
-        "description": "Practice and conversation are saved. Your lesson summary will appear here in the next step."
       }
     },
     "errors": {
+      "backLearn": "Back to learning home",
       "guestSession": "We could not start a Guest session. Please try again.",
       "sessionLost": "Your learning session is no longer available. Return to the start and try again.",
       "invalidChoice": "Choose one of the available options.",

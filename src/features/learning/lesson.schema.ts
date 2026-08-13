@@ -25,6 +25,24 @@ const conversationResponseSchema = z.object({
   turnId: z.string().trim().min(1).max(120),
 });
 
+const lessonResultSnapshotSchema = z.object({
+  accuracy: z.number().int().min(0).max(100),
+  completedAt: z.iso.datetime(),
+  conversationTurns: z.number().int().min(0).max(10),
+  mastery: z
+    .array(
+      z.object({
+        meaning: z.string().max(1000),
+        value: z.number().int().min(0).max(LEARNING_LIMITS.MASTERY_MAX),
+        word: z.string().trim().min(1).max(120),
+        wordId: z.number().int().positive(),
+      }),
+    )
+    .max(20),
+  practiceCorrect: z.number().int().min(0).max(20),
+  practiceTotal: z.number().int().min(0).max(20),
+});
+
 export const lessonSessionStateSchema = z.object({
   conversation: z
     .object({
@@ -37,6 +55,7 @@ export const lessonSessionStateSchema = z.object({
       answers: z.array(practiceAnswerSchema).max(20),
     })
     .default({ answers: [] }),
+  result: lessonResultSnapshotSchema.optional(),
   seenWordIds: z.array(z.number().int().positive()).max(20),
   wordIndex: z.number().int().min(0),
 });
@@ -62,7 +81,13 @@ export const submitConversationResponseInputSchema = z.object({
   turnId: z.string().trim().min(1).max(120),
 });
 
+export const lessonResultParamsSchema = z.object({
+  lessonKey: lessonKeySchema,
+  sessionId: z.uuid(),
+});
+
 export type LessonPhase = z.infer<typeof lessonPhaseSchema>;
+export type LessonResultSnapshot = z.infer<typeof lessonResultSnapshotSchema>;
 export type LessonSessionState = z.infer<typeof lessonSessionStateSchema>;
 
 export function createInitialLessonState(): LessonSessionState {
@@ -103,6 +128,7 @@ export function normalizeLessonSessionState(
           answers.findIndex((candidate) => candidate.questionId === answer.questionId) === index,
       ),
     },
+    result: result.data.result,
     seenWordIds: [...new Set(result.data.seenWordIds.filter((id) => allowedWordIds.has(id)))],
     wordIndex: Math.min(result.data.wordIndex, lastWordIndex),
   };

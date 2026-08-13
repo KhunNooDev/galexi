@@ -160,9 +160,15 @@ revealed through category navigation.
   guided turns use stable response identifiers and Lesson 1 vocabulary. Conversation is
   participation-based, does not alter correctness counters, and updates only `last_seen_at` for
   words used by the selected response.
-- Completing Conversation advances the session to the Result handoff without marking it completed.
-  Prompt 6 owns the final result summary and completion behavior. Refreshing or re-entering the
-  lesson resumes Learn, Practice, Conversation, or Result from the server-owned phase.
+- Completing Conversation advances the session to the Result handoff. The session-specific Result
+  route validates ownership and activity completion, snapshots authoritative practice,
+  participation, and mastery values into session JSON, then marks the session completed exactly once
+  under the same advisory lock. Reopening the route reads the stable snapshot instead of recalculating
+  historical metrics from current Word progress.
+- `/learn` is the personal learning home for Guest, Member, and Admin identities. Its server-only
+  continuation resolver prioritizes incomplete onboarding, then the current Learn, Practice,
+  Conversation, or Result phase, then the next catalog lesson. When no later lesson exists, the home
+  reports that the available catalog is complete without creating another session.
 
 - Public search and flashcard queries always filter on `is_public = true`.
 - Administrator list and detail queries operate on the complete global dictionary and never filter

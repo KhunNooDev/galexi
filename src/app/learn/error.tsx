@@ -36,9 +36,9 @@ export default function LearningError({ error, unstable_retry }: LearningErrorPr
         </p>
         <div className='mt-7 flex flex-col-reverse justify-center gap-3 sm:flex-row'>
           <Button asChild className='rounded-full' variant='outline'>
-            <Link href={ROUTES.HOME}>
+            <Link href={ROUTES.LEARN_HOME}>
               <Home aria-hidden='true' />
-              {t('backHome')}
+              {t('errors.backLearn')}
             </Link>
           </Button>
           <Button className='rounded-full' onClick={unstable_retry} type='button'>

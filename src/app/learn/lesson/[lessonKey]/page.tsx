@@ -3,8 +3,9 @@ import { getTranslations } from 'next-intl/server';
 
 import { PageHeader } from '@/components/page-header';
 import { IDENTITY_KIND } from '@/constants/identity';
-import { ROUTES } from '@/constants/routes';
+import { getLessonResultRoute, ROUTES } from '@/constants/routes';
 import { LessonPlayer } from '@/features/learning/components/lesson-player';
+import { LESSON_PHASE } from '@/features/learning/lesson.schema';
 import {
   buildPracticeQuestions,
   toPracticeQuestionView,
@@ -49,6 +50,10 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonK
   const words = await getPublishedLessonWords(lesson);
   const practiceQuestions = buildPracticeQuestions(words, lesson.conversation);
   const session = await getOrCreateCurrentLessonSession(lesson);
+
+  if (session.state.phase === LESSON_PHASE.RESULT) {
+    redirect(getLessonResultRoute(lesson.key, session.id));
+  }
 
   return (
     <main className='relative min-h-svh overflow-x-clip bg-background'>
