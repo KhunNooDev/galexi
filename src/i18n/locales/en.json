@@ -133,12 +133,78 @@
       "saving": "Saving...",
       "saveError": "We could not save your progress. Try again before continuing.",
       "unavailable": "This lesson is not available right now.",
-      "completeEyebrow": "Learn complete",
-      "practiceTitle": "Ready to practice",
-      "practiceDescription": "You have reviewed all {count} words. Practice activities are the next step in your learning path.",
-      "practiceSavedTitle": "Your lesson is saved",
-      "practiceSavedDescription": "You can leave and return without losing this handoff point.",
-      "browseWords": "Browse vocabulary"
+      "practice": {
+        "phase": "Practice",
+        "progress": "Question {current} of {total}",
+        "progressLabel": "Practice progress",
+        "meaningToWordLabel": "Recall the word",
+        "wordToMeaningLabel": "Recall the meaning",
+        "meaningToWordPrompt": "Which English word means \"{meaning}\"?",
+        "wordToMeaningPrompt": "Choose the Thai meaning of \"{word}\".",
+        "answerOptions": "Answer options",
+        "checkAnswer": "Check answer",
+        "checking": "Checking...",
+        "correct": "Correct",
+        "notQuite": "Not quite",
+        "correction": "\"{word}\" means \"{meaning}\".",
+        "continue": "Continue",
+        "startConversation": "Start conversation",
+        "invalidAnswer": "Choose one of the available answers.",
+        "saveError": "We could not score that answer. Please try again.",
+        "unavailable": "Practice is not available right now."
+      },
+      "conversation": {
+        "phase": "Conversation",
+        "progress": "Turn {current} of {total}",
+        "progressLabel": "Conversation progress",
+        "contextEyebrow": "Use your new words",
+        "title": "A quick check-in with Galexi",
+        "description": "Choose a natural response and use Lesson 1 vocabulary in context.",
+        "transcriptLabel": "Conversation transcript",
+        "chooseResponse": "How would you respond?",
+        "responseOptions": "Conversation response options",
+        "send": "Send response",
+        "sending": "Sending...",
+        "completeTitle": "Conversation complete",
+        "completeDescription": "You used your new vocabulary in context.",
+        "continue": "Continue",
+        "invalidResponse": "Choose one of the available responses.",
+        "saveError": "We could not save that response. Please try again.",
+        "unavailable": "The conversation is not available right now.",
+        "content": {
+          "turns": {
+            "momentumPlan": {
+              "message": "You are building momentum. What would you like to do next?",
+              "responses": {
+                "improveEnglish": "I want to improve my English.",
+                "curiousNext": "I am curious about the next lesson.",
+                "opportunityLearn": "This is a great opportunity to learn."
+              }
+            },
+            "momentumMethod": {
+              "message": "That sounds good. What will help you keep going?",
+              "responses": {
+                "reliablePractice": "Reliable practice is essential.",
+                "accomplishGoal": "I will accomplish one small goal today.",
+                "improveDaily": "I want to improve a little every day."
+              }
+            },
+            "momentumReady": {
+              "message": "You are nearly there. How do you feel about continuing?",
+              "responses": {
+                "curiousReady": "I am curious and ready to continue.",
+                "opportunityImportant": "This opportunity feels essential.",
+                "accomplishStep": "I can accomplish this step."
+              }
+            }
+          }
+        }
+      },
+      "result": {
+        "eyebrow": "Activities complete",
+        "title": "Your result is ready",
+        "description": "Practice and conversation are saved. Your lesson summary will appear here in the next step."
+      }
     },
     "errors": {
       "guestSession": "We could not start a Guest session. Please try again.",

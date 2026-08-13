@@ -58,15 +58,15 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/learn/start/goal`: learning goal selection
 - `/learn/start/level`: current English level selection
 - `/learn/start/ready`: completed onboarding handoff
-- `/learn/lesson/[lessonKey]`: authenticated, resumable vocabulary lesson
+- `/learn/lesson/[lessonKey]`: owned, resumable Learn, Practice, and Mini Conversation flow
 - `/admin/categories`: administrator category manager
 - `/api/words`: administrator-only Hono CRUD API for global vocabulary entries
 - `/api/categories`: administrator-only Hono CRUD API for categories
 
 Public visitors, guests, and members can read published entries. Administrators can view and manage
 every entry, including unpublished entries. Guests and permanent users share the same server-only
-learning onboarding, lesson, and persistence model. Guest persistence requires Anonymous Sign-Ins to be
-enabled in the connected Supabase Auth project. See
+learning onboarding, lesson, deterministic practice, guided conversation, and persistence model.
+Guest persistence requires Anonymous Sign-Ins to be enabled in the connected Supabase Auth project. See
 [Architecture](docs/architecture.md) for the data model and permission boundaries.
 
 ## Identity boundary
@@ -92,6 +92,7 @@ pnpm dev          # Start development mode
 pnpm build        # Create a production build
 pnpm start        # Start the production server
 pnpm lint         # Run ESLint
+pnpm test         # Run focused domain tests
 pnpm format       # Format and fix the project
 pnpm format:check # Check formatting and linting
 pnpm db:generate  # Generate a Drizzle migration

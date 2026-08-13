@@ -1,44 +1,50 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   ArrowLeft,
   ArrowRight,
-  BookOpenCheck,
+  CheckCircle2,
   Eye,
   ImageIcon,
   RotateCcw,
-  Sparkles,
   Volume2,
 } from 'lucide-react';
 
 import { advanceLessonAction } from '@/app/learn/lesson/[lessonKey]/actions';
 import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Button } from '@/components/ui/button';
-import { getWordImageRoute, ROUTES } from '@/constants/routes';
-import { LESSON_PHASE, type LessonPhase } from '@/features/learning/lesson.schema';
+import { getWordImageRoute } from '@/constants/routes';
+import { ConversationPlayer } from '@/features/learning/components/conversation-player';
+import { PracticePlayer } from '@/features/learning/components/practice-player';
+import { LESSON_PHASE, type LessonSessionState } from '@/features/learning/lesson.schema';
+import type {
+  ConversationTurn,
+  PracticeQuestionView,
+} from '@/features/learning/lessons/lesson-activities';
 import type { LessonWord } from '@/features/learning/server/lesson.service';
 
 type LessonPlayerProps = {
-  initialPhase: LessonPhase;
-  initialWordIndex: number;
+  conversation: readonly ConversationTurn[];
+  initialState: LessonSessionState;
   lessonKey: string;
+  practiceQuestions: PracticeQuestionView[];
   sessionId: string;
   words: LessonWord[];
 };
 
 export function LessonPlayer({
-  initialPhase,
-  initialWordIndex,
+  conversation,
+  initialState,
   lessonKey,
+  practiceQuestions,
   sessionId,
   words,
 }: LessonPlayerProps) {
   const t = useTranslations('learning.lesson');
-  const [phase, setPhase] = useState(initialPhase);
-  const [wordIndex, setWordIndex] = useState(initialWordIndex);
+  const [phase, setPhase] = useState(initialState.phase);
+  const [wordIndex, setWordIndex] = useState(initialState.wordIndex);
   const [isRevealed, setIsRevealed] = useState(false);
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
@@ -46,35 +52,43 @@ export function LessonPlayer({
 
   if (phase === LESSON_PHASE.PRACTICE) {
     return (
+      <PracticePlayer
+        initialAnsweredCount={initialState.practice.answers.length}
+        lessonKey={lessonKey}
+        onPhaseChange={setPhase}
+        questions={practiceQuestions}
+        sessionId={sessionId}
+      />
+    );
+  }
+
+  if (phase === LESSON_PHASE.CONVERSATION) {
+    return (
+      <ConversationPlayer
+        initialResponses={initialState.conversation.responses}
+        lessonKey={lessonKey}
+        onPhaseChange={setPhase}
+        sessionId={sessionId}
+        turns={conversation}
+      />
+    );
+  }
+
+  if (phase === LESSON_PHASE.RESULT) {
+    return (
       <section className='galexi-panel mx-auto w-full max-w-2xl p-6 text-center sm:p-10'>
         <span className='mx-auto grid size-14 place-items-center rounded-2xl bg-primary/12 text-primary'>
-          <Sparkles aria-hidden='true' className='size-7' />
+          <CheckCircle2 aria-hidden='true' className='size-7' />
         </span>
         <p className='mt-5 text-xs font-semibold tracking-[0.16em] text-primary uppercase'>
-          {t('completeEyebrow')}
+          {t('result.eyebrow')}
         </p>
-        <h1 className='mt-2 text-3xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
-          {t('practiceTitle')}
-        </h1>
+        <h2 className='mt-2 text-3xl font-semibold tracking-tight text-surface-foreground'>
+          {t('result.title')}
+        </h2>
         <p className='mx-auto mt-3 max-w-lg leading-7 text-muted-foreground'>
-          {t('practiceDescription', { count: words.length })}
+          {t('result.description')}
         </p>
-        <div className='mt-7 rounded-2xl border border-border bg-field p-4 text-left'>
-          <div className='flex items-start gap-3'>
-            <span className='grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary'>
-              <BookOpenCheck aria-hidden='true' className='size-5' />
-            </span>
-            <div>
-              <p className='font-semibold text-surface-foreground'>{t('practiceSavedTitle')}</p>
-              <p className='mt-1 text-sm leading-6 text-muted-foreground'>
-                {t('practiceSavedDescription')}
-              </p>
-            </div>
-          </div>
-        </div>
-        <Button asChild className='mt-7 h-11 rounded-full px-6' variant='outline'>
-          <Link href={ROUTES.PUBLIC_WORDS}>{t('browseWords')}</Link>
-        </Button>
       </section>
     );
   }
@@ -147,7 +161,7 @@ export function LessonPlayer({
         />
       </div>
 
-      <article className='flex min-h-[31rem] flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(34_74_150/12%)] sm:min-h-[35rem]'>
+      <article className='flex min-h-124 flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(34_74_150/12%)] sm:min-h-140'>
         <div className='flex flex-1 flex-col p-5 sm:p-7'>
           <div className='text-center'>
             <div className='flex items-center justify-center gap-2'>

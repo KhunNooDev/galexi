@@ -5,6 +5,10 @@ import { PageHeader } from '@/components/page-header';
 import { IDENTITY_KIND } from '@/constants/identity';
 import { ROUTES } from '@/constants/routes';
 import { LessonPlayer } from '@/features/learning/components/lesson-player';
+import {
+  buildPracticeQuestions,
+  toPracticeQuestionView,
+} from '@/features/learning/lessons/lesson-activities';
 import { getLessonDefinition } from '@/features/learning/lessons/lesson-catalog';
 import {
   ensureCurrentLearningOnboardingComplete,
@@ -43,6 +47,7 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonK
 
   await ensureCurrentLearningOnboardingComplete();
   const words = await getPublishedLessonWords(lesson);
+  const practiceQuestions = buildPracticeQuestions(words, lesson.conversation);
   const session = await getOrCreateCurrentLessonSession(lesson);
 
   return (
@@ -64,9 +69,10 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonK
             <p className='mt-2 text-sm leading-6 text-muted-foreground'>{t('description')}</p>
           </div>
           <LessonPlayer
-            initialPhase={session.state.phase}
-            initialWordIndex={session.state.wordIndex}
+            conversation={lesson.conversation}
+            initialState={session.state}
             lessonKey={lesson.key}
+            practiceQuestions={practiceQuestions.map(toPracticeQuestionView)}
             sessionId={session.id}
             words={words}
           />

@@ -27,9 +27,9 @@ Deleting a category cascades only to its link rows; it never deletes dictionary 
 | Member        | Read public entries and try the learning experience             | Report incorrect information and track learning progress |
 | Administrator | Read and manage all Global Dictionary entries, including drafts | None                                                     |
 
-The learning onboarding UI, first vocabulary lesson, and persistence foundation are implemented.
-Practice activities and correction reports remain planned and do not affect the current permission
-model.
+The learning onboarding UI, first vocabulary lesson, deterministic Practice phase, guided Mini
+Conversation, and persistence foundation are implemented. Correction reports remain planned and do
+not affect the current permission model.
 
 ## Learning data
 
@@ -139,7 +139,30 @@ revealed through category navigation.
 - First exposure updates only `seen_count` and `last_seen_at`. Learn does not change correctness,
   incorrectness, score, or mastery.
 - Completing Learn changes the session phase to the Practice handoff while leaving the session
-  `in_progress`. Practice questions and scoring remain intentionally unimplemented.
+  `in_progress`.
+- Practice contains six deterministic multiple-choice questions derived from the six Lesson 1
+  dictionary records. Correctness is resolved on the server from the authoritative question
+  definition; the client submits only stable question and option identifiers.
+- A session-scoped PostgreSQL advisory transaction lock serializes scoring and conversation
+  progression. The same transaction writes the scored answer into session JSON and updates the
+  related Word progress, so the two records cannot disagree. Repeating the same answer is
+  idempotent, while stale questions, different second answers, and out-of-order transitions fail.
+- Practice stores the selected option, target Word, and correctness for each question. Answered and
+  correct totals are derived from that list, incorrect is `answered - correct`, and the session
+  `score` stores percentage accuracy from 0 to 100.
+- A correct Practice attempt increments `correct_count` and mastery by 10. An incorrect attempt
+  increments `incorrect_count` and reduces mastery by 5. Mastery is clamped from 0 to 100, and both
+  outcomes update `last_seen_at`. Practice never increments `seen_count`.
+- `seen_count` remains Learn-phase exposure, `correct_count` and `incorrect_count` represent scored
+  Practice attempts, `last_seen_at` records the latest meaningful interaction with a Word, and
+  `mastery` is the bounded correctness signal described above.
+- Completing Practice advances the same `in_progress` session to Conversation. Three code-defined
+  guided turns use stable response identifiers and Lesson 1 vocabulary. Conversation is
+  participation-based, does not alter correctness counters, and updates only `last_seen_at` for
+  words used by the selected response.
+- Completing Conversation advances the session to the Result handoff without marking it completed.
+  Prompt 6 owns the final result summary and completion behavior. Refreshing or re-entering the
+  lesson resumes Learn, Practice, Conversation, or Result from the server-owned phase.
 
 - Public search and flashcard queries always filter on `is_public = true`.
 - Administrator list and detail queries operate on the complete global dictionary and never filter

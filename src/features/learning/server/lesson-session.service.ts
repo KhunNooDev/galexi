@@ -13,26 +13,18 @@ import {
 } from '@/features/learning/lesson.schema';
 import type { LessonDefinition } from '@/features/learning/lessons/lesson-catalog';
 import { requireLearningIdentity } from '@/features/learning/server/learning-identity';
-
-const lessonSessionColumns = {
-  id: learningSessions.id,
-  state: learningSessions.state,
-};
+import {
+  lessonSessionColumns,
+  type LessonTransaction,
+  lockLessonSession,
+} from '@/features/learning/server/lesson-session.persistence';
 
 type LessonSessionResult = {
   id: string;
   state: LessonSessionState;
 };
 
-function lessonSessionLockKey(userId: string, lessonKey: string) {
-  return `lesson:${userId}:${lessonKey}`;
-}
-
-async function recordWordExposure(
-  transaction: Parameters<Parameters<ReturnType<typeof getDatabase>['transaction']>[0]>[0],
-  userId: string,
-  wordId: number,
-) {
+async function recordWordExposure(transaction: LessonTransaction, userId: string, wordId: number) {
   const now = new Date();
 
   await transaction
@@ -49,7 +41,7 @@ async function recordWordExposure(
 }
 
 async function ensureCurrentWordExposure(
-  transaction: Parameters<Parameters<ReturnType<typeof getDatabase>['transaction']>[0]>[0],
+  transaction: LessonTransaction,
   userId: string,
   wordIds: readonly number[],
   state: LessonSessionState,
@@ -71,9 +63,7 @@ export async function getOrCreateCurrentLessonSession(
   const { userId } = await requireLearningIdentity();
 
   return getDatabase().transaction(async (transaction) => {
-    await transaction.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${lessonSessionLockKey(userId, lesson.key)}, 0))`,
-    );
+    await lockLessonSession(transaction, userId, lesson.key);
 
     const [existingSession] = await transaction
       .select(lessonSessionColumns)
@@ -122,7 +112,7 @@ export async function getOrCreateCurrentLessonSession(
     );
     const [updatedSession] = await transaction
       .update(learningSessions)
-      .set({ currentStep: state.wordIndex, state, updatedAt: new Date() })
+      .set({ state, updatedAt: new Date() })
       .where(and(eq(learningSessions.id, session.id), eq(learningSessions.userId, userId)))
       .returning(lessonSessionColumns);
 
@@ -146,9 +136,7 @@ export async function advanceCurrentLesson(
   }
 
   return getDatabase().transaction(async (transaction) => {
-    await transaction.execute(
-      sql`select pg_advisory_xact_lock(hashtextextended(${lessonSessionLockKey(userId, lesson.key)}, 0))`,
-    );
+    await lockLessonSession(transaction, userId, lesson.key);
 
     const [session] = await transaction
       .select(lessonSessionColumns)
@@ -171,7 +159,7 @@ export async function advanceCurrentLesson(
     const authoritativeWordId = lesson.wordIds[state.wordIndex];
 
     if (
-      state.phase === LESSON_PHASE.PRACTICE ||
+      state.phase !== LESSON_PHASE.LEARN ||
       state.wordIndex !== values.expectedWordIndex ||
       authoritativeWordId !== values.expectedWordId
     ) {
