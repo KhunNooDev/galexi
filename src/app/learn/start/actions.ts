@@ -10,6 +10,7 @@ import {
   learningLevelInputSchema,
 } from '@/features/learning/learning.schema';
 import {
+  getCurrentLearningEntryRoute,
   saveCurrentLearningGoal,
   saveCurrentLearningLevelAndComplete,
 } from '@/features/learning/server/learning-profile.service';
@@ -26,15 +27,23 @@ function getFormValue(formData: FormData, name: string) {
 
 export async function startLearning(): Promise<LearningOnboardingActionState> {
   const t = await getTranslations();
+  let destination: string;
 
   try {
-    await startOrResumeGuestSession();
+    const identity = await getCurrentIdentity();
+
+    if (identity.kind === IDENTITY_KIND.PUBLIC) {
+      await startOrResumeGuestSession();
+      destination = ROUTES.LEARN_START;
+    } else {
+      destination = await getCurrentLearningEntryRoute();
+    }
   } catch (error) {
     console.error('Unable to start or resume learning', error);
-    return { error: t('learning.errors.guestSession') };
+    return { error: t('learning.errors.start') };
   }
 
-  redirect(ROUTES.LEARN_START);
+  redirect(destination);
 }
 
 export async function saveLearningGoal(

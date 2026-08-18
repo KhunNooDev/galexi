@@ -1,4 +1,5 @@
 import { getLessonResultRoute, getLessonRoute, ROUTES } from '@/constants/routes';
+import { resolveLearningEntry } from '@/features/learning/learning-entry';
 import { LESSON_PHASE, type LessonPhase } from '@/features/learning/lesson.schema';
 import {
   getFirstLessonDefinition,
@@ -42,27 +43,11 @@ export function resolveLearningContinuation({
   level,
   onboardingCompletedAt,
 }: ContinuationInput): LearningContinuation {
-  if (!goal) {
-    return {
-      href: ROUTES.LEARN_GOAL,
-      kind: CONTINUATION_KIND.ONBOARDING,
-      lessonKey: null,
-      progress: 0,
-    };
-  }
+  const entryRoute = resolveLearningEntry({ goal, level, onboardingCompletedAt });
 
-  if (!level) {
+  if (entryRoute !== ROUTES.LEARN_HOME) {
     return {
-      href: ROUTES.LEARN_LEVEL,
-      kind: CONTINUATION_KIND.ONBOARDING,
-      lessonKey: null,
-      progress: 0,
-    };
-  }
-
-  if (!onboardingCompletedAt) {
-    return {
-      href: ROUTES.LEARN_READY,
+      href: entryRoute,
       kind: CONTINUATION_KIND.ONBOARDING,
       lessonKey: null,
       progress: 0,

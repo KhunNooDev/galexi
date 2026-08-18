@@ -2,12 +2,14 @@ import 'server-only';
 
 import { and, eq, isNull } from 'drizzle-orm';
 
+import { ROUTES } from '@/constants/routes';
 import { getDatabase } from '@/db';
 import { learningProfiles } from '@/db/schema';
 import {
   learningGoalInputSchema,
   learningLevelInputSchema,
 } from '@/features/learning/learning.schema';
+import { resolveLearningEntry } from '@/features/learning/learning-entry';
 import { requireLearningIdentity } from '@/features/learning/server/learning-identity';
 
 const learningProfileColumns = {
@@ -39,6 +41,8 @@ export async function getOrCreateCurrentLearningProfile() {
 
   return profile;
 }
+
+type CurrentLearningProfile = Awaited<ReturnType<typeof getOrCreateCurrentLearningProfile>>;
 
 export async function saveCurrentLearningGoal(input: unknown) {
   const { userId } = await requireLearningIdentity();
@@ -97,10 +101,12 @@ export async function saveCurrentLearningLevelAndComplete(input: unknown) {
   });
 }
 
-export async function ensureCurrentLearningOnboardingComplete() {
+export async function ensureCurrentLearningOnboardingComplete(
+  currentProfile?: CurrentLearningProfile,
+) {
   const { userId } = await requireLearningIdentity();
   const database = getDatabase();
-  const profile = await getOrCreateCurrentLearningProfile();
+  const profile = currentProfile ?? (await getOrCreateCurrentLearningProfile());
 
   if (!profile.goal || !profile.level || profile.onboardingCompletedAt) {
     return profile;
@@ -114,4 +120,15 @@ export async function ensureCurrentLearningOnboardingComplete() {
     .returning(learningProfileColumns);
 
   return completedProfile ?? getOrCreateCurrentLearningProfile();
+}
+
+export async function getCurrentLearningEntryRoute() {
+  const profile = await getOrCreateCurrentLearningProfile();
+  const route = resolveLearningEntry(profile);
+
+  if (route === ROUTES.LEARN_READY) {
+    await ensureCurrentLearningOnboardingComplete(profile);
+  }
+
+  return route;
 }

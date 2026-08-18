@@ -168,12 +168,16 @@ revealed through category navigation.
 
 - The landing page remains public and does not create an Auth user during rendering.
 - Choosing Start learning creates a Supabase anonymous Guest only when no existing session is
-  present. Existing Guest, Member, and Admin sessions are reused.
-- `/learn/start` reads `learning_profiles` and resumes at the first missing choice.
+  present. Existing Guest, Member, and Admin sessions are reused. Learners with completed onboarding
+  go directly to `/learn`, where the continuation resolver chooses their next action.
+- `/learn/start` reads `learning_profiles` and resumes at the first missing choice. A profile with a
+  goal and level but no completion timestamp is repaired safely before the Ready handoff. Completed
+  profiles redirect to `/learn` instead of showing Ready again.
 - Goal and level selections are validated and persisted immediately through authenticated Server
   Actions. The browser does not keep canonical onboarding state in local storage or the URL.
 - Selecting a level completes onboarding only when the current user's persisted goal exists.
-- `/learn/start/ready` hands the learner into the code-defined Lesson 1 catalog.
+- `/learn/start/ready` remains the first-time handoff into the code-defined Lesson 1 catalog. Direct
+  visits are harmless, but normal returning entry does not route through it.
 - `/learn/lesson/[lessonKey]` loads only published Global Dictionary entries. A curated lesson fails
   closed if any required Word is missing or unpublished.
 - Lesson entry resumes the latest owned `in_progress` session or creates one under a transaction

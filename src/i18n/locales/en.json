@@ -297,7 +297,7 @@
     },
     "errors": {
       "backLearn": "Back to learning home",
-      "guestSession": "We could not start a Guest session. Please try again.",
+      "start": "We could not open your learning path. Please try again.",
       "sessionLost": "Your learning session is no longer available. Return to the start and try again.",
       "invalidChoice": "Choose one of the available options.",
       "update": "We could not save your choice. Please try again.",

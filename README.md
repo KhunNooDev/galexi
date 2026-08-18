@@ -54,10 +54,11 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/words/search/[word]`: public flashcards for a word
 - `/categories`: public vocabulary topics
 - `/categories/[slug]`: public words within a topic
-- `/learn/start`: learning entry and durable onboarding resume
+- `/learn/start`: public learning entry and incomplete onboarding resume; completed learners continue
+  at `/learn`
 - `/learn/start/goal`: learning goal selection
 - `/learn/start/level`: current English level selection
-- `/learn/start/ready`: completed onboarding handoff
+- `/learn/start/ready`: first-time onboarding handoff; direct visits remain harmless
 - `/learn`: personal learning home and authoritative continuation entry
 - `/learn/save`: optional Guest account upgrade or secure merge into an existing account
 - `/learn/lesson/[lessonKey]`: owned, resumable Learn, Practice, and Mini Conversation flow

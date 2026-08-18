@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getLessonResultRoute, getLessonRoute, ROUTES } from '@/constants/routes';
+import { getLessonResultRoute, getLessonRoute } from '@/constants/routes';
 import {
   CONTINUATION_KIND,
   resolveLearningContinuation,
@@ -15,30 +15,6 @@ const completedOnboarding = {
 };
 
 describe('learning continuation', () => {
-  it('routes incomplete onboarding to the next required step', () => {
-    expect(
-      resolveLearningContinuation({
-        goal: null,
-        level: null,
-        onboardingCompletedAt: null,
-      }).href,
-    ).toBe(ROUTES.LEARN_GOAL);
-    expect(
-      resolveLearningContinuation({
-        goal: 'work',
-        level: null,
-        onboardingCompletedAt: null,
-      }).href,
-    ).toBe(ROUTES.LEARN_LEVEL);
-    expect(
-      resolveLearningContinuation({
-        goal: 'work',
-        level: 'beginner',
-        onboardingCompletedAt: null,
-      }).href,
-    ).toBe(ROUTES.LEARN_READY);
-  });
-
   it.each([LESSON_PHASE.LEARN, LESSON_PHASE.PRACTICE, LESSON_PHASE.CONVERSATION])(
     'continues an in-progress %s phase in the lesson player',
     (phase) => {

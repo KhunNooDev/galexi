@@ -3,27 +3,16 @@ import { getTranslations } from 'next-intl/server';
 import { Play } from 'lucide-react';
 
 import { IDENTITY_KIND } from '@/constants/identity';
-import { ROUTES } from '@/constants/routes';
 import { OnboardingShell } from '@/features/learning/components/onboarding-shell';
 import { StartLearningForm } from '@/features/learning/components/start-learning-form';
-import { getOrCreateCurrentLearningProfile } from '@/features/learning/server/learning-profile.service';
+import { getCurrentLearningEntryRoute } from '@/features/learning/server/learning-profile.service';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 export default async function LearningStartPage() {
   const [identity, t] = await Promise.all([getCurrentIdentity(), getTranslations()]);
 
   if (identity.kind !== IDENTITY_KIND.PUBLIC) {
-    const profile = await getOrCreateCurrentLearningProfile();
-
-    if (!profile.goal) {
-      redirect(ROUTES.LEARN_GOAL);
-    }
-
-    if (!profile.level) {
-      redirect(ROUTES.LEARN_LEVEL);
-    }
-
-    redirect(ROUTES.LEARN_READY);
+    redirect(await getCurrentLearningEntryRoute());
   }
 
   return (
