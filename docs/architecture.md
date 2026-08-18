@@ -47,6 +47,50 @@ every row by `auth.uid()`.
 | `learning_sessions`  | Resumable and historical lesson session state  | `user_id`             |
 | `user_word_progress` | Long-term counts and mastery for a global Word | `(user_id, word_id)`  |
 
+### Saving a Guest account
+
+`/learn/save` provides two deliberately separate account paths:
+
+1. A new account uses Supabase's supported anonymous-user email upgrade. Email verification and
+   password setup happen on the current Auth user, so its UUID and every learning foreign key stay
+   unchanged. The application then lazily establishes the normal member role and profile. Existing
+   admin roles are never downgraded.
+2. An existing account uses a server-created `learning_account_transfers` record before sign-in
+   replaces the Guest session. The browser receives an opaque 32-byte token in an HttpOnly,
+   SameSite=Lax cookie. PostgreSQL stores only its SHA-256 hash. The record expires after 15 minutes
+   and can be consumed once.
+
+The existing-account destination is always derived from the current permanent Supabase session.
+The client never supplies a source or destination user ID. The source comes from the transfer row,
+which was created only while that source Guest controlled the current authenticated session. The
+transfer table has RLS enabled and grants no access to `anon` or `authenticated`; only the server's
+direct database boundary can create or consume a transfer.
+
+Transfer consumption locks the transfer row with `FOR UPDATE`, so duplicate requests using the same
+one-time token serialize before any learning data changes. The same transaction applies these
+deterministic merge rules:
+
+- `learning_profiles`: destination goal and level win when present; Guest values fill only missing
+  fields. Onboarding remains completed only when the merged profile has both required choices.
+- `learning_sessions`: all history moves to the destination. If both users have an in-progress
+  attempt for the same lesson, the furthest valid phase wins, then the newest update, then the
+  newest start time, and finally the stable session ID. Other active attempts become abandoned.
+- `user_word_progress`: independent counters are added with PostgreSQL integer saturation,
+  `last_seen_at` keeps the latest value, and mastery keeps the strongest bounded value. Prompt 5
+  mastery is incremental and order-dependent, so aggregate counters cannot reconstruct it without
+  inventing a new formula.
+
+A committed transfer stores the destination and consumption time. Replaying the same token for the
+same destination returns the already-consumed result without applying counts or sessions again.
+Concurrent requests serialize on the locked transfer. A critical merge error rolls back both data
+changes and token consumption, leaving the transfer retryable until expiry. Expired and consumed
+records are retained briefly for audit and idempotency, then opportunistically removed after seven
+days when a later transfer is created.
+
+The source anonymous Auth user is not deleted by the merge. Its learning rows have been moved or
+combined, but Auth lifecycle cleanup remains a separate privileged maintenance concern. This avoids
+putting destructive Auth administration in a learner-facing request.
+
 Learning goals and levels use small PostgreSQL enums matching the application-supported values.
 Session status is `in_progress`, `completed`, or `abandoned`; current step and score ranges are
 database constrained, session JSON is limited to 32 KiB, and completion timestamps must agree with

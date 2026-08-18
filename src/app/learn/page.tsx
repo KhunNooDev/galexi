@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { ArrowRight, BookOpen, CheckCircle2, Clock3, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, CircleCheck, Clock3, Sparkles } from 'lucide-react';
 
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { IDENTITY_KIND } from '@/constants/identity';
-import { AUTH_ROUTES, getLessonResultRoute, ROUTES } from '@/constants/routes';
+import { getLessonResultRoute, ROUTES } from '@/constants/routes';
 import {
   CONTINUATION_KIND,
   type LearningContinuation,
@@ -15,7 +15,11 @@ import { getLessonDefinition } from '@/features/learning/lessons/lesson-catalog'
 import { getCurrentLearningHome } from '@/features/learning/server/learning-home.service';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
 
-export default async function LearningHomePage() {
+export default async function LearningHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string | string[] }>;
+}) {
   const [identity, t, tLessons] = await Promise.all([
     getCurrentIdentity(),
     getTranslations('learning.home'),
@@ -27,6 +31,8 @@ export default async function LearningHomePage() {
   }
 
   const home = await getCurrentLearningHome();
+  const { saved } = await searchParams;
+  const progressSaved = (Array.isArray(saved) ? saved[0] : saved) === '1';
   const continuationLesson = home.continuation.lessonKey
     ? getLessonDefinition(home.continuation.lessonKey)
     : null;
@@ -46,6 +52,15 @@ export default async function LearningHomePage() {
       <div className='relative mx-auto min-h-svh max-w-7xl'>
         <PageHeader brand identity={identity} />
         <section className='mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-12'>
+          {progressSaved && (
+            <p
+              className='mb-5 flex items-center gap-2 rounded-2xl border border-primary/25 bg-primary/8 px-4 py-3 text-sm font-medium text-surface-foreground'
+              role='status'
+            >
+              <CircleCheck aria-hidden='true' className='size-5 text-primary' />
+              {t('progressSaved')}
+            </p>
+          )}
           <div>
             <p className='text-xs font-semibold tracking-[0.16em] text-primary uppercase'>
               {t('eyebrow')}
@@ -160,7 +175,7 @@ export default async function LearningHomePage() {
                 </p>
               </div>
               <Button asChild className='mt-4 shrink-0 rounded-full sm:mt-0' variant='outline'>
-                <Link href={AUTH_ROUTES.SIGN_UP}>{t('createAccount')}</Link>
+                <Link href={ROUTES.LEARN_SAVE}>{t('createAccount')}</Link>
               </Button>
             </section>
           )}

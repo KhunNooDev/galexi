@@ -59,6 +59,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/learn/start/level`: current English level selection
 - `/learn/start/ready`: completed onboarding handoff
 - `/learn`: personal learning home and authoritative continuation entry
+- `/learn/save`: optional Guest account upgrade or secure merge into an existing account
 - `/learn/lesson/[lessonKey]`: owned, resumable Learn, Practice, and Mini Conversation flow
 - `/learn/lesson/[lessonKey]/result/[sessionId]`: owned, stable lesson result
 - `/admin/categories`: administrator category manager
@@ -71,6 +72,24 @@ learning onboarding, lesson, deterministic practice, guided conversation, result
 model.
 Guest persistence requires Anonymous Sign-Ins to be enabled in the connected Supabase Auth project. See
 [Architecture](docs/architecture.md) for the data model and permission boundaries.
+
+## Saving Guest progress
+
+Galexi keeps Guest learning optional. A Guest can continue learning without creating a permanent
+account, or choose **Save my progress** from the learning home.
+
+- Creating a new email and password account upgrades the current anonymous Supabase user. The Auth
+  user ID stays the same, so learning ownership does not need to be rewritten.
+- Signing in to an existing account creates a 15-minute, one-time transfer before the Guest session
+  is replaced. After sign-in, the server derives the destination from the current session and merges
+  the Guest learning data in one transaction.
+- Transfer bearer tokens are stored only in an HttpOnly, SameSite cookie. PostgreSQL stores only the
+  SHA-256 token hash, and normal Data API roles have no access to the transfer table.
+
+For same-user conversion, Supabase Anonymous Sign-Ins and manual identity linking must be enabled.
+Email confirmation behavior follows the Auth project settings. When email confirmation is required,
+the learner verifies the email before setting a password. The callback URL must allow
+`/auth/callback` for the deployed application origin.
 
 ## Identity boundary
 

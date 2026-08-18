@@ -86,7 +86,7 @@ export function LearningChoiceForm({ initialValue, type }: LearningChoiceFormPro
   const options = type === 'goal' ? goalOptions : levelOptions;
 
   return (
-    <form className='mt-7 space-y-4'>
+    <form action={formAction} className='mt-7 space-y-4'>
       <fieldset disabled={pending} className='grid gap-3 sm:grid-cols-2'>
         <legend className='sr-only'>{t(`${type}.legend`)}</legend>
         {options.map(({ descriptionKey, icon: Icon, titleKey, value }) => {
@@ -102,7 +102,6 @@ export function LearningChoiceForm({ initialValue, type }: LearningChoiceFormPro
                   ? 'border-primary bg-primary/10 text-foreground ring-2 ring-primary/20 hover:bg-primary/14'
                   : 'border-border bg-field text-foreground hover:border-primary/45 hover:bg-secondary-hover',
               )}
-              formAction={formAction}
               name={type}
               onClick={() => setSelected(value)}
               type='submit'

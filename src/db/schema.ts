@@ -21,6 +21,7 @@ import { anonRole, authenticatedRole, authUid, authUsers } from 'drizzle-orm/sup
 import { PROFILE_LIMITS } from '@/constants/profile';
 import { USER_ROLE } from '@/constants/role';
 import { WORD_LIMITS } from '@/constants/word';
+import { LEARNING_ACCOUNT_TRANSFER_STATUS } from '@/features/learning/account/account.constants';
 import {
   LEARNING_GOAL,
   LEARNING_LEVEL,
@@ -45,6 +46,11 @@ export const learningSessionStatus = pgEnum('learning_session_status', [
   LEARNING_SESSION_STATUS.IN_PROGRESS,
   LEARNING_SESSION_STATUS.COMPLETED,
   LEARNING_SESSION_STATUS.ABANDONED,
+]);
+export const learningAccountTransferStatus = pgEnum('learning_account_transfer_status', [
+  LEARNING_ACCOUNT_TRANSFER_STATUS.PENDING,
+  LEARNING_ACCOUNT_TRANSFER_STATUS.CONSUMED,
+  LEARNING_ACCOUNT_TRANSFER_STATUS.EXPIRED,
 ]);
 const isPermanentAuthUser = sql`(((select auth.jwt()) ->> 'is_anonymous')::boolean) is false`;
 const isRowOwner = (userId: AnyPgColumn) => sql`${authUid} = ${userId}`;
@@ -378,6 +384,38 @@ export const userWordProgress = pgTable(
       using: sql`${isRowOwner(table.userId)} and ${isLearningWordVisible(table.wordId)}`,
       withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordVisible(table.wordId)}`,
     }),
+  ],
+).enableRLS();
+
+// Server-only authorization handoff for merging a Guest into an existing account.
+export const learningAccountTransfers = pgTable(
+  'learning_account_transfers',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+    sourceUserId: uuid('source_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    destinationUserId: uuid('destination_user_id').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    status: learningAccountTransferStatus('status')
+      .default(LEARNING_ACCOUNT_TRANSFER_STATUS.PENDING)
+      .notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('learning_account_transfers_token_hash_uidx').on(table.tokenHash),
+    index('learning_account_transfers_source_status_idx').on(table.sourceUserId, table.status),
+    index('learning_account_transfers_status_expires_idx').on(table.status, table.expiresAt),
+    index('learning_account_transfers_destination_idx').on(table.destinationUserId),
+    check('learning_account_transfers_expiry_check', sql`${table.expiresAt} > ${table.createdAt}`),
+    check(
+      'learning_account_transfers_consumption_check',
+      sql`(${table.status} = ${sql.raw(`'${LEARNING_ACCOUNT_TRANSFER_STATUS.CONSUMED}'::learning_account_transfer_status`)} and ${table.consumedAt} is not null and ${table.destinationUserId} is not null) or (${table.status} <> ${sql.raw(`'${LEARNING_ACCOUNT_TRANSFER_STATUS.CONSUMED}'::learning_account_transfer_status`)} and ${table.consumedAt} is null)`,
+    ),
   ],
 ).enableRLS();
 

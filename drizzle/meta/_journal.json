@@ -162,6 +162,20 @@
       "when": 1786552934916,
       "tag": "0022_publish_first_lesson_words",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786637980177,
+      "tag": "0023_wet_crusher_hogan",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787065113718,
+      "tag": "0024_spotty_firebird",
+      "breakpoints": true
     }
   ]
 }
