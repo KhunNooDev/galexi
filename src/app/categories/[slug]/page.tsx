@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { PageHeader } from '@/components/page-header';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
 import { getCategoryRoute, ROUTES } from '@/constants/routes';
@@ -34,7 +35,7 @@ export default async function CategoryPage({
   ]);
 
   return (
-    <main className='min-h-svh bg-background pb-12'>
+    <main className='min-h-svh bg-background pb-28 lg:pb-12'>
       <PageHeader backHref={ROUTES.CATEGORIES} backLabel={t('categories.backToCategories')} />
       <div className='mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:py-12'>
         <section className='galexi-toolbar flex items-center gap-4 sm:p-6'>
@@ -84,6 +85,7 @@ export default async function CategoryPage({
           </ul>
         )}
       </div>
+      <MobileBottomNavigation active='categories' />
     </main>
   );
 }

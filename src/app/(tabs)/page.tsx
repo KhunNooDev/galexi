@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { BookOpenText, Globe2, Languages, Search, ShieldCheck } from 'lucide-react';
 
-import { PageHeader } from '@/components/page-header';
 import { ROUTES } from '@/constants/routes';
 import { StartLearningForm } from '@/features/learning/components/start-learning-form';
 
@@ -27,15 +26,13 @@ export default async function Home() {
   ];
 
   return (
-    <main className='relative min-h-svh overflow-x-clip bg-background'>
+    <main className='relative min-h-[calc(100svh-4rem)] overflow-x-clip bg-background pb-24 lg:pb-0'>
       <div className='pointer-events-none absolute inset-0'>
         <div className='absolute -top-40 left-1/2 size-96 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl' />
         <div className='absolute top-1/3 -right-32 size-80 rounded-full bg-[#22d3ee]/10 blur-3xl' />
       </div>
 
-      <div className='relative mx-auto flex min-h-svh max-w-7xl flex-col'>
-        <PageHeader brand />
-
+      <div className='relative mx-auto flex min-h-[calc(100svh-4rem)] max-w-7xl flex-col'>
         <section className='flex flex-1 flex-col justify-center px-5 py-14 sm:px-8 sm:py-20'>
           <div className='mx-auto max-w-3xl text-center'>
             <p className='mb-5 text-sm font-semibold tracking-[0.2em] text-primary uppercase'>

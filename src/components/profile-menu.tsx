@@ -33,6 +33,7 @@ export function ProfileMenu({
 }: ProfileMenuProps) {
   const isPermanentUser =
     identityKind === IDENTITY_KIND.MEMBER || identityKind === IDENTITY_KIND.ADMIN;
+  const accountInitial = email?.trim().charAt(0).toLocaleUpperCase();
 
   return (
     <Popover>
@@ -41,10 +42,16 @@ export function ProfileMenu({
           type='button'
           variant='outline'
           size='icon-lg'
-          className='size-10 cursor-pointer rounded-full border-border bg-surface text-muted-foreground shadow-sm hover:bg-secondary-hover hover:text-foreground dark:bg-surface dark:hover:bg-secondary-hover'
+          className='size-10 cursor-pointer rounded-full border-primary/25 bg-primary/12 font-semibold text-primary shadow-sm hover:bg-primary/18 hover:text-primary dark:bg-primary/14 dark:hover:bg-primary/20'
           aria-label={accountMenuLabel}
         >
-          <UserRound aria-hidden='true' className='size-4' />
+          {accountInitial ? (
+            <span aria-hidden='true' className='text-sm leading-none'>
+              {accountInitial}
+            </span>
+          ) : (
+            <UserRound aria-hidden='true' className='size-4' />
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent align='end' sideOffset={8} className='w-64 p-2'>

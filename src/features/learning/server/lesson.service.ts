@@ -10,7 +10,6 @@ const lessonWordColumns = {
   exampleSentence: words.exampleSentence,
   exampleSentenceMeaningTh: words.exampleSentenceMeaningTh,
   id: words.id,
-  imageUrl: words.imageUrl,
   meaningsTh: words.meaningsTh,
   partOfSpeech: words.partOfSpeech,
   pronunciationIpa: words.pronunciationIpa,
@@ -22,7 +21,6 @@ export type LessonWord = {
   exampleSentence: string;
   exampleSentenceMeaningTh: string;
   id: number;
-  imageUrl: string;
   meaningsTh: string[];
   partOfSpeech: string;
   pronunciationIpa: string;

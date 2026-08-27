@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, ArrowRight, Eye, ImageIcon, RotateCcw, Volume2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Eye, RotateCcw, Volume2 } from 'lucide-react';
 
 import { advanceLessonAction } from '@/app/learn/lesson/[lessonKey]/actions';
-import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Button } from '@/components/ui/button';
-import { getLessonResultRoute, getWordImageRoute } from '@/constants/routes';
+import { getLessonResultRoute } from '@/constants/routes';
 import { ConversationPlayer } from '@/features/learning/components/conversation-player';
 import { PracticePlayer } from '@/features/learning/components/practice-player';
 import { LESSON_PHASE, type LessonSessionState } from '@/features/learning/lesson.schema';
@@ -27,6 +26,17 @@ type LessonPlayerProps = {
   words: LessonWord[];
 };
 
+function speakEnglish(text: string) {
+  if (!('speechSynthesis' in window)) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  window.speechSynthesis.speak(utterance);
+}
+
 export function LessonPlayer({
   conversation,
   initialState,
@@ -43,6 +53,20 @@ export function LessonPlayer({
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
   const word = words[wordIndex];
+
+  useEffect(() => {
+    if (phase !== LESSON_PHASE.LEARN || !word) {
+      return;
+    }
+
+    speakEnglish(word.word);
+
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [phase, word]);
 
   function handlePhaseChange(nextPhase: typeof phase) {
     if (nextPhase === LESSON_PHASE.RESULT) {
@@ -82,17 +106,6 @@ export function LessonPlayer({
   }
 
   const progress = ((wordIndex + 1) / words.length) * 100;
-
-  function speakWord() {
-    if (!('speechSynthesis' in window)) {
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(word.word);
-    utterance.lang = 'en';
-    window.speechSynthesis.speak(utterance);
-  }
 
   function goToPreviousWord() {
     setError('');
@@ -145,89 +158,81 @@ export function LessonPlayer({
         />
       </div>
 
-      <article className='flex min-h-124 flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(34_74_150/12%)] sm:min-h-140'>
+      <article className='flex min-h-112 flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_20px_64px_rgb(34_74_150/10%)] sm:min-h-124'>
         <div className='flex flex-1 flex-col p-5 sm:p-7'>
-          <div className='text-center'>
-            <div className='flex items-center justify-center gap-2'>
-              <h1 className='text-4xl font-semibold tracking-tight wrap-break-word text-surface-foreground sm:text-5xl'>
+          <div>
+            <div className='flex items-start justify-between gap-4'>
+              <h1 className='min-w-0 text-4xl font-semibold tracking-tight wrap-break-word text-surface-foreground sm:text-5xl'>
                 {word.word}
               </h1>
               <Button
                 type='button'
                 variant='ghost'
-                size='icon'
-                className='rounded-full text-primary hover:bg-primary/10 hover:text-primary'
+                className='size-11 shrink-0 rounded-full bg-primary/10 p-0 text-primary hover:bg-primary/18 hover:text-primary'
                 aria-label={t('listen', { word: word.word })}
-                onClick={speakWord}
+                onClick={() => speakEnglish(word.word)}
               >
-                <Volume2 aria-hidden='true' className='size-5' />
+                <Volume2 aria-hidden='true' className='size-5.5' />
               </Button>
             </div>
             {word.partOfSpeech && (
-              <span className='mt-2 inline-flex rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase'>
+              <span className='mt-3 inline-flex rounded-full bg-primary/12 px-3 py-1 text-xs font-semibold tracking-wide text-primary uppercase'>
                 {word.partOfSpeech}
               </span>
             )}
             {(word.pronunciationIpa || word.pronunciationThai) && (
-              <div className='mt-3 flex flex-wrap justify-center gap-2 text-sm text-muted-foreground'>
-                {word.pronunciationIpa && (
-                  <span className='rounded-full bg-secondary-hover px-3 py-1.5'>
-                    <strong className='mr-1.5 text-xs text-primary'>{t('ipaLabel')}</strong>
-                    {word.pronunciationIpa}
+              <p className='mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground sm:text-base'>
+                {word.pronunciationIpa && <span>{word.pronunciationIpa}</span>}
+                {word.pronunciationIpa && word.pronunciationThai && (
+                  <span aria-hidden='true' className='text-border'>
+                    ·
                   </span>
                 )}
-                {word.pronunciationThai && (
-                  <span className='rounded-full bg-secondary-hover px-3 py-1.5'>
-                    <strong className='mr-1.5 text-xs text-primary'>{t('thaiLabel')}</strong>
-                    <span lang='th'>{word.pronunciationThai}</span>
-                  </span>
-                )}
-              </div>
+                {word.pronunciationThai && <span lang='th'>{word.pronunciationThai}</span>}
+              </p>
             )}
           </div>
 
-          <div className='my-5 h-px bg-border' />
+          <div className='my-6 h-px bg-border' />
 
           {isRevealed ? (
-            <div className='flex flex-1 animate-in flex-col gap-4 duration-200 fade-in-0 slide-in-from-bottom-2'>
-              <div className={word.imageUrl ? 'grid gap-4 sm:grid-cols-[8rem_1fr]' : ''}>
-                {word.imageUrl && (
-                  <div className='relative aspect-square w-28 justify-self-center overflow-hidden rounded-2xl border border-border bg-secondary-hover sm:w-32 sm:justify-self-start'>
-                    <ImageWithSkeleton
-                      src={getWordImageRoute(word.id)}
-                      alt={t('imageAlt', { word: word.word })}
-                      className='object-cover'
-                    />
-                  </div>
-                )}
-                <section>
-                  <h2 className='text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase'>
-                    {t('meaningsTitle')}
-                  </h2>
-                  <div className='mt-2 flex flex-wrap gap-2'>
-                    {word.meaningsTh.map((meaning) => (
-                      <span
-                        key={meaning}
-                        lang='th'
-                        className='rounded-full bg-primary/12 px-3 py-1.5 text-sm font-medium text-primary'
-                      >
-                        {meaning}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              </div>
+            <div className='flex flex-1 animate-in flex-col duration-200 fade-in-0 slide-in-from-bottom-2'>
+              <section>
+                <h2 className='sr-only'>{t('meaningsTitle')}</h2>
+                <div className='flex flex-wrap gap-x-3 gap-y-1'>
+                  {word.meaningsTh.map((meaning) => (
+                    <span
+                      key={meaning}
+                      lang='th'
+                      className='text-xl leading-8 font-semibold text-primary sm:text-2xl'
+                    >
+                      {meaning}
+                    </span>
+                  ))}
+                </div>
+              </section>
               {(word.exampleSentence || word.exampleSentenceMeaningTh) && (
-                <section>
-                  <h2 className='text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase'>
-                    {t('exampleTitle')}
-                  </h2>
-                  <blockquote className='mt-2 rounded-2xl border border-border bg-background/60 p-4'>
+                <section className='mt-6 border-t border-border pt-6'>
+                  <h2 className='sr-only'>{t('exampleTitle')}</h2>
+                  <blockquote>
                     {word.exampleSentence && (
-                      <p className='leading-6 text-surface-foreground'>{word.exampleSentence}</p>
+                      <div className='flex items-start gap-3'>
+                        <p className='min-w-0 flex-1 text-base leading-7 text-surface-foreground sm:text-lg'>
+                          {word.exampleSentence}
+                        </p>
+                        <Button
+                          type='button'
+                          variant='ghost'
+                          className='size-11 shrink-0 rounded-full bg-primary/10 p-0 text-primary hover:bg-primary/18 hover:text-primary'
+                          aria-label={t('listenExample')}
+                          onClick={() => speakEnglish(word.exampleSentence)}
+                        >
+                          <Volume2 aria-hidden='true' className='size-5' />
+                        </Button>
+                      </div>
                     )}
                     {word.exampleSentenceMeaningTh && (
-                      <p className='mt-2 text-sm leading-6 text-muted-foreground' lang='th'>
+                      <p className='mt-3 text-sm leading-6 text-muted-foreground' lang='th'>
                         {word.exampleSentenceMeaningTh}
                       </p>
                     )}
@@ -236,16 +241,11 @@ export function LessonPlayer({
               )}
             </div>
           ) : (
-            <div className='flex flex-1 animate-in flex-col items-center justify-center rounded-3xl border border-dashed border-primary/25 bg-primary/3 p-5 text-center duration-200 fade-in-0'>
-              <span className='grid size-12 place-items-center rounded-full bg-primary/12 text-primary'>
-                <ImageIcon aria-hidden='true' className='size-5' />
-              </span>
-              <p className='mt-3 max-w-sm text-sm leading-6 text-muted-foreground'>
-                {t('revealHint')}
-              </p>
+            <div className='flex flex-1 animate-in flex-col items-center justify-center px-2 py-6 text-center duration-200 fade-in-0'>
+              <p className='max-w-sm text-sm leading-6 text-muted-foreground'>{t('revealHint')}</p>
               <Button
                 type='button'
-                className='mt-4 h-11 rounded-full px-6'
+                className='mt-5 h-11 rounded-full px-6'
                 onClick={() => setIsRevealed(true)}
               >
                 <Eye aria-hidden='true' />

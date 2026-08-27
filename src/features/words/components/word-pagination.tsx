@@ -22,6 +22,19 @@ const PAGE_SIZE_OPTIONS = [
   { label: '24', value: '24' },
 ] as const;
 
+const MAX_VISIBLE_PAGE_BUTTONS = 5;
+
+function getVisiblePageNumbers(activePage: number, totalPages: number) {
+  const visibleCount = Math.min(totalPages, MAX_VISIBLE_PAGE_BUTTONS);
+  const preferredStart = activePage - Math.floor(visibleCount / 2);
+  const startPage = Math.min(
+    Math.max(preferredStart, 1),
+    Math.max(totalPages - visibleCount + 1, 1),
+  );
+
+  return Array.from({ length: visibleCount }, (_, index) => startPage + index);
+}
+
 type WordPaginationProps = {
   activePage: number;
   totalPages: number;
@@ -44,21 +57,19 @@ export function WordPagination({
   onViewChange,
 }: WordPaginationProps) {
   const t = useTranslations();
-  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).filter(
-    (page) => page === 1 || page === totalPages || Math.abs(page - activePage) <= 1,
-  );
+  const pageNumbers = getVisiblePageNumbers(activePage, totalPages);
 
   return (
-    <div className='galexi-panel flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4'>
+    <div className='galexi-panel flex flex-col gap-3 p-3 sm:p-4 md:flex-row md:items-center md:justify-between'>
       <nav
-        className='order-2 flex items-center justify-center gap-1 sm:order-1 sm:justify-start'
+        className='order-2 flex items-center justify-center gap-0 md:order-1 md:justify-start md:gap-1'
         aria-label={t('words.manager.paginationLabel')}
       >
         <Button
           type='button'
           variant='outline'
           size='icon'
-          className='hidden cursor-pointer rounded-xl border-border bg-surface sm:inline-flex dark:bg-surface'
+          className='hidden cursor-pointer rounded-xl border-border bg-surface md:inline-flex dark:bg-surface'
           aria-label={t('words.manager.firstPage')}
           disabled={activePage === 1}
           onClick={() => onPageChange(1)}
@@ -84,7 +95,6 @@ export function WordPagination({
             size='icon'
             className={cn(
               'cursor-pointer rounded-xl',
-              page !== activePage && 'hidden sm:inline-flex',
               page === activePage && 'shadow-md shadow-primary/20',
             )}
             aria-label={t('words.manager.goToPage', { page })}
@@ -109,7 +119,7 @@ export function WordPagination({
           type='button'
           variant='outline'
           size='icon'
-          className='hidden cursor-pointer rounded-xl border-border bg-surface sm:inline-flex dark:bg-surface'
+          className='hidden cursor-pointer rounded-xl border-border bg-surface md:inline-flex dark:bg-surface'
           aria-label={t('words.manager.lastPage')}
           disabled={activePage === totalPages}
           onClick={() => onPageChange(totalPages)}
@@ -118,7 +128,7 @@ export function WordPagination({
         </Button>
       </nav>
 
-      <div className='order-1 flex items-center justify-between gap-2 border-b border-border pb-3 sm:order-2 sm:justify-end sm:gap-3 sm:border-0 sm:pb-0'>
+      <div className='order-1 flex items-center justify-between gap-2 border-b border-border pb-3 md:order-2 md:justify-end md:gap-3 md:border-0 md:pb-0'>
         <p className='min-w-0 flex-1 truncate text-xs text-muted-foreground sm:flex-none sm:text-sm'>
           {t('words.manager.showingResults', {
             from: (activePage - 1) * pageSize + 1,

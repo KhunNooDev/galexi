@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local design docs
+/docs/design/
+
+# local generated artifacts
+/.artifacts/

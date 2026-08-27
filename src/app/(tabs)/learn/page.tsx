@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ArrowRight, BookOpen, CheckCircle2, CircleCheck, Clock3, Sparkles } from 'lucide-react';
 
-import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { IDENTITY_KIND } from '@/constants/identity';
 import { getLessonResultRoute, ROUTES } from '@/constants/routes';
@@ -44,13 +43,12 @@ export default async function LearningHomePage({
       );
 
   return (
-    <main className='relative min-h-svh overflow-x-clip bg-background'>
+    <main className='relative min-h-[calc(100svh-4rem)] overflow-x-clip bg-background pb-24 lg:pb-0'>
       <div className='pointer-events-none absolute inset-0 overflow-hidden'>
         <div className='absolute -top-40 left-1/3 size-96 rounded-full bg-primary/12 blur-3xl' />
         <div className='absolute right-0 bottom-0 size-80 rounded-full bg-cyan-400/7 blur-3xl' />
       </div>
-      <div className='relative mx-auto min-h-svh max-w-7xl'>
-        <PageHeader brand identity={identity} />
+      <div className='relative mx-auto min-h-[calc(100svh-4rem)] max-w-7xl'>
         <section className='mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-12'>
           {progressSaved && (
             <p
