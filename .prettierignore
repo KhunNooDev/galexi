@@ -6,4 +6,4 @@ build
 coverage
 AGENTS.md
 next-env.d.ts
-pnpm-lock.yaml
+bun.lock

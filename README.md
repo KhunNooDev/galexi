@@ -20,7 +20,7 @@ than owned by individual users.
 Install dependencies:
 
 ```bash
-pnpm install
+bun install
 ```
 
 Copy `.env.example` to `.env.local` and set the Supabase database and public Auth values.
@@ -32,13 +32,13 @@ never during ordinary page visits.
 Apply the existing database migrations:
 
 ```bash
-pnpm db:migrate
+bun run db:migrate
 ```
 
 Start the development server:
 
 ```bash
-pnpm dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -111,17 +111,17 @@ metadata, or client-side state.
 ## Scripts
 
 ```bash
-pnpm dev          # Start development mode
-pnpm build        # Create a production build
-pnpm start        # Start the production server
-pnpm lint         # Run ESLint
-pnpm test         # Run focused domain tests
-pnpm format       # Format and fix the project
-pnpm format:check # Check formatting and linting
-pnpm db:generate  # Generate a Drizzle migration
-pnpm db:migrate   # Apply Drizzle migrations
-pnpm db:check     # Validate Drizzle migrations
-pnpm db:studio    # Open Drizzle Studio
+bun run dev          # Start development mode
+bun run build        # Create a production build
+bun run start        # Start the production server
+bun run lint         # Run ESLint
+bun run test         # Run focused domain tests
+bun run format       # Format and fix the project
+bun run format:check # Check formatting and linting
+bun run db:generate  # Generate a Drizzle migration
+bun run db:migrate   # Apply Drizzle migrations
+bun run db:check     # Validate Drizzle migrations
+bun run db:studio    # Open Drizzle Studio
 ```
 
 Translation messages live in `src/i18n/locales/en.json`. Routes do not include a locale prefix.
