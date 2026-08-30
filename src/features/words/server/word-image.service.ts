@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 
 import { getStoredWordImagePath, WORD_IMAGE } from '@/constants/word';
 import { getDatabase } from '@/db';
-import { words } from '@/db/schema';
+import { wordSenses } from '@/db/schema';
 import { createClient } from '@/lib/supabase/server';
 
 export function getWordImageLockQuery(path: string) {
@@ -61,13 +61,13 @@ export async function cleanupUnreferencedWordImage(imageReference: string) {
   return getDatabase().transaction(async (transaction) => {
     await transaction.execute(getWordImageLockQuery(path));
 
-    const [referencedWord] = await transaction
-      .select({ id: words.id })
-      .from(words)
-      .where(eq(words.imageUrl, path))
+    const [referencedWordSense] = await transaction
+      .select({ id: wordSenses.id })
+      .from(wordSenses)
+      .where(eq(wordSenses.imageUrl, path))
       .limit(1);
 
-    if (referencedWord) {
+    if (referencedWordSense) {
       return { removed: false };
     }
 

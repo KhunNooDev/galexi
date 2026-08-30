@@ -23,7 +23,7 @@ type MasteryLabel = (typeof MASTERY_LABEL)[keyof typeof MASTERY_LABEL];
 type CreateLessonResultSnapshotInput = {
   completedAt: Date;
   conversation: readonly ConversationTurn[];
-  masteryByWordId: ReadonlyMap<number, number>;
+  masteryByWordSenseId: ReadonlyMap<number, number>;
   questions: readonly PracticeQuestion[];
   state: LessonSessionState;
   words: readonly ActivityWord[];
@@ -44,7 +44,7 @@ export function getMasteryLabel(mastery: number): MasteryLabel {
 export function createLessonResultSnapshot({
   completedAt,
   conversation,
-  masteryByWordId,
+  masteryByWordSenseId,
   questions,
   state,
   words,
@@ -59,7 +59,7 @@ export function createLessonResultSnapshot({
   const correct = questions.reduce((count, question) => {
     const answer = answersByQuestion.get(question.id);
 
-    if (!answer || answer.wordId !== question.targetWordId) {
+    if (!answer || answer.wordSenseId !== question.targetWordSenseId) {
       throw new Error('Practice result is incomplete');
     }
 
@@ -92,9 +92,9 @@ export function createLessonResultSnapshot({
     conversationTurns: conversation.length,
     mastery: words.map((word) => ({
       meaning: word.meaningsTh[0] ?? '',
-      value: masteryByWordId.get(word.id) ?? 0,
+      value: masteryByWordSenseId.get(word.id) ?? 0,
       word: word.word,
-      wordId: word.id,
+      wordSenseId: word.id,
     })),
     practiceCorrect: correct,
     practiceTotal: questions.length,

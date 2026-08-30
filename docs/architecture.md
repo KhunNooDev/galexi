@@ -2,9 +2,10 @@
 
 ## Global dictionary
 
-The `words` table is a shared, system-wide dictionary. A vocabulary entry does not belong to an
-individual user. Administrators manage the same collection, and the case-insensitive combination
-of `word` and `part_of_speech` is unique across the entire dictionary.
+The global dictionary separates spelling from learnable meaning. `words` stores one canonical,
+case-insensitively unique English spelling. `word_senses` stores each meaning, part of speech,
+pronunciation, example, image, visibility state, and a positive `sense_order`. Multiple senses may
+share both spelling and part of speech; `(word_id, lower(part_of_speech), sense_order)` is unique.
 
 Each entry has nullable audit references:
 
@@ -16,7 +17,7 @@ therefore removes the audit association without deleting or reassigning dictiona
 fields are audit metadata and are not used as ownership or authorization boundaries.
 
 Vocabulary topics use a normalized many-to-many model. `categories` stores the reusable topic
-name, URL slug, and display order, while `word_categories` links any word to any number of topics.
+name, URL slug, and display order, while `word_sense_categories` links each meaning to its topics.
 Deleting a category cascades only to its link rows; it never deletes dictionary entries.
 
 ## Access model
@@ -41,11 +42,11 @@ The connected Supabase Auth project must have Anonymous Sign-Ins enabled before 
 create Guest identities. RLS treats those anonymous Auth users as `authenticated` and still isolates
 every row by `auth.uid()`.
 
-| Table                | Purpose                                        | Ownership key         |
-| -------------------- | ---------------------------------------------- | --------------------- |
-| `learning_profiles`  | Goal, level, and onboarding completion         | `user_id` primary key |
-| `learning_sessions`  | Resumable and historical lesson session state  | `user_id`             |
-| `user_word_progress` | Long-term counts and mastery for a global Word | `(user_id, word_id)`  |
+| Table                | Purpose                                         | Ownership key              |
+| -------------------- | ----------------------------------------------- | -------------------------- |
+| `learning_profiles`  | Goal, level, and onboarding completion          | `user_id` primary key      |
+| `learning_sessions`  | Resumable and historical lesson session state   | `user_id`                  |
+| `user_word_progress` | Long-term counts and mastery for one word sense | `(user_id, word_sense_id)` |
 
 ### Saving a Guest account
 
@@ -158,9 +159,9 @@ permits direct role updates. The administrator policy permits dictionary managem
 calling the dictionary server functions.
 
 Category policies follow the same boundary. Guests and members can see only categories and
-relationships connected to public words. Administrators manage all categories and relationships.
-Public category pages still join through `words.is_public = true`, so a private word cannot be
-revealed through category navigation.
+relationships connected to public word senses. Administrators manage all categories and
+relationships. Public category pages join through `word_senses.is_public = true`, so an unpublished
+sense cannot be revealed through category navigation.
 
 ## Application flow
 
@@ -224,14 +225,14 @@ revealed through category navigation.
 - Creating an entry sets both audit fields to the current administrator ID.
 - Updating an entry leaves `created_by` unchanged and sets `updated_by` to the current
   administrator ID.
-- Word images are stored in Supabase Storage and referenced by the dictionary entry.
+- Word images are stored in Supabase Storage and referenced by a word sense.
 
 ### Word image consistency
 
 The browser uploads a candidate image directly to the private `word-images` bucket before saving
-the Word. PostgreSQL remains authoritative: `words.image_url` determines whether a Storage object is
-in use. If a save has an uncertain client outcome, the browser may request cleanup, but only the
-server decides whether removal is safe by checking the current dictionary references first.
+the sense. PostgreSQL remains authoritative: `word_senses.image_url` determines whether a Storage
+object is in use. If a save has an uncertain client outcome, the browser may request cleanup, but
+only the server decides whether removal is safe by checking current sense references first.
 
 Image replacement and Word deletion commit their database changes before the previous image becomes
 a cleanup candidate. Every automatic cleanup path uses the same database-aware service and retains

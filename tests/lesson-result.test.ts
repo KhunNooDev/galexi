@@ -61,7 +61,7 @@ describe('lesson result', () => {
     const snapshot = createLessonResultSnapshot({
       completedAt: new Date('2026-08-13T03:00:00.000Z'),
       conversation: FIRST_LESSON_CONVERSATION,
-      masteryByWordId: new Map([[8, 25]]),
+      masteryByWordSenseId: new Map([[8, 25]]),
       questions,
       state,
       words,
@@ -77,9 +77,9 @@ describe('lesson result', () => {
       meaning: 'อยากรู้อยากเห็น',
       value: 25,
       word: 'curious',
-      wordId: 8,
+      wordSenseId: 8,
     });
-    expect(snapshot.mastery[1]).toMatchObject({ value: 0, wordId: 9 });
+    expect(snapshot.mastery[1]).toMatchObject({ value: 0, wordSenseId: 9 });
   });
 
   it('keeps a completed snapshot stable and idempotent', () => {
@@ -87,7 +87,7 @@ describe('lesson result', () => {
     const input = {
       completedAt: new Date('2026-08-13T03:00:00.000Z'),
       conversation: FIRST_LESSON_CONVERSATION,
-      masteryByWordId: new Map([[8, 10]]),
+      masteryByWordSenseId: new Map([[8, 10]]),
       questions,
       state,
       words,
@@ -96,7 +96,7 @@ describe('lesson result', () => {
     const repeated = getStableLessonResultSnapshot(first, {
       ...input,
       completedAt: new Date('2026-08-14T03:00:00.000Z'),
-      masteryByWordId: new Map([[8, 90]]),
+      masteryByWordSenseId: new Map([[8, 90]]),
     });
 
     expect(repeated).toBe(first);

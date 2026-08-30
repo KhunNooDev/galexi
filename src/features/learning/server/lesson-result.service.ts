@@ -3,7 +3,7 @@ import 'server-only';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
-import { learningSessions, userWordProgress, words } from '@/db/schema';
+import { learningSessions, userWordProgress, words, wordSenses } from '@/db/schema';
 import { LEARNING_SESSION_STATUS } from '@/features/learning/learning.constants';
 import { normalizeLessonSessionState } from '@/features/learning/lesson.schema';
 import { buildPracticeQuestions } from '@/features/learning/lessons/lesson-activities';
@@ -27,16 +27,22 @@ const resultSessionColumns = {
 async function loadMastery(
   transaction: LessonTransaction,
   userId: string,
-  wordIds: readonly number[],
+  wordSenseIds: readonly number[],
 ) {
   const progress = await transaction
-    .select({ mastery: userWordProgress.mastery, wordId: userWordProgress.wordId })
+    .select({
+      mastery: userWordProgress.mastery,
+      wordSenseId: userWordProgress.wordSenseId,
+    })
     .from(userWordProgress)
     .where(
-      and(eq(userWordProgress.userId, userId), inArray(userWordProgress.wordId, [...wordIds])),
+      and(
+        eq(userWordProgress.userId, userId),
+        inArray(userWordProgress.wordSenseId, [...wordSenseIds]),
+      ),
     );
 
-  return new Map(progress.map((item) => [item.wordId, item.mastery]));
+  return new Map(progress.map((item) => [item.wordSenseId, item.mastery]));
 }
 
 export async function completeAndGetLessonResult(lesson: LessonDefinition, sessionId: string) {
@@ -65,7 +71,7 @@ export async function completeAndGetLessonResult(lesson: LessonDefinition, sessi
       return null;
     }
 
-    const state = normalizeLessonSessionState(session.state, lesson.wordIds);
+    const state = normalizeLessonSessionState(session.state, lesson.wordSenseIds);
 
     if (session.status === LEARNING_SESSION_STATUS.COMPLETED && state.result) {
       return toLessonResult(state.result);
@@ -76,11 +82,12 @@ export async function completeAndGetLessonResult(lesson: LessonDefinition, sessi
     }
 
     const lessonWords = await transaction
-      .select({ id: words.id, meaningsTh: words.meaningsTh, word: words.word })
-      .from(words)
-      .where(and(inArray(words.id, [...lesson.wordIds]), eq(words.isPublic, true)));
+      .select({ id: wordSenses.id, meaningsTh: wordSenses.meaningsTh, word: words.word })
+      .from(wordSenses)
+      .innerJoin(words, eq(words.id, wordSenses.wordId))
+      .where(and(inArray(wordSenses.id, [...lesson.wordSenseIds]), eq(wordSenses.isPublic, true)));
     const wordsById = new Map(lessonWords.map((word) => [word.id, word]));
-    const orderedWords = lesson.wordIds.map((wordId) => wordsById.get(wordId));
+    const orderedWords = lesson.wordSenseIds.map((wordSenseId) => wordsById.get(wordSenseId));
 
     const resultWords = orderedWords.map((word) => {
       if (!word) {
@@ -91,11 +98,11 @@ export async function completeAndGetLessonResult(lesson: LessonDefinition, sessi
     });
     const questions = buildPracticeQuestions(resultWords, lesson.conversation);
     const completedAt = new Date();
-    const masteryByWordId = await loadMastery(transaction, userId, lesson.wordIds);
+    const masteryByWordSenseId = await loadMastery(transaction, userId, lesson.wordSenseIds);
     const snapshot = getStableLessonResultSnapshot(state.result, {
       completedAt,
       conversation: lesson.conversation,
-      masteryByWordId,
+      masteryByWordSenseId,
       questions,
       state,
       words: resultWords,
@@ -132,7 +139,7 @@ function toLessonResult(
   return {
     ...snapshot,
     words: snapshot.mastery.map((word) => ({
-      id: word.wordId,
+      id: word.wordSenseId,
       label: getMasteryLabel(word.value),
       meaning: word.meaning,
       word: word.word,

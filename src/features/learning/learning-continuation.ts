@@ -57,7 +57,7 @@ export function resolveLearningContinuation({
   if (inProgress) {
     const lesson = getLessonDefinition(inProgress.lessonKey);
     const totalSteps = lesson
-      ? lesson.wordIds.length * 2 + lesson.conversation.length
+      ? lesson.wordSenseIds.length * 2 + lesson.conversation.length
       : Math.max(1, inProgress.currentStep + 1);
     const progress =
       inProgress.phase === LESSON_PHASE.RESULT

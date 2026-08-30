@@ -24,10 +24,10 @@ import {
   lockLessonSession,
 } from '@/features/learning/server/lesson-session.persistence';
 
-async function updatePracticeWordProgress(
+async function updatePracticeWordSenseProgress(
   transaction: LessonTransaction,
   userId: string,
-  wordId: number,
+  wordSenseId: number,
   isCorrect: boolean,
 ) {
   const now = new Date();
@@ -47,10 +47,10 @@ async function updatePracticeWordProgress(
       lastSeenAt: now,
       mastery,
       userId,
-      wordId,
+      wordSenseId,
     })
     .onConflictDoUpdate({
-      target: [userWordProgress.userId, userWordProgress.wordId],
+      target: [userWordProgress.userId, userWordProgress.wordSenseId],
       set: {
         ...countUpdate,
         lastSeenAt: now,
@@ -88,7 +88,7 @@ export async function submitCurrentPracticeAnswer(
       throw new Error('Lesson session is unavailable');
     }
 
-    const state = normalizeLessonSessionState(session.state, lesson.wordIds);
+    const state = normalizeLessonSessionState(session.state, lesson.wordSenseIds);
     const existingAnswer = state.practice.answers.find(
       (answer) => answer.questionId === question.id,
     );
@@ -104,10 +104,10 @@ export async function submitCurrentPracticeAnswer(
     const result = addPracticeAnswer(state, question, values.selectedOptionId, questions.length);
 
     if (!result.isDuplicate) {
-      await updatePracticeWordProgress(
+      await updatePracticeWordSenseProgress(
         transaction,
         userId,
-        result.answer.wordId,
+        result.answer.wordSenseId,
         result.answer.isCorrect,
       );
 
@@ -118,7 +118,7 @@ export async function submitCurrentPracticeAnswer(
       const [updatedSession] = await transaction
         .update(learningSessions)
         .set({
-          currentStep: lesson.wordIds.length + result.state.practice.answers.length,
+          currentStep: lesson.wordSenseIds.length + result.state.practice.answers.length,
           score,
           state: result.state,
           updatedAt: new Date(),

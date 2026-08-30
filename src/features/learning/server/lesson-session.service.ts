@@ -24,14 +24,18 @@ type LessonSessionResult = {
   state: LessonSessionState;
 };
 
-async function recordWordExposure(transaction: LessonTransaction, userId: string, wordId: number) {
+async function recordWordSenseExposure(
+  transaction: LessonTransaction,
+  userId: string,
+  wordSenseId: number,
+) {
   const now = new Date();
 
   await transaction
     .insert(userWordProgress)
-    .values({ lastSeenAt: now, seenCount: 1, userId, wordId })
+    .values({ lastSeenAt: now, seenCount: 1, userId, wordSenseId })
     .onConflictDoUpdate({
-      target: [userWordProgress.userId, userWordProgress.wordId],
+      target: [userWordProgress.userId, userWordProgress.wordSenseId],
       set: {
         lastSeenAt: now,
         seenCount: sql`${userWordProgress.seenCount} + 1`,
@@ -43,18 +47,18 @@ async function recordWordExposure(transaction: LessonTransaction, userId: string
 async function ensureCurrentWordExposure(
   transaction: LessonTransaction,
   userId: string,
-  wordIds: readonly number[],
+  wordSenseIds: readonly number[],
   state: LessonSessionState,
 ) {
-  const wordId = wordIds[state.wordIndex];
+  const wordSenseId = wordSenseIds[state.wordIndex];
 
-  if (!wordId || state.seenWordIds.includes(wordId)) {
+  if (!wordSenseId || state.seenWordSenseIds.includes(wordSenseId)) {
     return state;
   }
 
-  await recordWordExposure(transaction, userId, wordId);
+  await recordWordSenseExposure(transaction, userId, wordSenseId);
 
-  return { ...state, seenWordIds: [...state.seenWordIds, wordId] };
+  return { ...state, seenWordSenseIds: [...state.seenWordSenseIds, wordSenseId] };
 }
 
 export async function getOrCreateCurrentLessonSession(
@@ -103,11 +107,11 @@ export async function getOrCreateCurrentLessonSession(
       throw new Error('Unable to create lesson session');
     }
 
-    const normalizedState = normalizeLessonSessionState(session.state, lesson.wordIds);
+    const normalizedState = normalizeLessonSessionState(session.state, lesson.wordSenseIds);
     const state = await ensureCurrentWordExposure(
       transaction,
       userId,
-      lesson.wordIds,
+      lesson.wordSenseIds,
       normalizedState,
     );
     const [updatedSession] = await transaction
@@ -155,31 +159,31 @@ export async function advanceCurrentLesson(
       throw new Error('Lesson session is unavailable');
     }
 
-    const state = normalizeLessonSessionState(session.state, lesson.wordIds);
-    const authoritativeWordId = lesson.wordIds[state.wordIndex];
+    const state = normalizeLessonSessionState(session.state, lesson.wordSenseIds);
+    const authoritativeWordSenseId = lesson.wordSenseIds[state.wordIndex];
 
     if (
       state.phase !== LESSON_PHASE.LEARN ||
       state.wordIndex !== values.expectedWordIndex ||
-      authoritativeWordId !== values.expectedWordId
+      authoritativeWordSenseId !== values.expectedWordSenseId
     ) {
       return { ...session, state };
     }
 
     const nextWordIndex = state.wordIndex + 1;
     const nextState: LessonSessionState =
-      nextWordIndex >= lesson.wordIds.length
+      nextWordIndex >= lesson.wordSenseIds.length
         ? { ...state, phase: LESSON_PHASE.PRACTICE }
         : { ...state, wordIndex: nextWordIndex };
     const stateWithExposure = await ensureCurrentWordExposure(
       transaction,
       userId,
-      lesson.wordIds,
+      lesson.wordSenseIds,
       nextState,
     );
     const currentStep =
       stateWithExposure.phase === LESSON_PHASE.PRACTICE
-        ? lesson.wordIds.length
+        ? lesson.wordSenseIds.length
         : stateWithExposure.wordIndex;
     const [updatedSession] = await transaction
       .update(learningSessions)

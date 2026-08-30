@@ -9,7 +9,7 @@ export type LessonDefinition = {
   conversation: readonly ConversationTurn[];
   key: string;
   titleKey: 'learningMomentum';
-  wordIds: readonly number[];
+  wordSenseIds: readonly number[];
 };
 
 const lessonCatalog = [
@@ -17,7 +17,7 @@ const lessonCatalog = [
     conversation: FIRST_LESSON_CONVERSATION,
     key: FIRST_LESSON_KEY,
     titleKey: 'learningMomentum',
-    wordIds: [8, 9, 10, 7, 11, 16],
+    wordSenseIds: [8, 9, 10, 7, 11, 16],
   },
 ] as const satisfies readonly LessonDefinition[];
 

@@ -76,7 +76,7 @@ export async function getCurrentLearningHome() {
     : null;
   const inProgressState =
     inProgressSession && inProgressLesson
-      ? normalizeLessonSessionState(inProgressSession.state, inProgressLesson.wordIds)
+      ? normalizeLessonSessionState(inProgressSession.state, inProgressLesson.wordSenseIds)
       : null;
   const continuation = resolveLearningContinuation({
     completedLessonKey: completedSession?.lessonKey,

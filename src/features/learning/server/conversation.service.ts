@@ -49,7 +49,7 @@ export async function submitCurrentConversationResponse(
       throw new Error('Lesson session is unavailable');
     }
 
-    const state = normalizeLessonSessionState(session.state, lesson.wordIds);
+    const state = normalizeLessonSessionState(session.state, lesson.wordSenseIds);
     const existingResponse = state.conversation.responses.find(
       (response) => response.turnId === turn.id,
     );
@@ -72,12 +72,12 @@ export async function submitCurrentConversationResponse(
     if (!result.isDuplicate) {
       const now = new Date();
 
-      for (const wordId of result.response.wordIds) {
+      for (const wordSenseId of result.response.wordSenseIds) {
         await transaction
           .insert(userWordProgress)
-          .values({ lastSeenAt: now, userId, wordId })
+          .values({ lastSeenAt: now, userId, wordSenseId })
           .onConflictDoUpdate({
-            target: [userWordProgress.userId, userWordProgress.wordId],
+            target: [userWordProgress.userId, userWordProgress.wordSenseId],
             set: { lastSeenAt: now, updatedAt: now },
           });
       }
@@ -86,7 +86,9 @@ export async function submitCurrentConversationResponse(
         .update(learningSessions)
         .set({
           currentStep:
-            lesson.wordIds.length + questions.length + result.state.conversation.responses.length,
+            lesson.wordSenseIds.length +
+            questions.length +
+            result.state.conversation.responses.length,
           state: result.state,
           updatedAt: now,
         })

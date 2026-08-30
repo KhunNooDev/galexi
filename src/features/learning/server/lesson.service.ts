@@ -3,17 +3,17 @@ import 'server-only';
 import { and, eq, inArray } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
-import { words } from '@/db/schema';
+import { words, wordSenses } from '@/db/schema';
 import type { LessonDefinition } from '@/features/learning/lessons/lesson-catalog';
 
 const lessonWordColumns = {
-  exampleSentence: words.exampleSentence,
-  exampleSentenceMeaningTh: words.exampleSentenceMeaningTh,
-  id: words.id,
-  meaningsTh: words.meaningsTh,
-  partOfSpeech: words.partOfSpeech,
-  pronunciationIpa: words.pronunciationIpa,
-  pronunciationThai: words.pronunciationThai,
+  exampleSentence: wordSenses.exampleSentence,
+  exampleSentenceMeaningTh: wordSenses.exampleSentenceMeaningTh,
+  id: wordSenses.id,
+  meaningsTh: wordSenses.meaningsTh,
+  partOfSpeech: wordSenses.partOfSpeech,
+  pronunciationIpa: wordSenses.pronunciationIpa,
+  pronunciationThai: wordSenses.pronunciationThai,
   word: words.word,
 };
 
@@ -31,10 +31,11 @@ export type LessonWord = {
 export async function getPublishedLessonWords(lesson: LessonDefinition): Promise<LessonWord[]> {
   const lessonWords = await getDatabase()
     .select(lessonWordColumns)
-    .from(words)
-    .where(and(inArray(words.id, [...lesson.wordIds]), eq(words.isPublic, true)));
+    .from(wordSenses)
+    .innerJoin(words, eq(words.id, wordSenses.wordId))
+    .where(and(inArray(wordSenses.id, [...lesson.wordSenseIds]), eq(wordSenses.isPublic, true)));
   const wordsById = new Map(lessonWords.map((word) => [word.id, word]));
-  const orderedWords = lesson.wordIds.map((wordId) => wordsById.get(wordId));
+  const orderedWords = lesson.wordSenseIds.map((wordSenseId) => wordsById.get(wordSenseId));
 
   if (orderedWords.some((word) => word === undefined)) {
     throw new Error('Lesson content is unavailable');

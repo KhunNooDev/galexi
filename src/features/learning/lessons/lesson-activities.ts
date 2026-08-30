@@ -25,14 +25,14 @@ export type PracticeQuestion = {
   kind: 'meaning-to-word' | 'word-to-meaning';
   options: PracticeOption[];
   promptValue: string;
-  targetWordId: number;
+  targetWordSenseId: number;
   targetWordMeaning: string;
   targetWordText: string;
 };
 
 export type PracticeQuestionView = Omit<
   PracticeQuestion,
-  'correctOptionId' | 'targetWordId' | 'targetWordMeaning' | 'targetWordText'
+  'correctOptionId' | 'targetWordSenseId' | 'targetWordMeaning' | 'targetWordText'
 >;
 
 export type ConversationMessageKey =
@@ -52,7 +52,7 @@ export type ConversationMessageKey =
 export type ConversationResponse = {
   id: string;
   messageKey: ConversationMessageKey;
-  wordIds: readonly number[];
+  wordSenseIds: readonly number[];
 };
 
 export type ConversationTurn = {
@@ -69,17 +69,17 @@ export const FIRST_LESSON_CONVERSATION = [
       {
         id: 'improve-english',
         messageKey: 'content.turns.momentumPlan.responses.improveEnglish',
-        wordIds: [9],
+        wordSenseIds: [9],
       },
       {
         id: 'curious-next',
         messageKey: 'content.turns.momentumPlan.responses.curiousNext',
-        wordIds: [8],
+        wordSenseIds: [8],
       },
       {
         id: 'opportunity-learn',
         messageKey: 'content.turns.momentumPlan.responses.opportunityLearn',
-        wordIds: [10],
+        wordSenseIds: [10],
       },
     ],
   },
@@ -90,17 +90,17 @@ export const FIRST_LESSON_CONVERSATION = [
       {
         id: 'reliable-practice',
         messageKey: 'content.turns.momentumMethod.responses.reliablePractice',
-        wordIds: [11, 16],
+        wordSenseIds: [11, 16],
       },
       {
         id: 'accomplish-goal',
         messageKey: 'content.turns.momentumMethod.responses.accomplishGoal',
-        wordIds: [7],
+        wordSenseIds: [7],
       },
       {
         id: 'improve-daily',
         messageKey: 'content.turns.momentumMethod.responses.improveDaily',
-        wordIds: [9],
+        wordSenseIds: [9],
       },
     ],
   },
@@ -111,27 +111,59 @@ export const FIRST_LESSON_CONVERSATION = [
       {
         id: 'curious-ready',
         messageKey: 'content.turns.momentumReady.responses.curiousReady',
-        wordIds: [8],
+        wordSenseIds: [8],
       },
       {
         id: 'opportunity-important',
         messageKey: 'content.turns.momentumReady.responses.opportunityImportant',
-        wordIds: [10, 16],
+        wordSenseIds: [10, 16],
       },
       {
         id: 'accomplish-step',
         messageKey: 'content.turns.momentumReady.responses.accomplishStep',
-        wordIds: [7],
+        wordSenseIds: [7],
       },
     ],
   },
 ] as const satisfies readonly ConversationTurn[];
 
-function getPracticeCandidates(words: readonly ActivityWord[], targetIndex: number) {
+function getPracticeOptionLabel(word: ActivityWord, kind: PracticeQuestion['kind']) {
+  return kind === 'meaning-to-word' ? word.word : (word.meaningsTh[0] ?? '');
+}
+
+function normalizePracticeOptionLabel(label: string) {
+  return label.trim().toLowerCase();
+}
+
+function getPracticeCandidates(
+  words: readonly ActivityWord[],
+  targetIndex: number,
+  kind: PracticeQuestion['kind'],
+) {
   const target = words[targetIndex];
-  const distractors = Array.from({ length: PRACTICE_OPTION_COUNT - 1 }, (_, offset) => {
-    return words[(targetIndex + offset + 1) % words.length];
-  });
+  const seenLabels = new Set([normalizePracticeOptionLabel(getPracticeOptionLabel(target, kind))]);
+  const distractors: ActivityWord[] = [];
+
+  for (let offset = 1; offset < words.length; offset += 1) {
+    const candidate = words[(targetIndex + offset) % words.length];
+    const label = normalizePracticeOptionLabel(getPracticeOptionLabel(candidate, kind));
+
+    if (seenLabels.has(label)) {
+      continue;
+    }
+
+    seenLabels.add(label);
+    distractors.push(candidate);
+
+    if (distractors.length === PRACTICE_OPTION_COUNT - 1) {
+      break;
+    }
+  }
+
+  if (distractors.length < PRACTICE_OPTION_COUNT - 1) {
+    throw new Error('Practice requires at least four distinct answer labels');
+  }
+
   const correctPosition = (targetIndex * 3 + 1) % PRACTICE_OPTION_COUNT;
   const candidates = [...distractors];
 
@@ -150,9 +182,9 @@ export function buildPracticeQuestions(
   const questions = words.map((target, index) => {
     const kind: PracticeQuestion['kind'] = index % 2 === 0 ? 'meaning-to-word' : 'word-to-meaning';
     const questionId = `practice-${index + 1}-word-${target.id}`;
-    const options = getPracticeCandidates(words, index).map((candidate) => ({
+    const options = getPracticeCandidates(words, index, kind).map((candidate) => ({
       id: `${questionId}:word-${candidate.id}`,
-      label: kind === 'meaning-to-word' ? candidate.word : candidate.meaningsTh[0],
+      label: getPracticeOptionLabel(candidate, kind),
       language: kind === 'meaning-to-word' ? ('en' as const) : ('th' as const),
     }));
 
@@ -162,7 +194,7 @@ export function buildPracticeQuestions(
       kind,
       options,
       promptValue: kind === 'meaning-to-word' ? target.meaningsTh[0] : target.word,
-      targetWordId: target.id,
+      targetWordSenseId: target.id,
       targetWordMeaning: target.meaningsTh[0],
       targetWordText: target.word,
     };
@@ -188,7 +220,7 @@ export function resolvePracticeAnswer(question: PracticeQuestion, selectedOption
 
   return {
     isCorrect: selectedOptionId === question.correctOptionId,
-    wordId: question.targetWordId,
+    wordSenseId: question.targetWordSenseId,
   };
 }
 
@@ -213,7 +245,7 @@ export function addPracticeAnswer(
     isCorrect: resolved.isCorrect,
     questionId: question.id,
     selectedOptionId,
-    wordId: resolved.wordId,
+    wordSenseId: resolved.wordSenseId,
   };
   const answers = [...state.practice.answers, answer];
   const nextState: LessonSessionState = {
@@ -264,7 +296,7 @@ export function validateLessonActivities(
   questions: readonly PracticeQuestion[],
   conversation: readonly ConversationTurn[],
 ) {
-  const lessonWordIds = new Set(words.map((word) => word.id));
+  const lessonWordSenseIds = new Set(words.map((word) => word.id));
   const questionIds = new Set<string>();
   const turnIds = new Set<string>();
 
@@ -275,16 +307,20 @@ export function validateLessonActivities(
   }
 
   for (const question of questions) {
-    if (questionIds.has(question.id) || !lessonWordIds.has(question.targetWordId)) {
+    if (questionIds.has(question.id) || !lessonWordSenseIds.has(question.targetWordSenseId)) {
       throw new Error('Practice question definition is invalid');
     }
 
     questionIds.add(question.id);
     const optionIds = new Set(question.options.map((option) => option.id));
+    const optionLabels = new Set(
+      question.options.map((option) => normalizePracticeOptionLabel(option.label)),
+    );
 
     if (
       question.options.length !== PRACTICE_OPTION_COUNT ||
       optionIds.size !== PRACTICE_OPTION_COUNT ||
+      optionLabels.size !== PRACTICE_OPTION_COUNT ||
       !optionIds.has(question.correctOptionId)
     ) {
       throw new Error('Practice question options are invalid');
@@ -302,8 +338,8 @@ export function validateLessonActivities(
     for (const response of turn.responses) {
       if (
         responseIds.has(response.id) ||
-        response.wordIds.length === 0 ||
-        response.wordIds.some((wordId) => !lessonWordIds.has(wordId))
+        response.wordSenseIds.length === 0 ||
+        response.wordSenseIds.some((wordSenseId) => !lessonWordSenseIds.has(wordSenseId))
       ) {
         throw new Error('Conversation response definition is invalid');
       }

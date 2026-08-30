@@ -1,30 +1,32 @@
 import 'server-only';
 
-import { and, asc, desc, eq, ilike, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, max, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
-import { wordCategories, words } from '@/db/schema';
+import { words, wordSenseCategories, wordSenses } from '@/db/schema';
 import {
   ensureWordImageExists,
   getWordImageLockQuery,
 } from '@/features/words/server/word-image.service';
 import type { WordInput } from '@/features/words/word.schema';
 
-const baseWordColumns = {
-  id: words.id,
+const baseWordSenseColumns = {
+  id: wordSenses.id,
+  wordId: wordSenses.wordId,
   word: words.word,
-  pronunciationIpa: words.pronunciationIpa,
-  pronunciationThai: words.pronunciationThai,
-  partOfSpeech: words.partOfSpeech,
-  meaningsTh: words.meaningsTh,
-  exampleSentence: words.exampleSentence,
-  exampleSentenceMeaningTh: words.exampleSentenceMeaningTh,
-  imageUrl: words.imageUrl,
-  isPublic: words.isPublic,
+  senseOrder: wordSenses.senseOrder,
+  pronunciationIpa: wordSenses.pronunciationIpa,
+  pronunciationThai: wordSenses.pronunciationThai,
+  partOfSpeech: wordSenses.partOfSpeech,
+  meaningsTh: wordSenses.meaningsTh,
+  exampleSentence: wordSenses.exampleSentence,
+  exampleSentenceMeaningTh: wordSenses.exampleSentenceMeaningTh,
+  imageUrl: wordSenses.imageUrl,
+  isPublic: wordSenses.isPublic,
 };
 
-const wordColumns = {
-  ...baseWordColumns,
+const wordSenseColumns = {
+  ...baseWordSenseColumns,
   categories: sql<{ id: number; name: string; slug: string }[]>`
     coalesce(
       (
@@ -32,94 +34,207 @@ const wordColumns = {
           json_build_object('id', category.id, 'name', category.name, 'slug', category.slug)
           order by category.sort_order, category.name
         )
-        from word_categories relationship
+        from word_sense_categories relationship
         inner join categories category on category.id = relationship.category_id
-        where relationship.word_id = ${words.id}
+        where relationship.word_sense_id = ${wordSenses.id}
       ),
       '[]'::json
     )
   `,
 };
 
+type WordTransaction = Parameters<Parameters<ReturnType<typeof getDatabase>['transaction']>[0]>[0];
+
+function getCanonicalWordLockKey(word: string) {
+  return `galexi:word:${word.trim().toLowerCase()}`;
+}
+
+async function lockCanonicalWords(transaction: WordTransaction, spellings: readonly string[]) {
+  const lockKeys = [...new Set(spellings.map(getCanonicalWordLockKey))].sort();
+
+  for (const lockKey of lockKeys) {
+    await transaction.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+  }
+}
+
+async function findOrCreateCanonicalWordAfterLock(
+  transaction: WordTransaction,
+  adminUserId: string,
+  spelling: string,
+) {
+  const [existingWord] = await transaction
+    .select({ id: words.id })
+    .from(words)
+    .where(sql`lower(${words.word}) = lower(${spelling})`)
+    .limit(1);
+
+  if (existingWord) {
+    return existingWord.id;
+  }
+
+  const [createdWord] = await transaction
+    .insert(words)
+    .values({ createdBy: adminUserId, updatedBy: adminUserId, word: spelling })
+    .returning({ id: words.id });
+
+  return createdWord.id;
+}
+
+async function findOrCreateCanonicalWord(
+  transaction: WordTransaction,
+  adminUserId: string,
+  spelling: string,
+) {
+  await lockCanonicalWords(transaction, [spelling]);
+  return findOrCreateCanonicalWordAfterLock(transaction, adminUserId, spelling);
+}
+
+async function getNextSenseOrder(
+  transaction: WordTransaction,
+  wordId: number,
+  partOfSpeech: string,
+) {
+  const [result] = await transaction
+    .select({ value: max(wordSenses.senseOrder) })
+    .from(wordSenses)
+    .where(
+      and(
+        eq(wordSenses.wordId, wordId),
+        sql`lower(${wordSenses.partOfSpeech}) = lower(${partOfSpeech})`,
+      ),
+    );
+
+  return (result?.value ?? 0) + 1;
+}
+
 export async function listWords() {
   return getDatabase()
-    .select(wordColumns)
-    .from(words)
-    .orderBy(desc(words.createdAt), desc(words.id));
+    .select(wordSenseColumns)
+    .from(wordSenses)
+    .innerJoin(words, eq(words.id, wordSenses.wordId))
+    .orderBy(desc(wordSenses.createdAt), desc(wordSenses.id));
 }
 
 export async function getWordById(id: number) {
-  const [word] = await getDatabase()
-    .select(wordColumns)
-    .from(words)
-    .where(eq(words.id, id))
+  const [wordSense] = await getDatabase()
+    .select(wordSenseColumns)
+    .from(wordSenses)
+    .innerJoin(words, eq(words.id, wordSenses.wordId))
+    .where(eq(wordSenses.id, id))
     .limit(1);
 
-  return word ?? null;
+  return wordSense ?? null;
 }
 
 export async function createWord(adminUserId: string, values: WordInput) {
-  const { categoryIds, ...wordValues } = values;
-  const wordId = await getDatabase().transaction(async (transaction) => {
-    if (wordValues.imageUrl) {
-      await transaction.execute(getWordImageLockQuery(wordValues.imageUrl));
-      await ensureWordImageExists(wordValues.imageUrl);
+  const { categoryIds, word, ...senseValues } = values;
+  const wordSenseId = await getDatabase().transaction(async (transaction) => {
+    if (senseValues.imageUrl) {
+      await transaction.execute(getWordImageLockQuery(senseValues.imageUrl));
+      await ensureWordImageExists(senseValues.imageUrl);
     }
 
-    const [createdWord] = await transaction
-      .insert(words)
-      .values({ ...wordValues, createdBy: adminUserId, updatedBy: adminUserId })
-      .returning({ id: words.id });
+    const wordId = await findOrCreateCanonicalWord(transaction, adminUserId, word);
+    const senseOrder = await getNextSenseOrder(transaction, wordId, senseValues.partOfSpeech);
+    const [createdWordSense] = await transaction
+      .insert(wordSenses)
+      .values({
+        ...senseValues,
+        createdBy: adminUserId,
+        senseOrder,
+        updatedBy: adminUserId,
+        wordId,
+      })
+      .returning({ id: wordSenses.id });
 
     if (categoryIds.length > 0) {
-      await transaction
-        .insert(wordCategories)
-        .values(categoryIds.map((categoryId) => ({ categoryId, wordId: createdWord.id })));
+      await transaction.insert(wordSenseCategories).values(
+        categoryIds.map((categoryId) => ({
+          categoryId,
+          wordSenseId: createdWordSense.id,
+        })),
+      );
     }
 
-    return createdWord.id;
+    return createdWordSense.id;
   });
 
-  return getWordById(wordId);
+  return getWordById(wordSenseId);
 }
 
 export async function updateWord(id: number, adminUserId: string, values: WordInput) {
-  const { categoryIds, ...wordValues } = values;
+  const { categoryIds, word, ...senseValues } = values;
   const updated = await getDatabase().transaction(async (transaction) => {
-    if (wordValues.imageUrl) {
-      await transaction.execute(getWordImageLockQuery(wordValues.imageUrl));
+    const [currentWordSense] = await transaction
+      .select({
+        imageUrl: wordSenses.imageUrl,
+        partOfSpeech: wordSenses.partOfSpeech,
+        senseOrder: wordSenses.senseOrder,
+        word: words.word,
+        wordId: wordSenses.wordId,
+      })
+      .from(wordSenses)
+      .innerJoin(words, eq(words.id, wordSenses.wordId))
+      .where(eq(wordSenses.id, id))
+      .limit(1)
+      .for('update', { of: wordSenses });
 
-      const [currentWord] = await transaction
-        .select({ imageUrl: words.imageUrl })
-        .from(words)
-        .where(eq(words.id, id))
-        .limit(1);
+    if (!currentWordSense) {
+      return false;
+    }
 
-      if (!currentWord) {
-        return null;
-      }
+    if (senseValues.imageUrl) {
+      await transaction.execute(getWordImageLockQuery(senseValues.imageUrl));
 
-      if (currentWord.imageUrl !== wordValues.imageUrl) {
-        await ensureWordImageExists(wordValues.imageUrl);
+      if (currentWordSense.imageUrl !== senseValues.imageUrl) {
+        await ensureWordImageExists(senseValues.imageUrl);
       }
     }
 
-    const [updatedWord] = await transaction
+    await lockCanonicalWords(transaction, [currentWordSense.word, word]);
+    const targetWordId = await findOrCreateCanonicalWordAfterLock(transaction, adminUserId, word);
+    const identityChanged =
+      targetWordId !== currentWordSense.wordId ||
+      senseValues.partOfSpeech.toLowerCase() !== currentWordSense.partOfSpeech.toLowerCase();
+    const senseOrder = identityChanged
+      ? await getNextSenseOrder(transaction, targetWordId, senseValues.partOfSpeech)
+      : currentWordSense.senseOrder;
+    const [updatedWordSense] = await transaction
+      .update(wordSenses)
+      .set({
+        ...senseValues,
+        senseOrder,
+        updatedBy: adminUserId,
+        wordId: targetWordId,
+      })
+      .where(eq(wordSenses.id, id))
+      .returning({ id: wordSenses.id });
+
+    if (!updatedWordSense) {
+      return false;
+    }
+
+    await transaction
       .update(words)
-      .set({ ...wordValues, updatedBy: adminUserId })
-      .where(eq(words.id, id))
-      .returning({ id: words.id });
-
-    if (!updatedWord) {
-      return null;
-    }
-
-    await transaction.delete(wordCategories).where(eq(wordCategories.wordId, id));
+      .set({ updatedBy: adminUserId, word })
+      .where(eq(words.id, targetWordId));
+    await transaction.delete(wordSenseCategories).where(eq(wordSenseCategories.wordSenseId, id));
 
     if (categoryIds.length > 0) {
       await transaction
-        .insert(wordCategories)
-        .values(categoryIds.map((categoryId) => ({ categoryId, wordId: id })));
+        .insert(wordSenseCategories)
+        .values(categoryIds.map((categoryId) => ({ categoryId, wordSenseId: id })));
+    }
+
+    if (targetWordId !== currentWordSense.wordId) {
+      await transaction
+        .delete(words)
+        .where(
+          and(
+            eq(words.id, currentWordSense.wordId),
+            sql`not exists (select 1 from ${wordSenses} where ${wordSenses.wordId} = ${currentWordSense.wordId})`,
+          ),
+        );
     }
 
     return true;
@@ -129,12 +244,41 @@ export async function updateWord(id: number, adminUserId: string, values: WordIn
 }
 
 export async function deleteWord(id: number) {
-  const [deletedWord] = await getDatabase()
-    .delete(words)
-    .where(eq(words.id, id))
-    .returning({ id: words.id });
+  return getDatabase().transaction(async (transaction) => {
+    const [currentWordSense] = await transaction
+      .select({ word: words.word, wordId: wordSenses.wordId })
+      .from(wordSenses)
+      .innerJoin(words, eq(words.id, wordSenses.wordId))
+      .where(eq(wordSenses.id, id))
+      .limit(1)
+      .for('update', { of: wordSenses });
 
-  return deletedWord ?? null;
+    if (!currentWordSense) {
+      return null;
+    }
+
+    await lockCanonicalWords(transaction, [currentWordSense.word]);
+
+    const [deletedWordSense] = await transaction
+      .delete(wordSenses)
+      .where(and(eq(wordSenses.id, id), eq(wordSenses.wordId, currentWordSense.wordId)))
+      .returning({ id: wordSenses.id, wordId: wordSenses.wordId });
+
+    if (!deletedWordSense) {
+      return null;
+    }
+
+    await transaction
+      .delete(words)
+      .where(
+        and(
+          eq(words.id, deletedWordSense.wordId),
+          sql`not exists (select 1 from ${wordSenses} where ${wordSenses.wordId} = ${deletedWordSense.wordId})`,
+        ),
+      );
+
+    return { id: deletedWordSense.id };
+  });
 }
 
 export function listPublicWordSummaries(query = '') {
@@ -144,22 +288,20 @@ export function listPublicWordSummaries(query = '') {
   return getDatabase()
     .select({
       word: sql<string>`min(${words.word})`,
-      entries: sql<number>`count(*)::int`,
+      entries: sql<number>`count(${wordSenses.id})::int`,
     })
     .from(words)
-    .where(
-      normalizedQuery
-        ? and(eq(words.isPublic, true), ilike(words.word, `%${normalizedQuery}%`))
-        : eq(words.isPublic, true),
-    )
+    .innerJoin(wordSenses, and(eq(wordSenses.wordId, words.id), eq(wordSenses.isPublic, true)))
+    .where(normalizedQuery ? ilike(words.word, `%${normalizedQuery}%`) : undefined)
     .groupBy(normalizedWord)
     .orderBy(asc(normalizedWord));
 }
 
 export async function listPublicWordEntries(word: string) {
   return getDatabase()
-    .select(wordColumns)
-    .from(words)
-    .where(sql`${words.isPublic} = true and lower(${words.word}) = lower(${word})`)
-    .orderBy(asc(words.partOfSpeech), asc(words.id));
+    .select(wordSenseColumns)
+    .from(wordSenses)
+    .innerJoin(words, eq(words.id, wordSenses.wordId))
+    .where(sql`${wordSenses.isPublic} = true and lower(${words.word}) = lower(${word})`)
+    .orderBy(asc(wordSenses.partOfSpeech), asc(wordSenses.senseOrder), asc(wordSenses.id));
 }

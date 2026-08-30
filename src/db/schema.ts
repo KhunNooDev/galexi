@@ -115,6 +115,44 @@ export const words = pgTable(
       onDelete: 'set null',
     }),
     word: varchar('word', { length: WORD_LIMITS.WORD_MAX_LENGTH }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index('words_created_at_idx').on(table.createdAt, table.id),
+    index('words_created_by_idx').on(table.createdBy),
+    index('words_updated_by_idx').on(table.updatedBy),
+    uniqueIndex('words_word_unique').on(sql`lower(${table.word})`),
+    pgPolicy('Admins can manage words', {
+      for: 'all',
+      to: authenticatedRole,
+      using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+      withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+    }),
+    pgPolicy('Public can view words with published senses', {
+      for: 'select',
+      to: [anonRole, authenticatedRole],
+      using: sql`exists (select 1 from word_senses where word_senses.word_id = ${table.id} and word_senses.is_public = true)`,
+    }),
+  ],
+).enableRLS();
+
+export const wordSenses = pgTable(
+  'word_senses',
+  {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    wordId: integer('word_id')
+      .notNull()
+      .references(() => words.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
+    updatedBy: uuid('updated_by').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
     pronunciationIpa: varchar('pronunciation_ipa', {
       length: WORD_LIMITS.PRONUNCIATION_MAX_LENGTH,
     })
@@ -130,6 +168,7 @@ export const words = pgTable(
     })
       .default('')
       .notNull(),
+    senseOrder: integer('sense_order').default(1).notNull(),
     meaningsTh: text('meanings_th')
       .array()
       .default(sql`ARRAY[]::text[]`)
@@ -145,23 +184,26 @@ export const words = pgTable(
       .notNull(),
   },
   (table) => [
-    index('words_created_at_idx').on(table.createdAt, table.id),
-    index('words_created_by_idx').on(table.createdBy),
-    index('words_updated_by_idx').on(table.updatedBy),
-    index('words_public_word_idx')
-      .on(sql`lower(${table.word})`, table.partOfSpeech, table.id)
+    check('word_senses_sense_order_check', sql`${table.senseOrder} > 0`),
+    index('word_senses_word_id_idx').on(table.wordId),
+    index('word_senses_created_at_idx').on(table.createdAt, table.id),
+    index('word_senses_created_by_idx').on(table.createdBy),
+    index('word_senses_updated_by_idx').on(table.updatedBy),
+    index('word_senses_public_word_idx')
+      .on(table.wordId, table.partOfSpeech, table.senseOrder, table.id)
       .where(sql`${table.isPublic} = true`),
-    uniqueIndex('words_word_part_unique').on(
-      sql`lower(${table.word})`,
+    uniqueIndex('word_senses_word_part_order_unique').on(
+      table.wordId,
       sql`lower(${table.partOfSpeech})`,
+      table.senseOrder,
     ),
-    pgPolicy('Admins can manage words', {
+    pgPolicy('Admins can manage word senses', {
       for: 'all',
       to: authenticatedRole,
       using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
       withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
     }),
-    pgPolicy('Public can view published words', {
+    pgPolicy('Public can view published word senses', {
       for: 'select',
       to: [anonRole, authenticatedRole],
       using: sql`${table.isPublic} = true`,
@@ -194,44 +236,44 @@ export const categories = pgTable(
     pgPolicy('Public can view categories for published words', {
       for: 'select',
       to: [anonRole, authenticatedRole],
-      using: sql`exists (select 1 from word_categories wc join words w on w.id = wc.word_id where wc.category_id = ${table.id} and w.is_public = true)`,
+      using: sql`exists (select 1 from word_sense_categories relationship join word_senses sense on sense.id = relationship.word_sense_id where relationship.category_id = ${table.id} and sense.is_public = true)`,
     }),
   ],
 ).enableRLS();
 
-export const wordCategories = pgTable(
-  'word_categories',
+export const wordSenseCategories = pgTable(
+  'word_sense_categories',
   {
-    wordId: integer('word_id')
+    wordSenseId: integer('word_sense_id')
       .notNull()
-      .references(() => words.id, { onDelete: 'cascade' }),
+      .references(() => wordSenses.id, { onDelete: 'cascade' }),
     categoryId: integer('category_id')
       .notNull()
       .references(() => categories.id, { onDelete: 'cascade' }),
   },
   (table) => [
-    primaryKey({ columns: [table.wordId, table.categoryId] }),
-    index('word_categories_category_id_idx').on(table.categoryId, table.wordId),
-    pgPolicy('Admins can manage word categories', {
+    primaryKey({ columns: [table.wordSenseId, table.categoryId] }),
+    index('word_sense_categories_category_id_idx').on(table.categoryId, table.wordSenseId),
+    pgPolicy('Admins can manage word sense categories', {
       for: 'all',
       to: authenticatedRole,
       using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
       withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
     }),
-    pgPolicy('Public can view categories for published words', {
+    pgPolicy('Public can view categories for published word senses', {
       for: 'select',
       to: [anonRole, authenticatedRole],
-      using: sql`exists (select 1 from ${words} where ${words.id} = ${table.wordId} and ${words.isPublic} = true)`,
+      using: sql`exists (select 1 from ${wordSenses} where ${wordSenses.id} = ${table.wordSenseId} and ${wordSenses.isPublic} = true)`,
     }),
   ],
 ).enableRLS();
 
-const isLearningWordVisible = (wordId: AnyPgColumn) => sql`exists (
+const isLearningWordSenseVisible = (wordSenseId: AnyPgColumn) => sql`exists (
   select 1
-  from ${words}
-  where ${words.id} = ${wordId}
+  from ${wordSenses}
+  where ${wordSenses.id} = ${wordSenseId}
     and (
-      ${words.isPublic} = true
+      ${wordSenses.isPublic} = true
       or exists (
         select 1
         from ${userRoles}
@@ -343,9 +385,9 @@ export const userWordProgress = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => authUsers.id, { onDelete: 'cascade' }),
-    wordId: integer('word_id')
+    wordSenseId: integer('word_sense_id')
       .notNull()
-      .references(() => words.id, { onDelete: 'cascade' }),
+      .references(() => wordSenses.id, { onDelete: 'cascade' }),
     seenCount: integer('seen_count').default(0).notNull(),
     correctCount: integer('correct_count').default(0).notNull(),
     incorrectCount: integer('incorrect_count').default(0).notNull(),
@@ -358,7 +400,7 @@ export const userWordProgress = pgTable(
       .notNull(),
   },
   (table) => [
-    primaryKey({ columns: [table.userId, table.wordId] }),
+    primaryKey({ columns: [table.userId, table.wordSenseId] }),
     check('user_word_progress_seen_count_check', sql`${table.seenCount} >= 0`),
     check('user_word_progress_correct_count_check', sql`${table.correctCount} >= 0`),
     check('user_word_progress_incorrect_count_check', sql`${table.incorrectCount} >= 0`),
@@ -366,23 +408,23 @@ export const userWordProgress = pgTable(
       'user_word_progress_mastery_check',
       sql`${table.mastery} >= 0 and ${table.mastery} <= ${sql.raw(String(LEARNING_LIMITS.MASTERY_MAX))}`,
     ),
-    index('user_word_progress_word_id_idx').on(table.wordId),
+    index('user_word_progress_word_sense_id_idx').on(table.wordSenseId),
     index('user_word_progress_user_last_seen_idx').on(table.userId, table.lastSeenAt.desc()),
     pgPolicy('Users can view their own word progress', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`${isRowOwner(table.userId)} and ${isLearningWordVisible(table.wordId)}`,
+      using: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
     }),
     pgPolicy('Users can create their own word progress', {
       for: 'insert',
       to: authenticatedRole,
-      withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordVisible(table.wordId)}`,
+      withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
     }),
     pgPolicy('Users can update their own word progress', {
       for: 'update',
       to: authenticatedRole,
-      using: sql`${isRowOwner(table.userId)} and ${isLearningWordVisible(table.wordId)}`,
-      withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordVisible(table.wordId)}`,
+      using: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
+      withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
     }),
   ],
 ).enableRLS();
@@ -419,6 +461,5 @@ export const learningAccountTransfers = pgTable(
   ],
 ).enableRLS();
 
-export type NewWord = typeof words.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;

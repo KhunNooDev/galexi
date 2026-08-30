@@ -117,7 +117,7 @@ export function LessonPlayer({
     setError('');
     startTransition(async () => {
       const result = await advanceLessonAction({
-        expectedWordId: word.id,
+        expectedWordSenseId: word.id,
         expectedWordIndex: wordIndex,
         lessonKey,
         sessionId,

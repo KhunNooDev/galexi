@@ -339,13 +339,13 @@ async function mergeWordProgressForTransfer(
       or(eq(userWordProgress.userId, sourceUserId), eq(userWordProgress.userId, destinationUserId)),
     )
     .for('update');
-  const destinationByWord = new Map(
-    rows.filter((row) => row.userId === destinationUserId).map((row) => [row.wordId, row]),
+  const destinationByWordSense = new Map(
+    rows.filter((row) => row.userId === destinationUserId).map((row) => [row.wordSenseId, row]),
   );
   const sourceRows = rows.filter((row) => row.userId === sourceUserId);
 
   for (const source of sourceRows) {
-    const destination = destinationByWord.get(source.wordId);
+    const destination = destinationByWordSense.get(source.wordSenseId);
 
     if (destination) {
       const merged = mergeWordProgress(source, destination);
@@ -355,7 +355,7 @@ async function mergeWordProgressForTransfer(
         .where(
           and(
             eq(userWordProgress.userId, destinationUserId),
-            eq(userWordProgress.wordId, source.wordId),
+            eq(userWordProgress.wordSenseId, source.wordSenseId),
           ),
         );
       await transaction
@@ -363,7 +363,7 @@ async function mergeWordProgressForTransfer(
         .where(
           and(
             eq(userWordProgress.userId, sourceUserId),
-            eq(userWordProgress.wordId, source.wordId),
+            eq(userWordProgress.wordSenseId, source.wordSenseId),
           ),
         );
       continue;
@@ -373,7 +373,10 @@ async function mergeWordProgressForTransfer(
       .update(userWordProgress)
       .set({ userId: destinationUserId, updatedAt: new Date() })
       .where(
-        and(eq(userWordProgress.userId, sourceUserId), eq(userWordProgress.wordId, source.wordId)),
+        and(
+          eq(userWordProgress.userId, sourceUserId),
+          eq(userWordProgress.wordSenseId, source.wordSenseId),
+        ),
       );
   }
 }

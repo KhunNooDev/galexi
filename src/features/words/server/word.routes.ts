@@ -109,8 +109,11 @@ export const wordRoutes = new Hono<ApiEnvironment>()
     return context.json(deletedWord, 200);
   })
   .onError((error, context) => {
-    if (isUniqueConstraintViolation(error, 'words_word_part_unique')) {
-      return context.json({ error: 'Word already exists' }, 409);
+    if (
+      isUniqueConstraintViolation(error, 'words_word_unique') ||
+      isUniqueConstraintViolation(error, 'word_senses_word_part_order_unique')
+    ) {
+      return context.json({ error: 'Word sense already exists' }, 409);
     }
 
     throw error;
