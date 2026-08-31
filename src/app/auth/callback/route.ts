@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 
-import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { AUTH_ROUTES, getSafeAuthReturnTo, ROUTES } from '@/constants/routes';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
+  const returnTo = getSafeAuthReturnTo(url.searchParams.get('next'));
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(new URL(ROUTES.MANAGE_WORDS, url.origin));
+      return NextResponse.redirect(new URL(returnTo ?? ROUTES.LEARN_HOME, url.origin));
     }
   }
 

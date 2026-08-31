@@ -3,7 +3,7 @@ import 'server-only';
 import { and, asc, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
-import { categories, wordCategories, words } from '@/db/schema';
+import { categories, words, wordSenseCategories, wordSenses } from '@/db/schema';
 import type { CategoryInput } from '@/features/categories/category.schema';
 
 const categoryColumns = {
@@ -14,20 +14,25 @@ const categoryColumns = {
 };
 
 const publicWordColumns = {
-  id: words.id,
+  id: wordSenses.id,
+  wordId: wordSenses.wordId,
   word: words.word,
-  pronunciationIpa: words.pronunciationIpa,
-  pronunciationThai: words.pronunciationThai,
-  partOfSpeech: words.partOfSpeech,
-  meaningsTh: words.meaningsTh,
-  imageUrl: words.imageUrl,
+  senseOrder: wordSenses.senseOrder,
+  pronunciationIpa: wordSenses.pronunciationIpa,
+  pronunciationThai: wordSenses.pronunciationThai,
+  partOfSpeech: wordSenses.partOfSpeech,
+  meaningsTh: wordSenses.meaningsTh,
+  imageUrl: wordSenses.imageUrl,
 };
 
 export function listCategories() {
   return getDatabase()
-    .select({ ...categoryColumns, wordCount: count(wordCategories.wordId).mapWith(Number) })
+    .select({
+      ...categoryColumns,
+      wordCount: count(wordSenseCategories.wordSenseId).mapWith(Number),
+    })
     .from(categories)
-    .leftJoin(wordCategories, eq(wordCategories.categoryId, categories.id))
+    .leftJoin(wordSenseCategories, eq(wordSenseCategories.categoryId, categories.id))
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
 }
@@ -38,11 +43,14 @@ export function listPublicCategories(query = '') {
   return getDatabase()
     .select({
       ...categoryColumns,
-      wordCount: sql<number>`count(distinct ${wordCategories.wordId})::int`,
+      wordCount: sql<number>`count(distinct ${wordSenseCategories.wordSenseId})::int`,
     })
     .from(categories)
-    .innerJoin(wordCategories, eq(wordCategories.categoryId, categories.id))
-    .innerJoin(words, and(eq(words.id, wordCategories.wordId), eq(words.isPublic, true)))
+    .innerJoin(wordSenseCategories, eq(wordSenseCategories.categoryId, categories.id))
+    .innerJoin(
+      wordSenses,
+      and(eq(wordSenses.id, wordSenseCategories.wordSenseId), eq(wordSenses.isPublic, true)),
+    )
     .where(normalizedQuery ? ilike(categories.name, `%${normalizedQuery}%`) : undefined)
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
@@ -52,11 +60,14 @@ export async function getPublicCategory(slug: string) {
   const [category] = await getDatabase()
     .select({
       ...categoryColumns,
-      wordCount: sql<number>`count(distinct ${wordCategories.wordId})::int`,
+      wordCount: sql<number>`count(distinct ${wordSenseCategories.wordSenseId})::int`,
     })
     .from(categories)
-    .innerJoin(wordCategories, eq(wordCategories.categoryId, categories.id))
-    .innerJoin(words, and(eq(words.id, wordCategories.wordId), eq(words.isPublic, true)))
+    .innerJoin(wordSenseCategories, eq(wordSenseCategories.categoryId, categories.id))
+    .innerJoin(
+      wordSenses,
+      and(eq(wordSenses.id, wordSenseCategories.wordSenseId), eq(wordSenses.isPublic, true)),
+    )
     .where(sql`lower(${categories.slug}) = lower(${slug})`)
     .groupBy(categories.id)
     .limit(1);
@@ -71,23 +82,24 @@ export function listPublicWordsByCategory(
   const query = filters.query?.trim();
   const partOfSpeech = filters.partOfSpeech?.trim();
   const predicates = [
-    eq(wordCategories.categoryId, categoryId),
-    eq(words.isPublic, true),
-    partOfSpeech ? sql`lower(${words.partOfSpeech}) = lower(${partOfSpeech})` : undefined,
+    eq(wordSenseCategories.categoryId, categoryId),
+    eq(wordSenses.isPublic, true),
+    partOfSpeech ? sql`lower(${wordSenses.partOfSpeech}) = lower(${partOfSpeech})` : undefined,
     query
       ? or(
           ilike(words.word, `%${query}%`),
-          sql`array_to_string(${words.meaningsTh}, ' ') ilike ${`%${query}%`}`,
+          sql`array_to_string(${wordSenses.meaningsTh}, ' ') ilike ${`%${query}%`}`,
         )
       : undefined,
   ].filter((predicate) => predicate !== undefined);
 
   return getDatabase()
     .select(publicWordColumns)
-    .from(words)
-    .innerJoin(wordCategories, eq(wordCategories.wordId, words.id))
+    .from(wordSenses)
+    .innerJoin(words, eq(words.id, wordSenses.wordId))
+    .innerJoin(wordSenseCategories, eq(wordSenseCategories.wordSenseId, wordSenses.id))
     .where(and(...predicates))
-    .orderBy(asc(words.word), asc(words.partOfSpeech));
+    .orderBy(asc(words.word), asc(wordSenses.partOfSpeech), asc(wordSenses.senseOrder));
 }
 
 export async function createCategory(values: CategoryInput) {
@@ -111,9 +123,9 @@ export async function updateCategory(id: number, values: CategoryInput) {
   }
 
   const [{ wordCount }] = await getDatabase()
-    .select({ wordCount: count(wordCategories.wordId).mapWith(Number) })
-    .from(wordCategories)
-    .where(eq(wordCategories.categoryId, id));
+    .select({ wordCount: count(wordSenseCategories.wordSenseId).mapWith(Number) })
+    .from(wordSenseCategories)
+    .where(eq(wordSenseCategories.categoryId, id));
 
   return { ...category, wordCount };
 }

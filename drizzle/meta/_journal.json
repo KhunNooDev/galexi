@@ -99,6 +99,90 @@
       "when": 1786170368119,
       "tag": "0013_known_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1786526346396,
+      "tag": "0014_milky_magdalene",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786526619262,
+      "tag": "0015_youthful_dreadnoughts",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786546731523,
+      "tag": "0016_dazzling_charles_xavier",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786547145375,
+      "tag": "0017_concerned_yellowjacket",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786547216351,
+      "tag": "0018_restrict_learning_privileges",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786548720290,
+      "tag": "0019_quiet_multiple_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786549912107,
+      "tag": "0020_restrict_onboarding_completion",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786550709708,
+      "tag": "0021_restrict_learning_profile_mutations",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786552934916,
+      "tag": "0022_publish_first_lesson_words",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786637980177,
+      "tag": "0023_wet_crusher_hogan",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787065113718,
+      "tag": "0024_spotty_firebird",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1787842601032,
+      "tag": "0025_unusual_nitro",
+      "breakpoints": true
     }
   ]
 }

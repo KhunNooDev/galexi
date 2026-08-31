@@ -1,16 +1,7 @@
-import { handle } from 'hono/vercel';
-
 import { api } from '@/server/api';
 
 export const runtime = 'nodejs';
 
-const handler = handle(api);
+const handler = api.fetch;
 
-export {
-  handler as DELETE,
-  handler as GET,
-  handler as OPTIONS,
-  handler as PATCH,
-  handler as POST,
-  handler as PUT,
-};
+export { handler as DELETE, handler as GET, handler as PATCH, handler as POST };

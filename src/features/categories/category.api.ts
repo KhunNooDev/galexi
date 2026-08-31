@@ -1,40 +1,40 @@
-import type { InferRequestType, InferResponseType } from 'hono/client';
+import type { Treaty } from '@elysiajs/eden';
 
+import type { CategoryInput as DomainCategoryInput } from '@/features/categories/category.schema';
 import { apiClient } from '@/lib/api/client';
 import { throwApiError } from '@/lib/api/errors';
 
 const categoriesRoute = apiClient.api.categories;
-const categoryRoute = categoriesRoute[':id'];
 
-type CategoriesResponse = InferResponseType<typeof categoriesRoute.$get, 200>;
+type CategoriesResponse = Treaty.Data<typeof categoriesRoute.get>;
 
 export type AdminCategory = CategoriesResponse['categories'][number];
-export type CategoryInput = InferRequestType<typeof categoriesRoute.$post>['json'];
+export type CategoryInput = DomainCategoryInput;
 
 export const categoriesApi = {
   async list(signal?: AbortSignal) {
-    const response = await categoriesRoute.$get(undefined, { init: { signal } });
-    if (response.status !== 200) return throwApiError(response);
-    return (await response.json()).categories;
+    const { data, error } = await categoriesRoute.get({ fetch: { signal } });
+    if (error) return throwApiError(error);
+    return data.categories;
   },
   async create(values: CategoryInput) {
-    const response = await categoriesRoute.$post({ json: values });
-    if (response.status !== 201) return throwApiError(response);
-    return (await response.json()).category;
+    const { data, error } = await categoriesRoute.post(values);
+    if (error) return throwApiError(error);
+    return data.category;
   },
   async update(id: number, values: CategoryInput) {
-    const response = await categoryRoute.$patch({ param: { id: String(id) }, json: values });
-    if (response.status !== 200) return throwApiError(response);
-    return (await response.json()).category;
+    const { data, error } = await categoriesRoute({ id }).patch(values);
+    if (error) return throwApiError(error);
+    return data.category;
   },
   async remove(id: number) {
-    const response = await categoryRoute.$delete({ param: { id: String(id) } });
-    if (response.status !== 200) return throwApiError(response);
-    return response.json();
+    const { data, error } = await categoriesRoute({ id }).delete();
+    if (error) return throwApiError(error);
+    return data;
   },
   async reorder(categoryIds: number[]) {
-    const response = await categoriesRoute.reorder.$patch({ json: { categoryIds } });
-    if (response.status !== 200) return throwApiError(response);
-    return (await response.json()).categories;
+    const { data, error } = await categoriesRoute.reorder.patch({ categoryIds });
+    if (error) return throwApiError(error);
+    return data.categories;
   },
 };

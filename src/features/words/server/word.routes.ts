@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
+import { Elysia, status } from 'elysia';
 
 import { API_PATH } from '@/constants/api';
 import { categoriesExist } from '@/features/categories/server/category.service';
@@ -16,102 +15,109 @@ import { cleanupUnreferencedWordImage } from '@/features/words/server/word-image
 import { optionalWordImageReferenceSchema, wordInputSchema } from '@/features/words/word.schema';
 import { isUniqueConstraintViolation } from '@/server/api/errors';
 import { requireAdmin } from '@/server/api/middleware/require-admin';
-import type { ApiEnvironment } from '@/server/api/types';
 import { idParamSchema } from '@/server/api/validation';
 
 const wordApiInputSchema = wordInputSchema.extend({
   imageUrl: optionalWordImageReferenceSchema,
 });
 
-export const wordRoutes = new Hono<ApiEnvironment>()
-  .use(API_PATH.WORDS_WILDCARD, requireAdmin)
-  .get(API_PATH.WORDS, async (context) => {
-    const wordList = await listWords();
+function handleWordError(error: unknown): never | ReturnType<typeof status<409, object>> {
+  if (
+    isUniqueConstraintViolation(error, 'words_word_unique') ||
+    isUniqueConstraintViolation(error, 'word_senses_word_part_order_unique')
+  ) {
+    return status(409, { error: 'Word sense already exists' });
+  }
 
-    return context.json({ words: wordList }, 200);
-  })
-  .get(API_PATH.WORD_BY_ID, zValidator('param', idParamSchema), async (context) => {
-    const { id } = context.req.valid('param');
-    const word = await getWordById(id);
+  throw error;
+}
 
-    return word ? context.json({ word }, 200) : context.json({ error: 'Word not found' }, 404);
-  })
-  .post(API_PATH.WORDS, zValidator('json', wordApiInputSchema), async (context) => {
-    const adminUserId = context.get('adminUserId');
-    const values = context.req.valid('json');
+export const wordRoutes = new Elysia({ name: 'word-routes' })
+  .use(requireAdmin)
+  .get(API_PATH.WORDS, async () => ({ words: await listWords() }))
+  .get(
+    API_PATH.WORD_BY_ID,
+    async ({ params, status: reply }) => {
+      const word = await getWordById(params.id);
 
-    if (!(await categoriesExist(values.categoryIds))) {
-      return context.json({ error: 'One or more categories do not exist' }, 400);
-    }
+      return word ? { word } : reply(404, { error: 'Word not found' });
+    },
+    { params: idParamSchema },
+  )
+  .post(
+    API_PATH.WORDS,
+    async ({ adminUserId, body, status: reply }) => {
+      if (!(await categoriesExist(body.categoryIds))) {
+        return reply(400, { error: 'One or more categories do not exist' });
+      }
 
-    const word = await createWord(adminUserId, values);
-
-    return context.json({ word }, 201);
-  })
+      try {
+        return status(201, { word: await createWord(adminUserId, body) });
+      } catch (error) {
+        return handleWordError(error);
+      }
+    },
+    { body: wordApiInputSchema },
+  )
   .patch(
     API_PATH.WORD_BY_ID,
-    zValidator('param', idParamSchema),
-    zValidator('json', wordApiInputSchema),
-    async (context) => {
-      const { id } = context.req.valid('param');
-      const adminUserId = context.get('adminUserId');
-      const previousWord = await getWordById(id);
+    async ({ adminUserId, body, params, status: reply }) => {
+      const previousWord = await getWordById(params.id);
 
       if (!previousWord) {
-        return context.json({ error: 'Word not found' }, 404);
+        return reply(404, { error: 'Word not found' });
       }
 
-      const values = context.req.valid('json');
-
-      if (!(await categoriesExist(values.categoryIds))) {
-        return context.json({ error: 'One or more categories do not exist' }, 400);
+      if (!(await categoriesExist(body.categoryIds))) {
+        return reply(400, { error: 'One or more categories do not exist' });
       }
 
-      const word = await updateWord(id, adminUserId, values);
+      try {
+        const word = await updateWord(params.id, adminUserId, body);
+
+        if (!word) {
+          return reply(404, { error: 'Word not found' });
+        }
+
+        if (previousWord.imageUrl && previousWord.imageUrl !== body.imageUrl) {
+          try {
+            await cleanupUnreferencedWordImage(previousWord.imageUrl);
+          } catch (error) {
+            console.error('Unable to remove the replaced word image', error);
+          }
+        }
+
+        return { word };
+      } catch (error) {
+        return handleWordError(error);
+      }
+    },
+    { body: wordApiInputSchema, params: idParamSchema },
+  )
+  .delete(
+    API_PATH.WORD_BY_ID,
+    async ({ params, status: reply }) => {
+      const word = await getWordById(params.id);
 
       if (!word) {
-        return context.json({ error: 'Word not found' }, 404);
+        return reply(404, { error: 'Word not found' });
       }
 
-      if (previousWord.imageUrl && previousWord.imageUrl !== values.imageUrl) {
+      const deletedWord = await deleteWord(params.id);
+
+      if (!deletedWord) {
+        return reply(404, { error: 'Word not found' });
+      }
+
+      if (word.imageUrl) {
         try {
-          await cleanupUnreferencedWordImage(previousWord.imageUrl);
+          await cleanupUnreferencedWordImage(word.imageUrl);
         } catch (error) {
-          console.error('Unable to remove the replaced word image', error);
+          console.error('Unable to remove the deleted word image', error);
         }
       }
 
-      return context.json({ word }, 200);
+      return deletedWord;
     },
-  )
-  .delete(API_PATH.WORD_BY_ID, zValidator('param', idParamSchema), async (context) => {
-    const { id } = context.req.valid('param');
-    const word = await getWordById(id);
-
-    if (!word) {
-      return context.json({ error: 'Word not found' }, 404);
-    }
-
-    const deletedWord = await deleteWord(id);
-
-    if (!deletedWord) {
-      return context.json({ error: 'Word not found' }, 404);
-    }
-
-    if (word.imageUrl) {
-      try {
-        await cleanupUnreferencedWordImage(word.imageUrl);
-      } catch (error) {
-        console.error('Unable to remove the deleted word image', error);
-      }
-    }
-
-    return context.json(deletedWord, 200);
-  })
-  .onError((error, context) => {
-    if (isUniqueConstraintViolation(error, 'words_word_part_unique')) {
-      return context.json({ error: 'Word already exists' }, 409);
-    }
-
-    throw error;
-  });
+    { params: idParamSchema },
+  );

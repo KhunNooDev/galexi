@@ -22,7 +22,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export type InputTextProps<TValues extends FieldValues> = Omit<
+type InputTextProps<TValues extends FieldValues> = Omit<
   ComponentProps<typeof Input>,
   'name' | 'onBlur' | 'onChange' | 'ref'
 > & {

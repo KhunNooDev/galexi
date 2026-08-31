@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { MobileBottomNavigation } from '@/components/mobile-bottom-navigation';
 import { PageHeader } from '@/components/page-header';
 import { decodeWordRouteParam, ROUTES } from '@/constants/routes';
 import { WordFlashcard } from '@/features/words/components/word-flashcard';
@@ -18,7 +19,7 @@ export default async function SearchWordPage({ params }: { params: Promise<{ wor
   const t = await getTranslations();
 
   return (
-    <main className='min-h-svh bg-background pb-10'>
+    <main className='min-h-svh bg-background pb-28 lg:pb-10'>
       <div className='mx-auto max-w-7xl'>
         <PageHeader backHref={ROUTES.PUBLIC_WORDS} backLabel={t('words.search.backToSearch')} />
 
@@ -39,6 +40,7 @@ export default async function SearchWordPage({ params }: { params: Promise<{ wor
           </div>
         </div>
       </div>
+      <MobileBottomNavigation active='words' />
     </main>
   );
 }

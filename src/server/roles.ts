@@ -7,13 +7,8 @@ import { USER_ROLE } from '@/constants/role';
 import { getDatabase } from '@/db';
 import { userRoles } from '@/db/schema';
 
-export async function getUserRole(userId: string): Promise<UserRole> {
+async function getUserRole(userId: string): Promise<UserRole> {
   const database = getDatabase();
-
-  await database
-    .insert(userRoles)
-    .values({ userId, role: USER_ROLE.MEMBER })
-    .onConflictDoNothing({ target: userRoles.userId });
 
   const [record] = await database
     .select({ role: userRoles.role })
@@ -22,4 +17,13 @@ export async function getUserRole(userId: string): Promise<UserRole> {
     .limit(1);
 
   return record?.role ?? USER_ROLE.MEMBER;
+}
+
+export async function getOrCreatePermanentUserRole(userId: string): Promise<UserRole> {
+  await getDatabase()
+    .insert(userRoles)
+    .values({ userId, role: USER_ROLE.MEMBER })
+    .onConflictDoNothing({ target: userRoles.userId });
+
+  return getUserRole(userId);
 }

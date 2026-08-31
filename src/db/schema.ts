@@ -1,8 +1,11 @@
 import { sql } from 'drizzle-orm';
 import {
+  type AnyPgColumn,
   boolean,
+  check,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgPolicy,
   pgTable,
@@ -18,8 +21,39 @@ import { anonRole, authenticatedRole, authUid, authUsers } from 'drizzle-orm/sup
 import { PROFILE_LIMITS } from '@/constants/profile';
 import { USER_ROLE } from '@/constants/role';
 import { WORD_LIMITS } from '@/constants/word';
+import { LEARNING_ACCOUNT_TRANSFER_STATUS } from '@/features/learning/account/account.constants';
+import {
+  LEARNING_GOAL,
+  LEARNING_LEVEL,
+  LEARNING_LIMITS,
+  LEARNING_SESSION_STATUS,
+} from '@/features/learning/learning.constants';
 
 export const appRole = pgEnum('app_role', [USER_ROLE.MEMBER, USER_ROLE.ADMIN]);
+export const learningGoal = pgEnum('learning_goal', [
+  LEARNING_GOAL.DAILY_CONVERSATION,
+  LEARNING_GOAL.TRAVEL,
+  LEARNING_GOAL.WORK,
+  LEARNING_GOAL.SCHOOL_EXAM,
+]);
+export const learningLevel = pgEnum('learning_level', [
+  LEARNING_LEVEL.STARTER,
+  LEARNING_LEVEL.BEGINNER,
+  LEARNING_LEVEL.INTERMEDIATE,
+  LEARNING_LEVEL.ADVANCED,
+]);
+export const learningSessionStatus = pgEnum('learning_session_status', [
+  LEARNING_SESSION_STATUS.IN_PROGRESS,
+  LEARNING_SESSION_STATUS.COMPLETED,
+  LEARNING_SESSION_STATUS.ABANDONED,
+]);
+export const learningAccountTransferStatus = pgEnum('learning_account_transfer_status', [
+  LEARNING_ACCOUNT_TRANSFER_STATUS.PENDING,
+  LEARNING_ACCOUNT_TRANSFER_STATUS.CONSUMED,
+  LEARNING_ACCOUNT_TRANSFER_STATUS.EXPIRED,
+]);
+const isPermanentAuthUser = sql`(((select auth.jwt()) ->> 'is_anonymous')::boolean) is false`;
+const isRowOwner = (userId: AnyPgColumn) => sql`${authUid} = ${userId}`;
 
 // Authorization state only: this table controls what a user is allowed to do.
 export const userRoles = pgTable(
@@ -34,7 +68,7 @@ export const userRoles = pgTable(
     pgPolicy('Users can view their own role', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`${authUid} = ${table.userId}`,
+      using: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
     }),
   ],
 ).enableRLS();
@@ -59,13 +93,13 @@ export const profiles = pgTable(
     pgPolicy('Users can view their own profile', {
       for: 'select',
       to: authenticatedRole,
-      using: sql`${authUid} = ${table.userId}`,
+      using: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
     }),
     pgPolicy('Users can update their own profile', {
       for: 'update',
       to: authenticatedRole,
-      using: sql`${authUid} = ${table.userId}`,
-      withCheck: sql`${authUid} = ${table.userId}`,
+      using: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
+      withCheck: sql`${authUid} = ${table.userId} and ${isPermanentAuthUser}`,
     }),
   ],
 ).enableRLS();
@@ -81,6 +115,44 @@ export const words = pgTable(
       onDelete: 'set null',
     }),
     word: varchar('word', { length: WORD_LIMITS.WORD_MAX_LENGTH }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    index('words_created_at_idx').on(table.createdAt, table.id),
+    index('words_created_by_idx').on(table.createdBy),
+    index('words_updated_by_idx').on(table.updatedBy),
+    uniqueIndex('words_word_unique').on(sql`lower(${table.word})`),
+    pgPolicy('Admins can manage words', {
+      for: 'all',
+      to: authenticatedRole,
+      using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+      withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
+    }),
+    pgPolicy('Public can view words with published senses', {
+      for: 'select',
+      to: [anonRole, authenticatedRole],
+      using: sql`exists (select 1 from word_senses where word_senses.word_id = ${table.id} and word_senses.is_public = true)`,
+    }),
+  ],
+).enableRLS();
+
+export const wordSenses = pgTable(
+  'word_senses',
+  {
+    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    wordId: integer('word_id')
+      .notNull()
+      .references(() => words.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
+    updatedBy: uuid('updated_by').references(() => authUsers.id, {
+      onDelete: 'set null',
+    }),
     pronunciationIpa: varchar('pronunciation_ipa', {
       length: WORD_LIMITS.PRONUNCIATION_MAX_LENGTH,
     })
@@ -96,6 +168,7 @@ export const words = pgTable(
     })
       .default('')
       .notNull(),
+    senseOrder: integer('sense_order').default(1).notNull(),
     meaningsTh: text('meanings_th')
       .array()
       .default(sql`ARRAY[]::text[]`)
@@ -111,23 +184,26 @@ export const words = pgTable(
       .notNull(),
   },
   (table) => [
-    index('words_created_at_idx').on(table.createdAt, table.id),
-    index('words_created_by_idx').on(table.createdBy),
-    index('words_updated_by_idx').on(table.updatedBy),
-    index('words_public_word_idx')
-      .on(sql`lower(${table.word})`, table.partOfSpeech, table.id)
+    check('word_senses_sense_order_check', sql`${table.senseOrder} > 0`),
+    index('word_senses_word_id_idx').on(table.wordId),
+    index('word_senses_created_at_idx').on(table.createdAt, table.id),
+    index('word_senses_created_by_idx').on(table.createdBy),
+    index('word_senses_updated_by_idx').on(table.updatedBy),
+    index('word_senses_public_word_idx')
+      .on(table.wordId, table.partOfSpeech, table.senseOrder, table.id)
       .where(sql`${table.isPublic} = true`),
-    uniqueIndex('words_word_part_unique').on(
-      sql`lower(${table.word})`,
+    uniqueIndex('word_senses_word_part_order_unique').on(
+      table.wordId,
       sql`lower(${table.partOfSpeech})`,
+      table.senseOrder,
     ),
-    pgPolicy('Admins can manage words', {
+    pgPolicy('Admins can manage word senses', {
       for: 'all',
       to: authenticatedRole,
       using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
       withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
     }),
-    pgPolicy('Public can view published words', {
+    pgPolicy('Public can view published word senses', {
       for: 'select',
       to: [anonRole, authenticatedRole],
       using: sql`${table.isPublic} = true`,
@@ -160,38 +236,230 @@ export const categories = pgTable(
     pgPolicy('Public can view categories for published words', {
       for: 'select',
       to: [anonRole, authenticatedRole],
-      using: sql`exists (select 1 from word_categories wc join words w on w.id = wc.word_id where wc.category_id = ${table.id} and w.is_public = true)`,
+      using: sql`exists (select 1 from word_sense_categories relationship join word_senses sense on sense.id = relationship.word_sense_id where relationship.category_id = ${table.id} and sense.is_public = true)`,
     }),
   ],
 ).enableRLS();
 
-export const wordCategories = pgTable(
-  'word_categories',
+export const wordSenseCategories = pgTable(
+  'word_sense_categories',
   {
-    wordId: integer('word_id')
+    wordSenseId: integer('word_sense_id')
       .notNull()
-      .references(() => words.id, { onDelete: 'cascade' }),
+      .references(() => wordSenses.id, { onDelete: 'cascade' }),
     categoryId: integer('category_id')
       .notNull()
       .references(() => categories.id, { onDelete: 'cascade' }),
   },
   (table) => [
-    primaryKey({ columns: [table.wordId, table.categoryId] }),
-    index('word_categories_category_id_idx').on(table.categoryId, table.wordId),
-    pgPolicy('Admins can manage word categories', {
+    primaryKey({ columns: [table.wordSenseId, table.categoryId] }),
+    index('word_sense_categories_category_id_idx').on(table.categoryId, table.wordSenseId),
+    pgPolicy('Admins can manage word sense categories', {
       for: 'all',
       to: authenticatedRole,
       using: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
       withCheck: sql`exists (select 1 from ${userRoles} where ${userRoles.userId} = ${authUid} and ${userRoles.role} = 'admin'::app_role)`,
     }),
-    pgPolicy('Public can view categories for published words', {
+    pgPolicy('Public can view categories for published word senses', {
       for: 'select',
       to: [anonRole, authenticatedRole],
-      using: sql`exists (select 1 from ${words} where ${words.id} = ${table.wordId} and ${words.isPublic} = true)`,
+      using: sql`exists (select 1 from ${wordSenses} where ${wordSenses.id} = ${table.wordSenseId} and ${wordSenses.isPublic} = true)`,
     }),
   ],
 ).enableRLS();
 
-export type NewWord = typeof words.$inferInsert;
+const isLearningWordSenseVisible = (wordSenseId: AnyPgColumn) => sql`exists (
+  select 1
+  from ${wordSenses}
+  where ${wordSenses.id} = ${wordSenseId}
+    and (
+      ${wordSenses.isPublic} = true
+      or exists (
+        select 1
+        from ${userRoles}
+        where ${userRoles.userId} = ${authUid}
+          and ${userRoles.role} = 'admin'::app_role
+      )
+    )
+)`;
+
+// Learning data belongs to an Auth user, whether the identity is guest or permanent.
+export const learningProfiles = pgTable(
+  'learning_profiles',
+  {
+    userId: uuid('user_id')
+      .primaryKey()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    goal: learningGoal('goal'),
+    level: learningLevel('level'),
+    onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    pgPolicy('Users can view their own learning profile', {
+      for: 'select',
+      to: authenticatedRole,
+      using: isRowOwner(table.userId),
+    }),
+    pgPolicy('Users can create their own learning profile', {
+      for: 'insert',
+      to: authenticatedRole,
+      withCheck: isRowOwner(table.userId),
+    }),
+    pgPolicy('Users can update their own learning profile', {
+      for: 'update',
+      to: authenticatedRole,
+      using: isRowOwner(table.userId),
+      withCheck: isRowOwner(table.userId),
+    }),
+  ],
+).enableRLS();
+
+export const learningSessions = pgTable(
+  'learning_sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    lessonKey: varchar('lesson_key', { length: LEARNING_LIMITS.LESSON_KEY_MAX_LENGTH }).notNull(),
+    status: learningSessionStatus('status').default(LEARNING_SESSION_STATUS.IN_PROGRESS).notNull(),
+    currentStep: integer('current_step').default(0).notNull(),
+    state: jsonb('state').$type<Record<string, unknown>>().default({}).notNull(),
+    score: integer('score'),
+    startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (table) => [
+    check('learning_sessions_lesson_key_check', sql`length(btrim(${table.lessonKey})) > 0`),
+    check('learning_sessions_current_step_check', sql`${table.currentStep} >= 0`),
+    check(
+      'learning_sessions_score_check',
+      sql`${table.score} is null or (${table.score} >= 0 and ${table.score} <= ${sql.raw(String(LEARNING_LIMITS.SCORE_MAX))})`,
+    ),
+    check(
+      'learning_sessions_completion_check',
+      sql`(${table.status} = ${sql.raw(`'${LEARNING_SESSION_STATUS.COMPLETED}'`)} and ${table.completedAt} is not null) or (${table.status} <> ${sql.raw(`'${LEARNING_SESSION_STATUS.COMPLETED}'`)} and ${table.completedAt} is null)`,
+    ),
+    check(
+      'learning_sessions_state_size_check',
+      sql`pg_column_size(${table.state}) <= ${sql.raw(String(LEARNING_LIMITS.SESSION_STATE_MAX_BYTES))}`,
+    ),
+    check('learning_sessions_state_type_check', sql`jsonb_typeof(${table.state}) = 'object'`),
+    index('learning_sessions_user_status_updated_idx').on(
+      table.userId,
+      table.status,
+      table.updatedAt.desc(),
+    ),
+    index('learning_sessions_user_started_idx').on(table.userId, table.startedAt.desc()),
+    pgPolicy('Users can view their own learning sessions', {
+      for: 'select',
+      to: authenticatedRole,
+      using: isRowOwner(table.userId),
+    }),
+    pgPolicy('Users can create their own learning sessions', {
+      for: 'insert',
+      to: authenticatedRole,
+      withCheck: isRowOwner(table.userId),
+    }),
+    pgPolicy('Users can update their own learning sessions', {
+      for: 'update',
+      to: authenticatedRole,
+      using: isRowOwner(table.userId),
+      withCheck: isRowOwner(table.userId),
+    }),
+  ],
+).enableRLS();
+
+export const userWordProgress = pgTable(
+  'user_word_progress',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    wordSenseId: integer('word_sense_id')
+      .notNull()
+      .references(() => wordSenses.id, { onDelete: 'cascade' }),
+    seenCount: integer('seen_count').default(0).notNull(),
+    correctCount: integer('correct_count').default(0).notNull(),
+    incorrectCount: integer('incorrect_count').default(0).notNull(),
+    mastery: integer('mastery').default(0).notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.wordSenseId] }),
+    check('user_word_progress_seen_count_check', sql`${table.seenCount} >= 0`),
+    check('user_word_progress_correct_count_check', sql`${table.correctCount} >= 0`),
+    check('user_word_progress_incorrect_count_check', sql`${table.incorrectCount} >= 0`),
+    check(
+      'user_word_progress_mastery_check',
+      sql`${table.mastery} >= 0 and ${table.mastery} <= ${sql.raw(String(LEARNING_LIMITS.MASTERY_MAX))}`,
+    ),
+    index('user_word_progress_word_sense_id_idx').on(table.wordSenseId),
+    index('user_word_progress_user_last_seen_idx').on(table.userId, table.lastSeenAt.desc()),
+    pgPolicy('Users can view their own word progress', {
+      for: 'select',
+      to: authenticatedRole,
+      using: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
+    }),
+    pgPolicy('Users can create their own word progress', {
+      for: 'insert',
+      to: authenticatedRole,
+      withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
+    }),
+    pgPolicy('Users can update their own word progress', {
+      for: 'update',
+      to: authenticatedRole,
+      using: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
+      withCheck: sql`${isRowOwner(table.userId)} and ${isLearningWordSenseVisible(table.wordSenseId)}`,
+    }),
+  ],
+).enableRLS();
+
+// Server-only authorization handoff for merging a Guest into an existing account.
+export const learningAccountTransfers = pgTable(
+  'learning_account_transfers',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tokenHash: varchar('token_hash', { length: 64 }).notNull(),
+    sourceUserId: uuid('source_user_id')
+      .notNull()
+      .references(() => authUsers.id, { onDelete: 'cascade' }),
+    destinationUserId: uuid('destination_user_id').references(() => authUsers.id, {
+      onDelete: 'cascade',
+    }),
+    status: learningAccountTransferStatus('status')
+      .default(LEARNING_ACCOUNT_TRANSFER_STATUS.PENDING)
+      .notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('learning_account_transfers_token_hash_uidx').on(table.tokenHash),
+    index('learning_account_transfers_source_status_idx').on(table.sourceUserId, table.status),
+    index('learning_account_transfers_status_expires_idx').on(table.status, table.expiresAt),
+    index('learning_account_transfers_destination_idx').on(table.destinationUserId),
+    check('learning_account_transfers_expiry_check', sql`${table.expiresAt} > ${table.createdAt}`),
+    check(
+      'learning_account_transfers_consumption_check',
+      sql`(${table.status} = ${sql.raw(`'${LEARNING_ACCOUNT_TRANSFER_STATUS.CONSUMED}'::learning_account_transfer_status`)} and ${table.consumedAt} is not null and ${table.destinationUserId} is not null) or (${table.status} <> ${sql.raw(`'${LEARNING_ACCOUNT_TRANSFER_STATUS.CONSUMED}'::learning_account_transfer_status`)} and ${table.consumedAt} is null)`,
+    ),
+  ],
+).enableRLS();
+
 export type Category = typeof categories.$inferSelect;
 export type Profile = typeof profiles.$inferSelect;

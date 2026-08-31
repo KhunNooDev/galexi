@@ -13,7 +13,6 @@ import {
   Trash2,
 } from 'lucide-react';
 
-import { ImageWithSkeleton } from '@/components/image-with-skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -38,31 +37,6 @@ type WordItemProps = {
   onEdit: (word: AdminWord) => void;
   onDelete: (word: AdminWord) => void;
 };
-
-function WordThumbnail({ word, className }: { word: AdminWord; className: string }) {
-  const t = useTranslations();
-
-  return (
-    <div
-      className={cn(
-        'relative shrink-0 overflow-hidden rounded-2xl border border-border bg-secondary-hover',
-        className,
-      )}
-    >
-      {word.imageUrl ? (
-        <ImageWithSkeleton
-          src={getWordImageRoute(word.id)}
-          alt={t('words.flashcard.imageAlt', { word: word.word })}
-          className='object-cover'
-        />
-      ) : (
-        <span className='grid size-full place-items-center text-muted-foreground'>
-          <ImageIcon aria-hidden='true' className='size-7' />
-        </span>
-      )}
-    </div>
-  );
-}
 
 function WordActions({ word, deleting, onEdit, onDelete }: WordItemProps) {
   const t = useTranslations();
@@ -180,9 +154,8 @@ export function WordCollection({
         {words.map((word) => (
           <li
             key={word.id}
-            className='group flex min-h-36 gap-3 rounded-3xl border border-border bg-surface p-4 shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8'
+            className='group flex min-h-32 rounded-3xl border border-border bg-surface p-4 shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8'
           >
-            <WordThumbnail word={word} className='size-20 sm:size-24' />
             <div className='flex min-w-0 flex-1 flex-col'>
               <div className='flex items-start gap-2'>
                 <div className='min-w-0 flex-1'>
@@ -237,9 +210,8 @@ export function WordCollection({
         {words.map((word) => (
           <li
             key={word.id}
-            className='flex items-center gap-3 rounded-2xl border border-border bg-surface p-3 shadow-[0_12px_35px_rgb(34_74_150/6%)]'
+            className='flex items-center gap-2 rounded-2xl border border-border bg-surface p-3 shadow-[0_12px_35px_rgb(34_74_150/6%)]'
           >
-            <WordThumbnail word={word} className='size-18' />
             <div className='min-w-0 flex-1'>
               <div className='flex items-center gap-2'>
                 <h3 className='truncate font-semibold text-surface-foreground'>{word.word}</h3>
@@ -277,14 +249,11 @@ export function WordCollection({
               key={word.id}
               className='grid grid-cols-[minmax(14rem,2fr)_minmax(8rem,1fr)_minmax(10rem,1.3fr)_8rem_3rem] items-center gap-4 px-5 py-4 transition-colors hover:bg-secondary-hover/35'
             >
-              <div className='flex min-w-0 items-center gap-3'>
-                <WordThumbnail word={word} className='size-12 rounded-xl' />
-                <div className='min-w-0'>
-                  <p className='truncate font-semibold text-surface-foreground'>{word.word}</p>
-                  <p className='mt-0.5 truncate text-xs text-muted-foreground'>
-                    {word.meaningsTh.join(' · ')}
-                  </p>
-                </div>
+              <div className='min-w-0'>
+                <p className='truncate font-semibold text-surface-foreground'>{word.word}</p>
+                <p className='mt-0.5 truncate text-xs text-muted-foreground'>
+                  {word.meaningsTh.join(' · ')}
+                </p>
               </div>
               <span className='truncate text-sm text-surface-foreground'>
                 {word.partOfSpeech || '-'}

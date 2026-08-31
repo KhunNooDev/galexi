@@ -21,7 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-export type InputFileProps<TValues extends FieldValues> = {
+type InputFileProps<TValues extends FieldValues> = {
   accept?: string;
   chooseLabel: string;
   className?: string;

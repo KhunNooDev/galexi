@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-export type MultiComboboxOption = { label: string; value: number };
+type MultiComboboxOption = { label: string; value: number };
 
 export function InputMultiCombobox<TValues extends FieldValues>({
   field,

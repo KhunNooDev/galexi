@@ -1,7 +1,7 @@
 import 'client-only';
 
-import { hc } from 'hono/client';
+import { treaty } from '@elysiajs/eden';
 
-import type { ApiType } from '@/server/api';
+import type { Api } from '@/server/api';
 
-export const apiClient = hc<ApiType>('/');
+export const apiClient = treaty<Api>('', { keepDomain: true });

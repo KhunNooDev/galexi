@@ -7,6 +7,12 @@
     "loading": "Loading Galexi...",
     "adminLoading": "Loading dictionary management...",
     "categoriesLoading": "Loading vocabulary topics...",
+    "categoryLoading": "Loading category vocabulary...",
+    "homeLoading": "Loading home...",
+    "learnHomeLoading": "Loading your learning dashboard...",
+    "profileLoading": "Loading your profile...",
+    "wordLoading": "Loading flashcard...",
+    "wordsLoading": "Loading vocabulary...",
     "error": {
       "title": "Something went wrong",
       "description": "We could not load this page. Try again, or return home."
@@ -26,7 +32,8 @@
     "eyebrow": "Your vocabulary universe",
     "heading": "Keep new words in orbit.",
     "description": "Study a shared dictionary of pronunciations, meanings, and examples maintained by administrators.",
-    "getStarted": "Get started",
+    "startLearning": "Start learning",
+    "noAccountRequired": "No account required",
     "openWords": "Open words",
     "browseCategories": "Browse topics",
     "profile": "Profile",
@@ -38,11 +45,285 @@
     "languageDescription": "Built with internationalization from the start, with English enabled today.",
     "themeToggle": "Toggle light and dark mode"
   },
+  "learning": {
+    "back": "Back",
+    "backHome": "Back home",
+    "retry": "Try again",
+    "loading": "Loading your learning setup...",
+    "starting": "Starting...",
+    "saving": "Saving your choice...",
+    "progress": {
+      "start": "Learning setup",
+      "step": "Step {current} of {total}",
+      "complete": "Setup complete"
+    },
+    "start": {
+      "title": "Start learning in a few taps",
+      "description": "Choose your goal and current level so Galexi can prepare the right learning path for you.",
+      "action": "Begin learning",
+      "guestNote": "Your progress is saved to a private Guest session on this device."
+    },
+    "goal": {
+      "eyebrow": "Your goal",
+      "title": "Why are you learning English?",
+      "description": "Choose the one that matters most right now. You can change it later.",
+      "legend": "Choose your learning goal",
+      "options": {
+        "daily_conversation": {
+          "title": "Daily conversation",
+          "description": "Speak more naturally in everyday situations."
+        },
+        "travel": {
+          "title": "Travel",
+          "description": "Navigate trips and connect with people confidently."
+        },
+        "work": {
+          "title": "Work",
+          "description": "Communicate clearly in professional settings."
+        },
+        "school_exam": {
+          "title": "School or exams",
+          "description": "Build vocabulary for study and test preparation."
+        }
+      }
+    },
+    "level": {
+      "eyebrow": "Your level",
+      "title": "How does English feel today?",
+      "description": "Pick the closest match. There is no test and no wrong answer.",
+      "legend": "Choose your current English level",
+      "options": {
+        "starter": {
+          "title": "Just starting",
+          "description": "I know a few words and simple phrases."
+        },
+        "beginner": {
+          "title": "Beginner",
+          "description": "I can understand and use basic sentences."
+        },
+        "intermediate": {
+          "title": "Intermediate",
+          "description": "I can handle familiar conversations and texts."
+        },
+        "advanced": {
+          "title": "Advanced",
+          "description": "I communicate well and want more precision."
+        }
+      }
+    },
+    "ready": {
+      "title": "You are ready for your first lesson",
+      "description": "Your learning preferences are saved. Your first six words are ready.",
+      "nextTitle": "Lesson 1: Learning momentum",
+      "nextDescription": "Learn six useful words with Thai meanings and clear examples. Your progress saves as you go.",
+      "browseWords": "Start Lesson 1"
+    },
+    "lessons": {
+      "learningMomentum": "Learning momentum"
+    },
+    "home": {
+      "eyebrow": "Your learning",
+      "title": "Keep moving forward",
+      "description": "Continue where you left off or review your latest lesson result.",
+      "continueEyebrow": "Continue learning",
+      "startEyebrow": "Ready when you are",
+      "setupEyebrow": "Finish your setup",
+      "setupTitle": "Set up your learning path",
+      "completeEyebrow": "Available lessons complete",
+      "allCompleteTitle": "You are caught up",
+      "allCompleteDescription": "You have completed every lesson currently available. Your results are ready whenever you want to review them.",
+      "setupDescription": "Complete your learning preferences before starting your lesson.",
+      "lessonDescription": "Your lesson progress is saved. Continue from the exact activity you reached.",
+      "resultDescription": "Your activities are complete. Open the result to finish this lesson.",
+      "progress": "Lesson progress",
+      "finishSetup": "Finish setup",
+      "startLesson": "Start lesson",
+      "continueLesson": "Continue lesson",
+      "viewResult": "View result",
+      "moreLessonsSoon": "More lessons are coming soon",
+      "lessonsCompleted": "Lessons completed",
+      "wordsPracticed": "Words practiced",
+      "recentLesson": "Recent lesson",
+      "recentScore": "{score}% practice accuracy",
+      "progressSaved": "Progress saved. Your learning is ready on this account.",
+      "guestTitle": "Learning as Guest",
+      "guestDescription": "Save your progress to continue on other devices and after signing out.",
+      "createAccount": "Save my progress"
+    },
+    "saveAccount": {
+      "lessonComplete": "Lesson complete",
+      "heroTitle": "{count, plural, =0 {Your progress is ready to save} one {# word is ready for your next session} other {# words are ready for your next session}}",
+      "heroDescription": "You are building momentum. Keep it going.",
+      "sheetTitle": "Save before you go?",
+      "sheetDescription": "Create an account to keep this progress, or sign in to add it to your account.",
+      "createAccount": "Create an account",
+      "existingAccount": "Sign in to my account",
+      "notNow": "Continue without saving",
+      "privacyNote": "Optional and private. Your current lesson stays available in this Guest session on this device.",
+      "createTitle": "Create your account",
+      "createDescription": "Add your email first. After you verify it, you can set a password without losing this progress.",
+      "or": "or",
+      "useExistingInstead": "Sign in to an existing account",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "sendVerification": "Send verification email",
+      "checkEmail": "Check {email} and open the verification link to continue.",
+      "passwordTitle": "Secure your account",
+      "passwordDescription": "Your email is verified. Set a password to finish saving your progress.",
+      "passwordLabel": "Password",
+      "confirmPasswordLabel": "Confirm password",
+      "passwordPlaceholder": "At least {minLength} characters",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "saveProgress": "Save progress",
+      "saving": "Saving your progress...",
+      "mergeFailedTitle": "We could not combine your progress yet",
+      "mergeFailedDescription": "Your account is signed in, but we could not finish importing this Guest progress.",
+      "mergeUnavailable": "This save request is no longer available. Start again from a Guest session.",
+      "tryAgain": "Try again",
+      "continueLearning": "Continue to learning home",
+      "validation": {
+        "invalidEmail": "Enter a valid email address.",
+        "emailUnavailable": "We could not use that email. If you already have an account, sign in instead.",
+        "confirmPassword": "Confirm your password.",
+        "passwordsMismatch": "Passwords do not match.",
+        "passwordTooShort": "Password must be at least {minLength} characters.",
+        "verifyEmailFirst": "Verify your email before setting a password.",
+        "passwordUpdateFailed": "We could not set your password. Please try again."
+      }
+    },
+    "result": {
+      "eyebrow": "Lesson complete",
+      "title": "Nice work",
+      "lessonCompleted": "{lesson} completed on {date}",
+      "accuracy": "Accuracy",
+      "practice": "Practice",
+      "correctCount": "{correct}/{total} correct",
+      "conversation": "Conversation",
+      "turnCount": "{count, plural, one {# turn} other {# turns}}",
+      "vocabularyTitle": "Lesson vocabulary",
+      "vocabularyDescription": "Mastery shown here is a snapshot from lesson completion.",
+      "continue": "Continue to learning home",
+      "mastery": {
+        "new": "New",
+        "practicing": "Practicing",
+        "developing": "Developing",
+        "familiar": "Familiar",
+        "strong": "Strong"
+      }
+    },
+    "lesson": {
+      "eyebrow": "Lesson 1",
+      "title": "Learning momentum",
+      "description": "Build a useful set of words for learning, growth, and everyday goals.",
+      "learnPhase": "Learn",
+      "progress": "Word {current} of {total}",
+      "progressLabel": "Lesson progress",
+      "listen": "Listen to {word}",
+      "listenExample": "Listen to example sentence",
+      "meaningsTitle": "Thai meanings",
+      "exampleTitle": "Example",
+      "revealHint": "Think of the Thai meaning, then reveal the answer when you are ready.",
+      "revealAnswer": "Reveal answer",
+      "previous": "Previous",
+      "next": "Next word",
+      "startPractice": "Continue to practice",
+      "saving": "Saving...",
+      "saveError": "We could not save your progress. Try again before continuing.",
+      "unavailable": "This lesson is not available right now.",
+      "practice": {
+        "phase": "Practice",
+        "progress": "Question {current} of {total}",
+        "progressLabel": "Practice progress",
+        "meaningToWordLabel": "Recall the word",
+        "wordToMeaningLabel": "Recall the meaning",
+        "meaningToWordPrompt": "Which English word means \"{meaning}\"?",
+        "wordToMeaningPrompt": "Choose the Thai meaning of \"{word}\".",
+        "answerOptions": "Answer options",
+        "checkAnswer": "Check answer",
+        "checking": "Checking...",
+        "correct": "Correct",
+        "notQuite": "Not quite",
+        "correction": "\"{word}\" means \"{meaning}\".",
+        "continue": "Continue",
+        "startConversation": "Start conversation",
+        "invalidAnswer": "Choose one of the available answers.",
+        "saveError": "We could not score that answer. Please try again.",
+        "unavailable": "Practice is not available right now."
+      },
+      "conversation": {
+        "phase": "Conversation",
+        "progress": "Turn {current} of {total}",
+        "progressLabel": "Conversation progress",
+        "contextEyebrow": "Use your new words",
+        "title": "A quick check-in with Galexi",
+        "description": "Choose a natural response and use Lesson 1 vocabulary in context.",
+        "transcriptLabel": "Conversation transcript",
+        "chooseResponse": "How would you respond?",
+        "responseOptions": "Conversation response options",
+        "send": "Send response",
+        "sending": "Sending...",
+        "completeTitle": "Conversation complete",
+        "completeDescription": "You used your new vocabulary in context.",
+        "continue": "Continue",
+        "invalidResponse": "Choose one of the available responses.",
+        "saveError": "We could not save that response. Please try again.",
+        "unavailable": "The conversation is not available right now.",
+        "content": {
+          "turns": {
+            "momentumPlan": {
+              "message": "You are building momentum. What would you like to do next?",
+              "responses": {
+                "improveEnglish": "I want to improve my English.",
+                "curiousNext": "I am curious about the next lesson.",
+                "opportunityLearn": "This is a great opportunity to learn."
+              }
+            },
+            "momentumMethod": {
+              "message": "That sounds good. What will help you keep going?",
+              "responses": {
+                "reliablePractice": "Reliable practice is essential.",
+                "accomplishGoal": "I will accomplish one small goal today.",
+                "improveDaily": "I want to improve a little every day."
+              }
+            },
+            "momentumReady": {
+              "message": "You are nearly there. How do you feel about continuing?",
+              "responses": {
+                "curiousReady": "I am curious and ready to continue.",
+                "opportunityImportant": "This opportunity feels essential.",
+                "accomplishStep": "I can accomplish this step."
+              }
+            }
+          }
+        }
+      }
+    },
+    "errors": {
+      "backLearn": "Back to learning home",
+      "start": "We could not open your learning path. Please try again.",
+      "sessionLost": "Your learning session is no longer available. Return to the start and try again.",
+      "invalidChoice": "Choose one of the available options.",
+      "update": "We could not save your choice. Please try again.",
+      "pageTitle": "Your learning setup could not load",
+      "pageDescription": "Try again. If your Guest session expired, return home and start learning again."
+    }
+  },
   "header": {
     "accountMenu": "Open account menu",
     "adminNavigation": "Dictionary management",
     "categories": "Categories",
+    "guest": "Guest",
+    "guestDescription": "Your temporary learning session is active on this device.",
     "words": "Words"
+  },
+  "navigation": {
+    "label": "Primary navigation",
+    "home": "Home",
+    "learn": "Learn",
+    "words": "Words",
+    "categories": "Categories",
+    "profile": "Profile"
   },
   "auth": {
     "signInTitle": "Welcome back",
@@ -71,6 +352,7 @@
       "confirmPassword": "Confirm your password.",
       "passwordsMismatch": "Passwords do not match.",
       "incorrectCredentials": "The email or password is incorrect.",
+      "transferUnavailable": "Your progress-saving session expired. Return to Save my progress and try again.",
       "accountCreationFailed": "The account could not be created.",
       "checkEmail": "Check your email to confirm your account."
     }
@@ -80,6 +362,7 @@
     "pageDescription": "Your Galexi profile and secure account details.",
     "avatarAlt": "Profile picture for {name}",
     "accountDetails": "Account details",
+    "editAction": "Edit profile",
     "editTitle": "Application profile",
     "editDescription": "Choose how your name and profile picture appear in Galexi.",
     "displayName": "Display name",
@@ -111,10 +394,11 @@
   "categories": {
     "backHome": "Back home",
     "backToCategories": "Back to categories",
-    "pageTitle": "Learn vocabulary",
+    "pageTitle": "Categories",
     "pageDescription": "What do you want to learn?",
     "searchLabel": "Search topics",
-    "searchPlaceholder": "Search topics...",
+    "searchPlaceholder": "Search topics",
+    "topicCount": "{count, plural, one {# topic} other {# topics}}",
     "wordCount": "{count, plural, one {# word} other {# words}}",
     "empty": "No public vocabulary topics are available yet.",
     "noResults": "No topics match your search.",
@@ -280,7 +564,8 @@
       "pageDescription": "Explore flashcards published by Galexi administrators.",
       "searchLabel": "Search public vocabulary",
       "searchPlaceholder": "Search by word...",
-      "resultCount": "{count, plural, one {# word found} other {# words found}}",
+      "alphabetIndex": "Jump to words by letter",
+      "resultCount": "{count, plural, one {# word} other {# words}}",
       "noResults": "No published words match your search.",
       "empty": "No public words have been published yet.",
       "backHome": "Back home",

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export type InputTagsProps<TValues extends FieldValues> = {
+type InputTagsProps<TValues extends FieldValues> = {
   addLabel: string;
   className?: string;
   errors?: string[];

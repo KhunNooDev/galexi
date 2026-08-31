@@ -11,7 +11,7 @@ import { createFormInputs, Form, FormResetFields } from '@/components/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AUTH_MODE, AUTH_PASSWORD_MIN_LENGTH, type AuthMode } from '@/constants/auth';
-import { AUTH_ROUTES } from '@/constants/routes';
+import { getAuthRoute } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
 type AuthAction = (state: AuthState, formData: FormData) => Promise<AuthState>;
@@ -25,12 +25,13 @@ type AuthFormValues = {
 type AuthFormProps = {
   action: AuthAction;
   mode: AuthMode;
+  returnTo?: string | null;
 };
 
 const { InputPass, InputText } = createFormInputs<AuthFormValues>();
 const authSecretFields: ('password' | 'confirmPassword')[] = ['password', 'confirmPassword'];
 
-export function AuthForm({ action, mode }: AuthFormProps) {
+export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
   const t = useTranslations();
   const [state, formAction, pending] = useActionState(action, {});
   const authFormSchema = useMemo(
@@ -75,7 +76,10 @@ export function AuthForm({ action, mode }: AuthFormProps) {
     [mode, t],
   );
   const Icon = mode === AUTH_MODE.SIGN_IN ? LogIn : UserPlus;
-  const alternateHref = mode === AUTH_MODE.SIGN_IN ? AUTH_ROUTES.SIGN_UP : AUTH_ROUTES.SIGN_IN;
+  const alternateHref = getAuthRoute(
+    mode === AUTH_MODE.SIGN_IN ? AUTH_MODE.SIGN_UP : AUTH_MODE.SIGN_IN,
+    returnTo,
+  );
   const alternateLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signUp') : t('auth.signIn');
   const alternatePrompt =
     mode === AUTH_MODE.SIGN_IN ? t('auth.needAccount') : t('auth.haveAccount');
@@ -106,7 +110,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
         aria-label={t('auth.navigationLabel')}
       >
         <Link
-          href={AUTH_ROUTES.SIGN_IN}
+          href={getAuthRoute(AUTH_MODE.SIGN_IN, returnTo)}
           scroll={false}
           className={cn(
             'rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-all duration-300',
@@ -120,7 +124,7 @@ export function AuthForm({ action, mode }: AuthFormProps) {
           {t('auth.signIn')}
         </Link>
         <Link
-          href={AUTH_ROUTES.SIGN_UP}
+          href={getAuthRoute(AUTH_MODE.SIGN_UP, returnTo)}
           scroll={false}
           className={cn(
             'rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-all duration-300',

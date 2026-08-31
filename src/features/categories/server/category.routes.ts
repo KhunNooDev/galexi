@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
+import { Elysia, status } from 'elysia';
 import { z } from 'zod';
 
 import { API_PATH } from '@/constants/api';
@@ -16,7 +15,6 @@ import {
 } from '@/features/categories/server/category.service';
 import { isUniqueConstraintViolation } from '@/server/api/errors';
 import { requireAdmin } from '@/server/api/middleware/require-admin';
-import type { ApiEnvironment } from '@/server/api/types';
 import { idParamSchema } from '@/server/api/validation';
 
 const categoryOrderSchema = z.object({
@@ -26,46 +24,52 @@ const categoryOrderSchema = z.object({
     .refine((ids) => new Set(ids).size === ids.length),
 });
 
-export const categoryRoutes = new Hono<ApiEnvironment>()
-  .use(API_PATH.CATEGORIES_WILDCARD, requireAdmin)
-  .get(API_PATH.CATEGORIES, async (context) =>
-    context.json({ categories: await listCategories() }, 200),
+function handleCategoryError(error: unknown): never | ReturnType<typeof status<409, object>> {
+  if (isUniqueConstraintViolation(error, 'categories_slug_unique')) {
+    return status(409, { error: 'Category slug already exists' });
+  }
+
+  throw error;
+}
+
+export const categoryRoutes = new Elysia({ name: 'category-routes' })
+  .use(requireAdmin)
+  .get(API_PATH.CATEGORIES, async () => ({ categories: await listCategories() }))
+  .post(
+    API_PATH.CATEGORIES,
+    async ({ body }) => {
+      try {
+        return status(201, { category: await createCategory(body) });
+      } catch (error) {
+        return handleCategoryError(error);
+      }
+    },
+    { body: categoryInputSchema },
   )
-  .post(API_PATH.CATEGORIES, zValidator('json', categoryInputSchema), async (context) =>
-    context.json({ category: await createCategory(context.req.valid('json')) }, 201),
-  )
-  .patch(API_PATH.CATEGORIES_REORDER, zValidator('json', categoryOrderSchema), async (context) =>
-    context.json(
-      { categories: await reorderCategories(context.req.valid('json').categoryIds) },
-      200,
-    ),
+  .patch(
+    API_PATH.CATEGORIES_REORDER,
+    async ({ body }) => ({ categories: await reorderCategories(body.categoryIds) }),
+    { body: categoryOrderSchema },
   )
   .patch(
     API_PATH.CATEGORY_BY_ID,
-    zValidator('param', idParamSchema),
-    zValidator('json', categoryInputSchema),
-    async (context) => {
-      const category = await updateCategory(
-        context.req.valid('param').id,
-        context.req.valid('json'),
-      );
+    async ({ body, params, status: reply }) => {
+      try {
+        const category = await updateCategory(params.id, body);
 
-      return category
-        ? context.json({ category }, 200)
-        : context.json({ error: 'Category not found' }, 404);
+        return category ? { category } : reply(404, { error: 'Category not found' });
+      } catch (error) {
+        return handleCategoryError(error);
+      }
     },
+    { body: categoryInputSchema, params: idParamSchema },
   )
-  .delete(API_PATH.CATEGORY_BY_ID, zValidator('param', idParamSchema), async (context) => {
-    const category = await deleteCategory(context.req.valid('param').id);
+  .delete(
+    API_PATH.CATEGORY_BY_ID,
+    async ({ params, status: reply }) => {
+      const category = await deleteCategory(params.id);
 
-    return category
-      ? context.json(category, 200)
-      : context.json({ error: 'Category not found' }, 404);
-  })
-  .onError((error, context) => {
-    if (isUniqueConstraintViolation(error, 'categories_slug_unique')) {
-      return context.json({ error: 'Category slug already exists' }, 409);
-    }
-
-    throw error;
-  });
+      return category ?? reply(404, { error: 'Category not found' });
+    },
+    { params: idParamSchema },
+  );
