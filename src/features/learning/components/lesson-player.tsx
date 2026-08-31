@@ -10,12 +10,15 @@ import { Button } from '@/components/ui/button';
 import { getLessonResultRoute } from '@/constants/routes';
 import { ConversationPlayer } from '@/features/learning/components/conversation-player';
 import { PracticePlayer } from '@/features/learning/components/practice-player';
-import { LESSON_PHASE, type LessonSessionState } from '@/features/learning/lesson.schema';
+import {
+  LESSON_PHASE,
+  type LessonSessionState,
+  type LessonWord,
+} from '@/features/learning/lesson.schema';
 import type {
   ConversationTurn,
   PracticeQuestionView,
 } from '@/features/learning/lessons/lesson-activities';
-import type { LessonWord } from '@/features/learning/server/lesson.service';
 
 type LessonPlayerProps = {
   conversation: readonly ConversationTurn[];

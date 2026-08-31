@@ -14,7 +14,7 @@ import { getPublishedLessonWords } from '@/features/learning/server/lesson.servi
 import { advanceCurrentLesson } from '@/features/learning/server/lesson-session.service';
 import { submitCurrentPracticeAnswer } from '@/features/learning/server/practice.service';
 
-export type AdvanceLessonActionResult =
+type AdvanceLessonActionResult =
   | {
       ok: true;
       phase: LessonPhase;
@@ -51,7 +51,7 @@ export async function advanceLessonAction(input: unknown): Promise<AdvanceLesson
   }
 }
 
-export type SubmitPracticeAnswerActionResult =
+type SubmitPracticeAnswerActionResult =
   | {
       feedback: {
         correctOptionId: string;
@@ -95,7 +95,7 @@ export async function submitPracticeAnswerAction(
   }
 }
 
-export type SubmitConversationResponseActionResult =
+type SubmitConversationResponseActionResult =
   { ok: true; phase: LessonPhase } | { error: string; ok: false };
 
 export async function submitConversationResponseAction(

@@ -7,6 +7,7 @@ import { learningSessions, userWordProgress } from '@/db/schema';
 import { LEARNING_LIMITS } from '@/features/learning/learning.constants';
 import {
   LESSON_PHASE,
+  type LessonWord,
   normalizeLessonSessionState,
   submitPracticeAnswerInputSchema,
 } from '@/features/learning/lesson.schema';
@@ -17,7 +18,6 @@ import {
 } from '@/features/learning/lessons/lesson-activities';
 import type { LessonDefinition } from '@/features/learning/lessons/lesson-catalog';
 import { requireLearningIdentity } from '@/features/learning/server/learning-identity';
-import type { LessonWord } from '@/features/learning/server/lesson.service';
 import {
   findOwnedLessonSession,
   type LessonTransaction,

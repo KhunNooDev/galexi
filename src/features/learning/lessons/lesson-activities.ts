@@ -13,7 +13,7 @@ export type ActivityWord = {
   word: string;
 };
 
-export type PracticeOption = {
+type PracticeOption = {
   id: string;
   label: string;
   language: 'en' | 'th';
@@ -35,7 +35,7 @@ export type PracticeQuestionView = Omit<
   'correctOptionId' | 'targetWordSenseId' | 'targetWordMeaning' | 'targetWordText'
 >;
 
-export type ConversationMessageKey =
+type ConversationMessageKey =
   | 'content.turns.momentumPlan.message'
   | 'content.turns.momentumPlan.responses.improveEnglish'
   | 'content.turns.momentumPlan.responses.curiousNext'
@@ -49,7 +49,7 @@ export type ConversationMessageKey =
   | 'content.turns.momentumReady.responses.opportunityImportant'
   | 'content.turns.momentumReady.responses.accomplishStep';
 
-export type ConversationResponse = {
+type ConversationResponse = {
   id: string;
   messageKey: ConversationMessageKey;
   wordSenseIds: readonly number[];

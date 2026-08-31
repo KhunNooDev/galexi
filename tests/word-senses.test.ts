@@ -1,5 +1,5 @@
+import { describe, expect, it } from 'bun:test';
 import { getTableConfig } from 'drizzle-orm/pg-core';
-import { describe, expect, it } from 'vitest';
 
 import { userWordProgress, words, wordSenseCategories, wordSenses } from '@/db/schema';
 import {

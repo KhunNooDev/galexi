@@ -1,16 +1,16 @@
-import type { InferRequestType, InferResponseType } from 'hono/client';
+import type { Treaty } from '@elysiajs/eden';
 
+import type { WordInput as DomainWordInput } from '@/features/words/word.schema';
 import { apiClient } from '@/lib/api/client';
 import { throwApiError } from '@/lib/api/errors';
 
 const wordsRoute = apiClient.api.words;
-const wordRoute = wordsRoute[':id'];
 const wordImageCleanupRoute = apiClient.api['word-images'].cleanup;
 
-type WordsResponse = InferResponseType<typeof wordsRoute.$get, 200>;
+type WordsResponse = Treaty.Data<typeof wordsRoute.get>;
 
 export type AdminWord = WordsResponse['words'][number];
-export type WordInput = InferRequestType<typeof wordsRoute.$post>['json'];
+export type WordInput = DomainWordInput;
 export type UpdateWordInput = {
   id: number;
   values: WordInput;
@@ -18,60 +18,54 @@ export type UpdateWordInput = {
 
 export const wordsApi = {
   async list(signal?: AbortSignal) {
-    const response = await wordsRoute.$get(undefined, { init: { signal } });
+    const { data, error } = await wordsRoute.get({ fetch: { signal } });
 
-    if (response.status !== 200) {
-      return throwApiError(response);
+    if (error) {
+      return throwApiError(error);
     }
 
-    const data = await response.json();
     return data.words;
   },
 
   async create(values: WordInput) {
-    const response = await wordsRoute.$post({ json: values });
+    const { data, error } = await wordsRoute.post(values);
 
-    if (response.status !== 201) {
-      return throwApiError(response);
+    if (error) {
+      return throwApiError(error);
     }
 
-    const data = await response.json();
     return data.word;
   },
 
   async update({ id, values }: UpdateWordInput) {
-    const response = await wordRoute.$patch({
-      param: { id: String(id) },
-      json: values,
-    });
+    const { data, error } = await wordsRoute({ id }).patch(values);
 
-    if (response.status !== 200) {
-      return throwApiError(response);
+    if (error) {
+      return throwApiError(error);
     }
 
-    const data = await response.json();
     return data.word;
   },
 
   async remove(id: number) {
-    const response = await wordRoute.$delete({ param: { id: String(id) } });
+    const { data, error } = await wordsRoute({ id }).delete();
 
-    if (response.status !== 200) {
-      return throwApiError(response);
+    if (error) {
+      return throwApiError(error);
     }
 
-    return response.json();
+    return data;
   },
 };
 
 export const wordImagesApi = {
   async cleanup(imageUrl: string) {
-    const response = await wordImageCleanupRoute.$post({ json: { imageUrl } });
+    const { data, error } = await wordImageCleanupRoute.post({ imageUrl });
 
-    if (response.status !== 200) {
-      return throwApiError(response);
+    if (error) {
+      return throwApiError(error);
     }
 
-    return response.json();
+    return data;
   },
 };

@@ -19,7 +19,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
-export type InputTextareaProps<TValues extends FieldValues> = Omit<
+type InputTextareaProps<TValues extends FieldValues> = Omit<
   ComponentProps<typeof Textarea>,
   'name' | 'onBlur' | 'onChange' | 'ref'
 > & {

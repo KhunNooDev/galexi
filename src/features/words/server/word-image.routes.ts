@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { zValidator } from '@hono/zod-validator';
-import { Hono } from 'hono';
+import { Elysia } from 'elysia';
 
 import { API_PATH } from '@/constants/api';
 import { IDENTITY_KIND } from '@/constants/identity';
@@ -13,42 +12,56 @@ import {
 import { wordImageCleanupSchema } from '@/features/words/word.schema';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
 import { requireAdmin } from '@/server/api/middleware/require-admin';
-import type { ApiEnvironment } from '@/server/api/types';
 import { idParamSchema } from '@/server/api/validation';
 
-export const wordImageRoutes = new Hono<ApiEnvironment>()
+const wordImageCleanupRoutes = new Elysia({ name: 'word-image-cleanup-routes' })
+  .use(requireAdmin)
   .post(
     API_PATH.WORD_IMAGE_CLEANUP,
-    requireAdmin,
-    zValidator('json', wordImageCleanupSchema),
-    async (context) => {
-      const { imageUrl } = context.req.valid('json');
-
+    async ({ body, status }) => {
       try {
-        return context.json(await cleanupUnreferencedWordImage(imageUrl), 200);
+        return await cleanupUnreferencedWordImage(body.imageUrl);
       } catch (error) {
         console.error('Unable to clean up the unreferenced Word image', error);
-        return context.json({ error: 'Unable to clean up Word image' }, 500);
+        return status(500, { error: 'Unable to clean up Word image' });
       }
     },
-  )
-  .get(API_PATH.WORD_IMAGE_BY_ID, zValidator('param', idParamSchema), async (context) => {
-    const { id } = context.req.valid('param');
-    const word = await getWordById(id);
+    { body: wordImageCleanupSchema },
+  );
 
-    if (!word?.imageUrl) {
-      return context.notFound();
-    }
+export const wordImageRoutes = new Elysia({ name: 'word-image-routes' })
+  .get(
+    API_PATH.WORD_IMAGE_BY_ID,
+    async ({ params }) => {
+      const word = await getWordById(params.id);
 
-    if (!word.isPublic) {
-      const identity = await getCurrentIdentity();
-
-      if (identity.kind !== IDENTITY_KIND.ADMIN) {
-        return context.notFound();
+      if (!word?.imageUrl) {
+        return new Response('404 Not Found', {
+          headers: { 'content-type': 'text/plain; charset=UTF-8' },
+          status: 404,
+        });
       }
-    }
 
-    const imageUrl = await getWordImageUrl(word.imageUrl);
+      if (!word.isPublic) {
+        const identity = await getCurrentIdentity();
 
-    return imageUrl ? context.redirect(imageUrl, 307) : context.notFound();
-  });
+        if (identity.kind !== IDENTITY_KIND.ADMIN) {
+          return new Response('404 Not Found', {
+            headers: { 'content-type': 'text/plain; charset=UTF-8' },
+            status: 404,
+          });
+        }
+      }
+
+      const imageUrl = await getWordImageUrl(word.imageUrl);
+
+      return imageUrl
+        ? Response.redirect(imageUrl, 307)
+        : new Response('404 Not Found', {
+            headers: { 'content-type': 'text/plain; charset=UTF-8' },
+            status: 404,
+          });
+    },
+    { params: idParamSchema },
+  )
+  .use(wordImageCleanupRoutes);

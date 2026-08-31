@@ -13,7 +13,7 @@ const profileColumns = {
   avatarUrl: profiles.avatarUrl,
 };
 
-export type ProfileUpdateInput = Pick<Profile, 'avatarUrl' | 'displayName'>;
+type ProfileUpdateInput = Pick<Profile, 'avatarUrl' | 'displayName'>;
 
 export async function getOrCreateProfile(identity: PermanentIdentity) {
   const { userId } = identity;

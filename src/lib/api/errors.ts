@@ -29,17 +29,10 @@ function getErrorDetails(value: unknown) {
   return { code, error };
 }
 
-export async function throwApiError(response: Response): Promise<never> {
-  let body: unknown;
+export function throwApiError(error: { status: unknown; value: unknown }): never {
+  const status = typeof error.status === 'number' ? error.status : 500;
+  const details = getErrorDetails(error.value);
+  const message = details.error ?? STATUS_MESSAGES[status] ?? 'Request failed';
 
-  try {
-    body = await response.json();
-  } catch {
-    body = null;
-  }
-
-  const details = getErrorDetails(body);
-  const message = details.error ?? STATUS_MESSAGES[response.status] ?? 'Request failed';
-
-  throw new ApiError(message, response.status, details.code);
+  throw new ApiError(message, status, details.code);
 }

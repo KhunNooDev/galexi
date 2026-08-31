@@ -42,6 +42,7 @@ bun-debug.log*
 next-env.d.ts
 
 # local design docs
+/design-qa.md
 /docs/design/
 
 # local generated artifacts

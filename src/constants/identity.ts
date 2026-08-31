@@ -22,11 +22,11 @@ export type GuestIdentity = AuthenticatedIdentity & {
   kind: typeof IDENTITY_KIND.GUEST;
 };
 
-export type MemberIdentity = AuthenticatedIdentity & {
+type MemberIdentity = AuthenticatedIdentity & {
   kind: typeof IDENTITY_KIND.MEMBER;
 };
 
-export type AdminIdentity = AuthenticatedIdentity & {
+type AdminIdentity = AuthenticatedIdentity & {
   kind: typeof IDENTITY_KIND.ADMIN;
 };
 

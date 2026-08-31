@@ -6,7 +6,7 @@ import { RequiredMark } from '@/components/form/required-mark';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
-export type FieldFeedbackProps = {
+type FieldFeedbackProps = {
   errors?: string[];
   hint?: string;
   id: string;

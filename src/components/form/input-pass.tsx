@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export type InputPassProps<TValues extends FieldValues> = Omit<
+type InputPassProps<TValues extends FieldValues> = Omit<
   ComponentProps<typeof Input>,
   'name' | 'onBlur' | 'onChange' | 'ref' | 'type'
 > & {

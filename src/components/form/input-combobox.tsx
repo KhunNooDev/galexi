@@ -24,12 +24,12 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-export type ComboboxOption = {
+type ComboboxOption = {
   label: string;
   value: string;
 };
 
-export type InputComboboxProps<TValues extends FieldValues> = {
+type InputComboboxProps<TValues extends FieldValues> = {
   className?: string;
   clearLabel?: string;
   errors?: string[];

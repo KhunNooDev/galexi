@@ -6,6 +6,7 @@ import { getDatabase } from '@/db';
 import { learningSessions, userWordProgress } from '@/db/schema';
 import {
   LESSON_PHASE,
+  type LessonWord,
   normalizeLessonSessionState,
   submitConversationResponseInputSchema,
 } from '@/features/learning/lesson.schema';
@@ -15,7 +16,6 @@ import {
 } from '@/features/learning/lessons/lesson-activities';
 import type { LessonDefinition } from '@/features/learning/lessons/lesson-catalog';
 import { requireLearningIdentity } from '@/features/learning/server/learning-identity';
-import type { LessonWord } from '@/features/learning/server/lesson.service';
 import {
   findOwnedLessonSession,
   lockLessonSession,

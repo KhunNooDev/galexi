@@ -16,7 +16,7 @@ import {
 } from '@/features/learning/server/learning-profile.service';
 import { getCurrentIdentity, startOrResumeGuestSession } from '@/lib/supabase/auth';
 
-export type LearningOnboardingActionState = {
+type LearningOnboardingActionState = {
   error?: string;
 };
 

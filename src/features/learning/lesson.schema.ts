@@ -11,7 +11,7 @@ export const LESSON_PHASE = {
 
 const lessonPhaseSchema = z.enum(LESSON_PHASE);
 
-export const lessonKeySchema = z.string().trim().min(1).max(LEARNING_LIMITS.LESSON_KEY_MAX_LENGTH);
+const lessonKeySchema = z.string().trim().min(1).max(LEARNING_LIMITS.LESSON_KEY_MAX_LENGTH);
 
 const practiceAnswerSchema = z.object({
   isCorrect: z.boolean(),
@@ -89,6 +89,16 @@ export const lessonResultParamsSchema = z.object({
 export type LessonPhase = z.infer<typeof lessonPhaseSchema>;
 export type LessonResultSnapshot = z.infer<typeof lessonResultSnapshotSchema>;
 export type LessonSessionState = z.infer<typeof lessonSessionStateSchema>;
+export type LessonWord = {
+  exampleSentence: string;
+  exampleSentenceMeaningTh: string;
+  id: number;
+  meaningsTh: string[];
+  partOfSpeech: string;
+  pronunciationIpa: string;
+  pronunciationThai: string;
+  word: string;
+};
 
 export function createInitialLessonState(): LessonSessionState {
   return {

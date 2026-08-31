@@ -8,10 +8,13 @@ than owned by individual users.
 
 - Next.js 16 and React 19
 - Tailwind CSS 4
+- Bun package management and script execution
 - Supabase Auth and PostgreSQL
 - Drizzle ORM with code-first migrations
-- Hono API routes
+- Elysia API routes and Eden Treaty typed browser transport
+- TanStack Query server-state management
 - React Hook Form and Zod validation
+- Bun's built-in `bun:test` runner
 - `next-intl` with English and no locale sub-path
 - `next-themes` and Lucide React
 
@@ -64,8 +67,8 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/learn/lesson/[lessonKey]`: owned, resumable Learn, Practice, and Mini Conversation flow
 - `/learn/lesson/[lessonKey]/result/[sessionId]`: owned, stable lesson result
 - `/admin/categories`: administrator category manager
-- `/api/words`: administrator-only Hono CRUD API for global vocabulary entries
-- `/api/categories`: administrator-only Hono CRUD API for categories
+- `/api/words`: administrator-only Elysia CRUD API for global vocabulary entries
+- `/api/categories`: administrator-only Elysia CRUD API for categories
 
 Public visitors, guests, and members can read published entries. Administrators can view and manage
 every entry, including unpublished entries. Guests and permanent users share the same server-only
@@ -115,6 +118,7 @@ bun run dev          # Start development mode
 bun run build        # Create a production build
 bun run start        # Start the production server
 bun run lint         # Run ESLint
+bun run typecheck    # Validate TypeScript
 bun run test         # Run focused domain tests
 bun run format       # Format and fix the project
 bun run format:check # Check formatting and linting

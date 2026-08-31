@@ -77,7 +77,7 @@ deterministic merge rules:
   attempt for the same lesson, the furthest valid phase wins, then the newest update, then the
   newest start time, and finally the stable session ID. Other active attempts become abandoned.
 - `user_word_progress`: independent counters are added with PostgreSQL integer saturation,
-  `last_seen_at` keeps the latest value, and mastery keeps the strongest bounded value. Prompt 5
+  `last_seen_at` keeps the latest value, and mastery keeps the strongest bounded value. Current
   mastery is incremental and order-dependent, so aggregate counters cannot reconstruct it without
   inventing a new formula.
 
@@ -155,7 +155,7 @@ while only permanent authenticated users may select their own role or select and
 profile fields. These permanent-user policies check the Supabase `is_anonymous` JWT claim because
 Supabase guests also use the PostgreSQL `authenticated` role. No authenticated-user grant or policy
 permits direct role updates. The administrator policy permits dictionary management based on
-`user_roles`, and Hono mutation routes independently require the administrator identity before
+`user_roles`, and Elysia mutation routes independently require the administrator identity before
 calling the dictionary server functions.
 
 Category policies follow the same boundary. Guests and members can see only categories and
@@ -246,7 +246,7 @@ dictionary row referencing a missing image.
 
 `src/app` remains the routing and page-composition layer. Word-, Category-, and Learning-specific
 schemas and server-only database operations live under their matching feature directories. Word and
-Category UI, typed Hono RPC wrappers, and TanStack Query hooks remain feature-owned. Shared form
+Category UI, typed API wrappers, and TanStack Query hooks remain feature-owned. Shared form
 controls and UI primitives remain in `src/components`, while database, Supabase, environment,
 internationalization, profile, and role infrastructure stay outside the product features.
 
@@ -268,22 +268,22 @@ Server Component still reads the initial list with `listWords()` and passes it t
 TanStack Query initial data. Subsequent reads and mutations follow this path:
 
 ```text
-Client Component -> TanStack Query -> feature API wrapper -> typed Hono client
-                 -> Next.js API entry -> root Hono API -> feature route
+Client Component -> TanStack Query -> feature API wrapper -> Eden Treaty
+                 -> Next.js API entry -> root Elysia API -> feature route
                  -> feature server layer -> Drizzle / external service
 ```
 
-Only the reusable API client instantiates `hc<ApiType>`. Components and query hooks do not know the
-Hono route structure, and feature database operations remain confined to server-only feature
-services. Shared authorization and profile helpers remain in `src/server`. Authentication and
-profile forms continue to use their existing Server Actions.
+Only the reusable API client instantiates `treaty<Api>`. Components and query hooks do not know the
+route structure, and feature database operations remain confined to server-only feature services.
+Shared authorization and profile helpers remain in `src/server`. Authentication and profile forms
+continue to use their existing Server Actions.
 
-The optional catch-all Next.js API entry only adapts the composed Hono application to Next.js. The
-root Hono module applies the `/api` base path, composes feature-owned Word, Category, and Word Image
-routers, and provides the unexpected-error fallback. Shared administrator middleware authenticates
-the request, resolves authorization from `user_roles`, and exposes `adminUserId` to protected route
-handlers. Expected duplicate errors are mapped by the owning feature router so domain responses stay
-accurate.
+The optional catch-all Next.js API entry exposes the composed Elysia Fetch handler to Next.js. The
+root Elysia module applies the `/api` base path, composes feature-owned Word, Category, and Word Image
+routers, and provides validation, not-found, and unexpected-error fallbacks. Shared administrator
+resolution authenticates the request before validation, resolves authorization from `user_roles`,
+and exposes `adminUserId` to protected route handlers. Expected duplicate errors remain mapped by
+the owning feature router so domain responses stay accurate.
 
 ### App Router boundaries
 

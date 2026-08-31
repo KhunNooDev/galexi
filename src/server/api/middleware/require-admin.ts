@@ -1,22 +1,23 @@
 import 'server-only';
 
-import type { MiddlewareHandler } from 'hono';
+import { Elysia, status } from 'elysia';
 
 import { IDENTITY_KIND } from '@/constants/identity';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
-import type { ApiEnvironment } from '@/server/api/types';
 
-export const requireAdmin: MiddlewareHandler<ApiEnvironment> = async (context, next) => {
-  const identity = await getCurrentIdentity();
+export const requireAdmin = new Elysia({ name: 'require-admin' }).derive(
+  { as: 'scoped' },
+  async () => {
+    const identity = await getCurrentIdentity();
 
-  if (identity.kind === IDENTITY_KIND.PUBLIC || identity.kind === IDENTITY_KIND.GUEST) {
-    return context.json({ error: 'Unauthorized' }, 401);
-  }
+    if (identity.kind === IDENTITY_KIND.PUBLIC || identity.kind === IDENTITY_KIND.GUEST) {
+      return status(401, { error: 'Unauthorized' });
+    }
 
-  if (identity.kind !== IDENTITY_KIND.ADMIN) {
-    return context.json({ error: 'Forbidden' }, 403);
-  }
+    if (identity.kind !== IDENTITY_KIND.ADMIN) {
+      return status(403, { error: 'Forbidden' });
+    }
 
-  context.set('adminUserId', identity.userId);
-  await next();
-};
+    return { adminUserId: identity.userId };
+  },
+);
