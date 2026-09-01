@@ -23,6 +23,7 @@ type InputCheckboxProps<TValues extends FieldValues> = {
   id?: string;
   label: string;
   required?: boolean;
+  variant?: 'card' | 'inline';
   wrapperClassName?: string;
 };
 
@@ -35,6 +36,7 @@ export function InputCheckbox<TValues extends FieldValues>({
   id = field.replaceAll('.', '-'),
   label,
   required = false,
+  variant = 'card',
   wrapperClassName,
 }: InputCheckboxProps<TValues>) {
   const { control } = useFormContext<TValues>();
@@ -51,9 +53,15 @@ export function InputCheckbox<TValues extends FieldValues>({
             <Label
               htmlFor={id}
               className={cn(
-                'group flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-field p-4 transition-colors focus-within:border-focus focus-within:ring-2 focus-within:ring-focus/20 hover:border-primary/40 hover:bg-primary/5',
-                controller.value && 'border-primary/50 bg-primary/5',
-                fieldErrors && 'border-danger/70 ring-2 ring-danger/10',
+                'group flex cursor-pointer items-start gap-3 transition-colors focus-within:ring-2 focus-within:ring-focus/20',
+                variant === 'card'
+                  ? 'rounded-xl border border-border bg-field p-4 hover:border-primary/40 hover:bg-primary/5'
+                  : 'rounded-lg py-1 text-muted-foreground hover:text-surface-foreground',
+                controller.value &&
+                  (variant === 'card'
+                    ? 'border-primary/50 bg-primary/5'
+                    : 'text-surface-foreground'),
+                fieldErrors && variant === 'card' && 'border-danger/70 ring-2 ring-danger/10',
               )}
             >
               <Checkbox
@@ -72,7 +80,12 @@ export function InputCheckbox<TValues extends FieldValues>({
                 onCheckedChange={(checked) => controller.onChange(checked === true)}
               />
               <span className='grid min-w-0 flex-1 gap-1'>
-                <span className='text-sm font-medium text-surface-foreground'>
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    variant === 'card' ? 'text-surface-foreground' : 'text-current',
+                  )}
+                >
                   {label}
                   <RequiredMark required={required} />
                 </span>

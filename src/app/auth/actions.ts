@@ -20,7 +20,11 @@ import {
   setLearningTransferCookie,
 } from '@/features/learning/account/server/transfer-cookie';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
-import { createClient } from '@/lib/supabase/server';
+import {
+  clearAuthSessionPersistence,
+  createClient,
+  setAuthSessionPersistence,
+} from '@/lib/supabase/server';
 
 async function redirectAfterAuthentication(returnTo?: string | null): Promise<never> {
   const safeReturnTo = getSafeAuthReturnTo(returnTo);
@@ -39,6 +43,7 @@ function createSignInSchema(messages: { invalidEmail: string; passwordRequired: 
   return z.object({
     email: z.string().trim().pipe(z.email(messages.invalidEmail)),
     password: z.string().min(1, messages.passwordRequired),
+    rememberMe: z.preprocess((value) => value === 'true', z.boolean()),
   });
 }
 
@@ -87,7 +92,10 @@ export async function signIn(
     invalidEmail: t('auth.validation.invalidEmail'),
     passwordRequired: t('auth.validation.passwordRequired'),
   });
-  const result = signInSchema.safeParse(getCredentials(formData));
+  const result = signInSchema.safeParse({
+    ...getCredentials(formData),
+    rememberMe: formData.get('rememberMe'),
+  });
 
   if (!result.success) {
     return { fieldErrors: z.flattenError(result.error).fieldErrors };
@@ -115,12 +123,15 @@ export async function signIn(
     await clearLearningTransferCookie();
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword(result.data);
+  const supabase = await createClient({ persistentSession: result.data.rememberMe });
+  const { email, password, rememberMe } = result.data;
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     return { error: t('auth.validation.incorrectCredentials') };
   }
+
+  await setAuthSessionPersistence(rememberMe);
 
   if (
     transferToken &&
@@ -208,5 +219,6 @@ export async function signUp(
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  await clearAuthSessionPersistence();
   redirect(AUTH_ROUTES.SIGN_IN);
 }

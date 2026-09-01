@@ -345,6 +345,16 @@
     "navigationLabel": "Authentication",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
+    "rememberMe": "Remember me",
+    "rememberMeHint": "Keep me signed in after I close the browser.",
+    "heroEyebrow": "Your vocabulary universe",
+    "heroTitle": "Your words. Your progress. One secure place.",
+    "heroDescription": "Sign in to keep your learning journey in sync and continue from any device.",
+    "benefits": {
+      "continue": "Continue exactly where you left off",
+      "sync": "Keep your learning progress in sync",
+      "private": "Your account stays private and protected"
+    },
     "validation": {
       "invalidEmail": "Enter a valid email address.",
       "passwordRequired": "Enter your password.",

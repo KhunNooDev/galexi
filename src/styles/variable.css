@@ -17,14 +17,6 @@
   --scrollbar-thumb: rgb(51 92 255 / 38%);
   --scrollbar-thumb-hover: rgb(51 92 255 / 62%);
   --scrollbar-track: rgb(59 90 160 / 7%);
-  --auth-backdrop: #dbeafe;
-  --auth-card: rgb(250 252 255 / 94%);
-  --auth-control: rgb(255 255 255 / 82%);
-  --auth-control-foreground: #172554;
-  --auth-field: rgb(255 255 255 / 72%);
-  --auth-field-border: rgb(57 88 166 / 18%);
-  --auth-overlay: rgb(255 255 255 / 5%);
-  --auth-gradient: linear-gradient(100deg, #38bdf8 0%, #4f7cff 52%, #7158e8 100%);
   color-scheme: light;
 }
 
@@ -47,14 +39,6 @@
   --scrollbar-thumb: rgb(122 162 255 / 38%);
   --scrollbar-thumb-hover: rgb(122 162 255 / 64%);
   --scrollbar-track: rgb(130 162 255 / 7%);
-  --auth-backdrop: #050816;
-  --auth-card: rgb(7 12 32 / 92%);
-  --auth-control: rgb(9 15 40 / 78%);
-  --auth-control-foreground: #dbeafe;
-  --auth-field: rgb(112 145 255 / 8%);
-  --auth-field-border: rgb(130 162 255 / 22%);
-  --auth-overlay: rgb(2 6 23 / 35%);
-  --auth-gradient: linear-gradient(100deg, #22d3ee 0%, #4f7cff 52%, #8b5cf6 100%);
   color-scheme: dark;
 }
 
@@ -86,12 +70,5 @@
   --color-danger-hover: var(--danger-hover);
   --color-danger-foreground: var(--danger-foreground);
   --color-destructive: var(--danger);
-  --color-auth-backdrop: var(--auth-backdrop);
-  --color-auth-card: var(--auth-card);
-  --color-auth-control: var(--auth-control);
-  --color-auth-control-foreground: var(--auth-control-foreground);
-  --color-auth-field: var(--auth-field);
-  --color-auth-field-border: var(--auth-field-border);
-  --color-auth-overlay: var(--auth-overlay);
   --font-sans: var(--font-geist-sans);
 }
