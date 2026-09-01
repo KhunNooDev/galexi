@@ -7,10 +7,10 @@ export default async function AuthLoading() {
   const t = await getTranslations();
 
   return (
-    <AuthPageShell backLabel={t('auth.backHome')} themeLabel={t('home.themeToggle')}>
+    <AuthPageShell>
       <section
         aria-busy='true'
-        className='mx-3 w-[calc(100%-1.5rem)] max-w-lg rounded-t-4xl border border-auth-field-border bg-auth-card p-5 shadow-[0_-16px_50px_rgb(34_74_150/16%)] sm:mx-6 sm:w-[calc(100%-3rem)] sm:p-8 md:mx-0 md:w-full md:rounded-4xl md:p-10'
+        className='w-full max-w-lg rounded-3xl border border-border bg-surface p-5 shadow-[0_24px_80px_rgb(34_74_150/10%)] sm:p-8 lg:p-9'
         role='status'
       >
         <span className='sr-only'>{t('boundaries.loading')}</span>
@@ -27,6 +27,7 @@ export default async function AuthLoading() {
               <SkeletonBlock className='mb-2 h-4 w-20 rounded-full' />
               <SkeletonBlock className='h-12 rounded-2xl' />
             </div>
+            <SkeletonBlock className='h-10 rounded-xl' />
             <SkeletonBlock className='mt-4 h-12 rounded-2xl' />
           </div>
           <SkeletonBlock className='mx-auto mt-5 h-4 w-44 rounded-full' />

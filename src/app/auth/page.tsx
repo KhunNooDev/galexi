@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 
 import { signIn, signUp } from '@/app/auth/actions';
 import { AuthForm } from '@/components/auth-form';
@@ -44,12 +43,11 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
     redirect(returnTo ?? ROUTES.PUBLIC_WORDS);
   }
 
-  const t = await getTranslations();
   const action =
     mode === AUTH_MODE.SIGN_IN ? signIn.bind(null, returnTo) : signUp.bind(null, returnTo);
 
   return (
-    <AuthPageShell backLabel={t('auth.backHome')} themeLabel={t('home.themeToggle')}>
+    <AuthPageShell>
       <AuthForm key={mode} action={action} mode={mode} returnTo={returnTo} />
     </AuthPageShell>
   );

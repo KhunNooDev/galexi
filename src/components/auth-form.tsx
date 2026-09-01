@@ -20,6 +20,7 @@ type AuthFormValues = {
   confirmPassword?: string;
   email: string;
   password: string;
+  rememberMe: boolean;
 };
 
 type AuthFormProps = {
@@ -28,7 +29,7 @@ type AuthFormProps = {
   returnTo?: string | null;
 };
 
-const { InputPass, InputText } = createFormInputs<AuthFormValues>();
+const { InputCheckbox, InputPass, InputText } = createFormInputs<AuthFormValues>();
 const authSecretFields: ('password' | 'confirmPassword')[] = ['password', 'confirmPassword'];
 
 export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
@@ -52,6 +53,7 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
                   }),
                 ),
           confirmPassword: z.string().optional(),
+          rememberMe: z.boolean(),
         })
         .superRefine(({ confirmPassword, password }, context) => {
           if (mode !== AUTH_MODE.SIGN_UP) return;
@@ -92,6 +94,9 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
     const formData = new FormData();
     formData.set('email', values.email);
     formData.set('password', values.password);
+    if (mode === AUTH_MODE.SIGN_IN && values.rememberMe) {
+      formData.set('rememberMe', 'true');
+    }
     if (mode === AUTH_MODE.SIGN_UP && values.confirmPassword !== undefined) {
       formData.set('confirmPassword', values.confirmPassword);
     }
@@ -101,12 +106,12 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
   return (
     <div
       className={cn(
-        'mx-3 w-[calc(100%-1.5rem)] max-w-lg animate-in rounded-t-4xl border border-auth-field-border bg-auth-card p-5 shadow-[0_-16px_50px_rgb(34_74_150/16%)] ease-out animation-duration-300 fill-mode-both fade-in motion-reduce:animate-none sm:mx-6 sm:w-[calc(100%-3rem)] sm:p-8 md:mx-0 md:w-full md:rounded-4xl md:p-10 md:shadow-[0_24px_80px_rgb(34_74_150/18%)]',
+        'w-full max-w-lg animate-in rounded-3xl border border-border bg-surface p-5 shadow-[0_24px_80px_rgb(34_74_150/10%)] ease-out animation-duration-300 fill-mode-both fade-in motion-reduce:animate-none sm:p-8 lg:p-9',
         mode === AUTH_MODE.SIGN_IN ? 'slide-in-from-left-3' : 'slide-in-from-right-3',
       )}
     >
       <nav
-        className='mb-5 grid grid-cols-2 rounded-2xl border border-auth-field-border bg-auth-field p-1 sm:mb-8'
+        className='mb-7 grid grid-cols-2 rounded-2xl border border-border bg-field p-1'
         aria-label={t('auth.navigationLabel')}
       >
         <Link
@@ -115,10 +120,9 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
           className={cn(
             'rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-all duration-300',
             mode === AUTH_MODE.SIGN_IN
-              ? 'text-white shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground',
           )}
-          style={mode === AUTH_MODE.SIGN_IN ? { background: 'var(--auth-gradient)' } : {}}
           aria-current={mode === AUTH_MODE.SIGN_IN ? 'page' : undefined}
         >
           {t('auth.signIn')}
@@ -129,29 +133,28 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
           className={cn(
             'rounded-xl px-4 py-2.5 text-center text-sm font-medium transition-all duration-300',
             mode === AUTH_MODE.SIGN_UP
-              ? 'text-white shadow-sm'
+              ? 'bg-primary text-primary-foreground shadow-sm'
               : 'text-muted-foreground hover:text-surface-foreground',
           )}
-          style={mode === AUTH_MODE.SIGN_UP ? { background: 'var(--auth-gradient)' } : {}}
           aria-current={mode === AUTH_MODE.SIGN_UP ? 'page' : undefined}
         >
           {t('auth.signUp')}
         </Link>
       </nav>
 
-      <div className='mb-4 space-y-2 text-center sm:mb-8'>
-        <h1 className='text-2xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
+      <div className='mb-7 space-y-2'>
+        <h2 className='text-3xl font-semibold tracking-tight text-surface-foreground sm:text-4xl'>
           {title}
-        </h1>
-        <p className='mx-auto hidden max-w-sm text-sm leading-6 text-muted-foreground sm:block sm:text-base'>
+        </h2>
+        <p className='max-w-sm text-sm leading-6 text-muted-foreground sm:text-base'>
           {description}
         </p>
       </div>
 
       <Form
         action={formAction}
-        className='flex flex-col gap-2 sm:gap-5'
-        defaultValues={{ confirmPassword: '', email: '', password: '' }}
+        className='flex flex-col gap-4'
+        defaultValues={{ confirmPassword: '', email: '', password: '', rememberMe: false }}
         schema={authFormSchema}
         onSubmit={submitForm}
       >
@@ -170,7 +173,7 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
         )}
         {state.success && (
           <Alert
-            className='rounded-2xl border border-auth-field-border bg-auth-field px-4 py-3 text-sm text-surface-foreground'
+            className='rounded-2xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-surface-foreground'
             role='status'
           >
             <AlertDescription className='text-surface-foreground'>{state.success}</AlertDescription>
@@ -224,22 +227,30 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
           />
         )}
 
+        {mode === AUTH_MODE.SIGN_IN && (
+          <InputCheckbox
+            field='rememberMe'
+            label={t('auth.rememberMe')}
+            hint={t('auth.rememberMeHint')}
+            variant='inline'
+          />
+        )}
+
         <Button
           type='submit'
           disabled={pending}
-          className='mt-4 h-12 w-full cursor-pointer rounded-2xl px-4 font-medium text-white shadow-[0_12px_28px_rgb(34_74_150/24%)] transition-transform hover:-translate-y-0.5 disabled:cursor-wait sm:h-13'
-          style={{ background: 'var(--auth-gradient)' }}
+          className='mt-2 h-12 w-full cursor-pointer rounded-2xl bg-primary px-4 font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5 hover:bg-primary-hover disabled:cursor-wait sm:h-13'
         >
           <Icon aria-hidden='true' className='size-4' />
           {submitLabel}
         </Button>
       </Form>
 
-      <p className='mt-4 text-center text-xs text-muted-foreground sm:mt-7 sm:text-sm'>
+      <p className='mt-6 text-center text-xs text-muted-foreground sm:text-sm'>
         {alternatePrompt}{' '}
         <Link
           href={alternateHref}
-          className='font-medium text-surface-foreground underline decoration-auth-field-border underline-offset-4 hover:decoration-current'
+          className='font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-current'
         >
           {alternateLabel}
         </Link>

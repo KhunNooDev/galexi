@@ -77,7 +77,7 @@ export const inputBaseClassName =
 export const inputVariantClassNames = {
   default:
     'rounded-lg border-border bg-field focus:border-focus focus:ring-focus/20 sm:h-11 dark:bg-field',
-  auth: 'rounded-full border-auth-field-border bg-auth-field focus:border-focus focus:ring-focus/20 sm:h-13',
+  auth: 'rounded-2xl border-border bg-field focus:border-focus focus:ring-focus/20 sm:h-12 dark:bg-field',
 } as const;
 
 export type InputVariant = keyof typeof inputVariantClassNames;
