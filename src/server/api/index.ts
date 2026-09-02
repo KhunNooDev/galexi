@@ -7,14 +7,16 @@ import { API_PATH } from '@/constants/api';
 import { categoryRoutes } from '@/features/categories/server/category.routes';
 import { wordRoutes } from '@/features/words/server/word.routes';
 import { wordImageRoutes } from '@/features/words/server/word-image.routes';
+import { API_ERROR_CODE } from '@/server/api/error-codes';
+import { badRequest, internalServerError } from '@/server/api/response';
 
 export const api = new Elysia({
   adapter: WebStandardAdapter,
   prefix: API_PATH.BASE,
 })
-  .onError(({ code, error, status }) => {
+  .onError(({ code, error }) => {
     if (code === 'VALIDATION' || code === 'PARSE') {
-      return status(400, { error: 'Invalid request' });
+      return badRequest(API_ERROR_CODE.INVALID_REQUEST, 'Invalid request');
     }
 
     if (code === 'NOT_FOUND') {
@@ -25,7 +27,7 @@ export const api = new Elysia({
     }
 
     console.error(error);
-    return status(500, { error: 'Internal server error' });
+    return internalServerError(API_ERROR_CODE.INTERNAL_SERVER_ERROR, 'Internal server error');
   })
   .use(wordImageRoutes)
   .use(categoryRoutes)

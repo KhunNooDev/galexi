@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { Elysia, status } from 'elysia';
+import { Elysia } from 'elysia';
 
 import { API_PATH } from '@/constants/api';
 import { categoriesExist } from '@/features/categories/server/category.service';
@@ -13,20 +13,22 @@ import {
 } from '@/features/words/server/word.service';
 import { cleanupUnreferencedWordImage } from '@/features/words/server/word-image.service';
 import { optionalWordImageReferenceSchema, wordInputSchema } from '@/features/words/word.schema';
+import { API_ERROR_CODE } from '@/server/api/error-codes';
 import { isUniqueConstraintViolation } from '@/server/api/errors';
 import { requireAdmin } from '@/server/api/middleware/require-admin';
+import { badRequest, conflict, created, notFound, ok } from '@/server/api/response';
 import { idParamSchema } from '@/server/api/validation';
 
 const wordApiInputSchema = wordInputSchema.extend({
   imageUrl: optionalWordImageReferenceSchema,
 });
 
-function handleWordError(error: unknown): never | ReturnType<typeof status<409, object>> {
+function handleWordError(error: unknown) {
   if (
     isUniqueConstraintViolation(error, 'words_word_unique') ||
     isUniqueConstraintViolation(error, 'word_senses_word_part_order_unique')
   ) {
-    return status(409, { error: 'Word sense already exists' });
+    return conflict(API_ERROR_CODE.WORD_SENSE_ALREADY_EXISTS, 'Word sense already exists');
   }
 
   throw error;
@@ -34,90 +36,115 @@ function handleWordError(error: unknown): never | ReturnType<typeof status<409, 
 
 export const wordRoutes = new Elysia({ name: 'word-routes' })
   .use(requireAdmin)
-  .get(API_PATH.WORDS, async () => ({ words: await listWords() }))
+  // Read
+  .get(API_PATH.WORDS, async () => {
+    const words = await listWords();
+
+    return ok({ words });
+  })
   .get(
     API_PATH.WORD_BY_ID,
-    async ({ params, status: reply }) => {
+    async ({ params }) => {
       const word = await getWordById(params.id);
 
-      return word ? { word } : reply(404, { error: 'Word not found' });
+      if (!word) {
+        return notFound(API_ERROR_CODE.WORD_NOT_FOUND, 'Word not found');
+      }
+
+      return ok({ word });
     },
-    { params: idParamSchema },
+    {
+      params: idParamSchema,
+    },
   )
+  // Create
   .post(
     API_PATH.WORDS,
-    async ({ adminUserId, body, status: reply }) => {
+    async ({ adminUserId, body }) => {
       if (!(await categoriesExist(body.categoryIds))) {
-        return reply(400, { error: 'One or more categories do not exist' });
+        return badRequest(API_ERROR_CODE.INVALID_CATEGORY, 'One or more categories do not exist');
       }
 
       try {
-        return status(201, { word: await createWord(adminUserId, body) });
+        const word = await createWord(adminUserId, body);
+
+        return created({ word });
       } catch (error) {
         return handleWordError(error);
       }
     },
-    { body: wordApiInputSchema },
+    {
+      body: wordApiInputSchema,
+    },
   )
+  // Update
   .patch(
     API_PATH.WORD_BY_ID,
-    async ({ adminUserId, body, params, status: reply }) => {
+    async ({ adminUserId, body, params }) => {
       const previousWord = await getWordById(params.id);
 
       if (!previousWord) {
-        return reply(404, { error: 'Word not found' });
+        return notFound(API_ERROR_CODE.WORD_NOT_FOUND, 'Word not found');
       }
 
       if (!(await categoriesExist(body.categoryIds))) {
-        return reply(400, { error: 'One or more categories do not exist' });
+        return badRequest(API_ERROR_CODE.INVALID_CATEGORY, 'One or more categories do not exist');
       }
 
       try {
         const word = await updateWord(params.id, adminUserId, body);
 
         if (!word) {
-          return reply(404, { error: 'Word not found' });
+          return notFound(API_ERROR_CODE.WORD_NOT_FOUND, 'Word not found');
         }
 
         if (previousWord.imageUrl && previousWord.imageUrl !== body.imageUrl) {
           try {
             await cleanupUnreferencedWordImage(previousWord.imageUrl);
           } catch (error) {
+            // Database mutation already committed; cleanup failure must not fail it.
             console.error('Unable to remove the replaced word image', error);
           }
         }
 
-        return { word };
+        return ok({ word });
       } catch (error) {
         return handleWordError(error);
       }
     },
-    { body: wordApiInputSchema, params: idParamSchema },
+    {
+      body: wordApiInputSchema,
+      params: idParamSchema,
+    },
   )
+  // Delete
   .delete(
     API_PATH.WORD_BY_ID,
-    async ({ params, status: reply }) => {
+    async ({ params }) => {
       const word = await getWordById(params.id);
 
       if (!word) {
-        return reply(404, { error: 'Word not found' });
+        return notFound(API_ERROR_CODE.WORD_NOT_FOUND, 'Word not found');
       }
 
       const deletedWord = await deleteWord(params.id);
 
       if (!deletedWord) {
-        return reply(404, { error: 'Word not found' });
+        return notFound(API_ERROR_CODE.WORD_NOT_FOUND, 'Word not found');
       }
 
       if (word.imageUrl) {
         try {
           await cleanupUnreferencedWordImage(word.imageUrl);
         } catch (error) {
+          // Database mutation already committed; cleanup failure must not fail it.
           console.error('Unable to remove the deleted word image', error);
         }
       }
 
-      return deletedWord;
+      return ok(deletedWord);
     },
-    { params: idParamSchema },
+    {
+      params: idParamSchema,
+    },
   );

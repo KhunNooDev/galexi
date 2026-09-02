@@ -57,7 +57,7 @@ describe('Eden API client wrappers', () => {
   it('preserves same-origin Word list requests and AbortSignal forwarding', async () => {
     const controller = new AbortController();
     const words = [adminWord];
-    const fetchMock = stubFetch(async () => Response.json({ words }));
+    const fetchMock = stubFetch(async () => Response.json({ data: { words } }));
 
     await expect(wordsApi.list(controller.signal)).resolves.toEqual(words);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -68,7 +68,7 @@ describe('Eden API client wrappers', () => {
 
   it('preserves typed Word mutation paths and payloads', async () => {
     const updatedWord = { ...adminWord, id: 7 };
-    const fetchMock = stubFetch(async () => Response.json({ word: updatedWord }));
+    const fetchMock = stubFetch(async () => Response.json({ data: { word: updatedWord } }));
 
     await expect(wordsApi.update({ id: 7, values: wordInput })).resolves.toEqual(updatedWord);
     expect(fetchMock).toHaveBeenCalledWith(
@@ -80,7 +80,12 @@ describe('Eden API client wrappers', () => {
   it('normalizes typed Eden errors into the existing ApiError abstraction', async () => {
     stubFetch(async () =>
       Response.json(
-        { code: 'duplicate_word', error: 'Word sense already exists' },
+        {
+          error: {
+            code: 'WORD_SENSE_ALREADY_EXISTS',
+            message: 'Word sense already exists',
+          },
+        },
         { status: 409 },
       ),
     );
@@ -89,7 +94,7 @@ describe('Eden API client wrappers', () => {
 
     await expect(request).rejects.toBeInstanceOf(ApiError);
     await expect(request).rejects.toMatchObject({
-      code: 'duplicate_word',
+      code: 'WORD_SENSE_ALREADY_EXISTS',
       message: 'Word sense already exists',
       status: 409,
     });
@@ -97,7 +102,7 @@ describe('Eden API client wrappers', () => {
 
   it('preserves Category reorder path, payload, and return shape', async () => {
     const categories = [{ id: 2, name: 'Travel', slug: 'travel', sortOrder: 0, wordCount: 3 }];
-    const fetchMock = stubFetch(async () => Response.json({ categories }));
+    const fetchMock = stubFetch(async () => Response.json({ data: { categories } }));
 
     await expect(categoriesApi.reorder([2])).resolves.toEqual(categories);
     expect(fetchMock).toHaveBeenCalledWith(

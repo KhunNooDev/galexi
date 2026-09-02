@@ -23,16 +23,24 @@ function getErrorDetails(value: unknown) {
     return {};
   }
 
-  const error = 'error' in value && typeof value.error === 'string' ? value.error : undefined;
-  const code = 'code' in value && typeof value.code === 'string' ? value.code : undefined;
+  if (!('error' in value) || !value.error || typeof value.error !== 'object') {
+    return {};
+  }
 
-  return { code, error };
+  const code =
+    'code' in value.error && typeof value.error.code === 'string' ? value.error.code : undefined;
+  const message =
+    'message' in value.error && typeof value.error.message === 'string'
+      ? value.error.message
+      : undefined;
+
+  return { code, message };
 }
 
 export function throwApiError(error: { status: unknown; value: unknown }): never {
   const status = typeof error.status === 'number' ? error.status : 500;
   const details = getErrorDetails(error.value);
-  const message = details.error ?? STATUS_MESSAGES[status] ?? 'Request failed';
+  const message = details.message ?? STATUS_MESSAGES[status] ?? 'Request failed';
 
   throw new ApiError(message, status, details.code);
 }

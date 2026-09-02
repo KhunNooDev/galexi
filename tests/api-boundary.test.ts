@@ -60,7 +60,9 @@ describe('Elysia API boundary', () => {
     });
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: 'UNAUTHORIZED', message: 'Unauthorized' },
+    });
     expect(mocks.createWord).not.toHaveBeenCalled();
   });
 
@@ -74,7 +76,9 @@ describe('Elysia API boundary', () => {
     const response = await apiRequest('/api/categories');
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: 'FORBIDDEN', message: 'Forbidden' },
+    });
   });
 
   it('treats Guest identities as unauthenticated for administrator APIs', async () => {
@@ -87,7 +91,9 @@ describe('Elysia API boundary', () => {
     const response = await apiRequest('/api/words');
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: 'UNAUTHORIZED', message: 'Unauthorized' },
+    });
     expect(mocks.listWords).not.toHaveBeenCalled();
   });
 
@@ -107,7 +113,7 @@ describe('Elysia API boundary', () => {
     });
 
     expect(response.status).toBe(201);
-    await expect(response.json()).resolves.toEqual({ word: createdWord });
+    await expect(response.json()).resolves.toEqual({ data: { word: createdWord } });
     expect(mocks.createWord).toHaveBeenCalledWith(
       'admin-id',
       expect.objectContaining({
@@ -124,7 +130,9 @@ describe('Elysia API boundary', () => {
     const response = await apiRequest('/api/word-images/not-a-number');
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: 'Invalid request' });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: 'INVALID_REQUEST', message: 'Invalid request' },
+    });
     expect(mocks.getWordById).not.toHaveBeenCalled();
   });
 
@@ -155,7 +163,12 @@ describe('Elysia API boundary', () => {
     });
 
     expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({ error: 'Category slug already exists' });
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: 'CATEGORY_SLUG_ALREADY_EXISTS',
+        message: 'Category slug already exists',
+      },
+    });
   });
 
   it('maps Word uniqueness failures to HTTP 409 without leaking database details', async () => {
@@ -176,7 +189,12 @@ describe('Elysia API boundary', () => {
     });
 
     expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({ error: 'Word sense already exists' });
+    await expect(response.json()).resolves.toEqual({
+      error: {
+        code: 'WORD_SENSE_ALREADY_EXISTS',
+        message: 'Word sense already exists',
+      },
+    });
   });
 
   it('preserves missing Word update semantics', async () => {
@@ -194,7 +212,9 @@ describe('Elysia API boundary', () => {
     });
 
     expect(response.status).toBe(404);
-    await expect(response.json()).resolves.toEqual({ error: 'Word not found' });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: 'WORD_NOT_FOUND', message: 'Word not found' },
+    });
     expect(mocks.updateWord).not.toHaveBeenCalled();
   });
 
@@ -212,7 +232,7 @@ describe('Elysia API boundary', () => {
     const response = await apiRequest('/api/words/9', { method: 'DELETE' });
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ id: 9 });
+    await expect(response.json()).resolves.toEqual({ data: { id: 9 } });
     expect(mocks.cleanupUnreferencedWordImage).toHaveBeenCalledWith('words/old.jpg');
     expect(consoleError).toHaveBeenCalledWith(
       'Unable to remove the deleted word image',
@@ -235,7 +255,9 @@ describe('Elysia API boundary', () => {
     const response = await apiRequest('/api/words');
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: 'Internal server error' });
+    await expect(response.json()).resolves.toEqual({
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' },
+    });
     expect(consoleError).toHaveBeenCalledWith(internalError);
 
     consoleError.mockRestore();

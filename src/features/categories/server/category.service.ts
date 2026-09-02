@@ -25,6 +25,8 @@ const publicWordColumns = {
   imageUrl: wordSenses.imageUrl,
 };
 
+// Admin queries
+
 export function listCategories() {
   return getDatabase()
     .select({
@@ -36,6 +38,8 @@ export function listCategories() {
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
 }
+
+// Public queries
 
 export function listPublicCategories(query = '') {
   const normalizedQuery = query.trim();
@@ -102,6 +106,8 @@ export function listPublicWordsByCategory(
     .orderBy(asc(words.word), asc(wordSenses.partOfSpeech), asc(wordSenses.senseOrder));
 }
 
+// Mutations
+
 export async function createCategory(values: CategoryInput) {
   const [category] = await getDatabase()
     .insert(categories)
@@ -122,12 +128,12 @@ export async function updateCategory(id: number, values: CategoryInput) {
     return null;
   }
 
-  const [{ wordCount }] = await getDatabase()
+  const [countResult] = await getDatabase()
     .select({ wordCount: count(wordSenseCategories.wordSenseId).mapWith(Number) })
     .from(wordSenseCategories)
     .where(eq(wordSenseCategories.categoryId, id));
 
-  return { ...category, wordCount };
+  return { ...category, wordCount: countResult.wordCount };
 }
 
 export async function deleteCategory(id: number) {

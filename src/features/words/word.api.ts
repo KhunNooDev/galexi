@@ -9,7 +9,7 @@ const wordImageCleanupRoute = apiClient.api['word-images'].cleanup;
 
 type WordsResponse = Treaty.Data<typeof wordsRoute.get>;
 
-export type AdminWord = WordsResponse['words'][number];
+export type AdminWord = WordsResponse['data']['words'][number];
 export type WordInput = DomainWordInput;
 export type UpdateWordInput = {
   id: number;
@@ -24,7 +24,7 @@ export const wordsApi = {
       return throwApiError(error);
     }
 
-    return data.words;
+    return data.data.words;
   },
 
   async create(values: WordInput) {
@@ -34,7 +34,7 @@ export const wordsApi = {
       return throwApiError(error);
     }
 
-    return data.word;
+    return data.data.word;
   },
 
   async update({ id, values }: UpdateWordInput) {
@@ -44,7 +44,7 @@ export const wordsApi = {
       return throwApiError(error);
     }
 
-    return data.word;
+    return data.data.word;
   },
 
   async remove(id: number) {
@@ -54,7 +54,7 @@ export const wordsApi = {
       return throwApiError(error);
     }
 
-    return data;
+    return data.data;
   },
 };
 
@@ -66,6 +66,6 @@ export const wordImagesApi = {
       return throwApiError(error);
     }
 
-    return data;
+    return data.data;
   },
 };
