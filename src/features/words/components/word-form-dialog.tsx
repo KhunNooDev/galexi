@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { type UseFormReturn, useWatch } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { BookOpenText, Globe2, Plus, Save, X } from 'lucide-react';
@@ -13,6 +14,7 @@ import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
 import { getWordImageRoute } from '@/constants/routes';
 import { WORD_IMAGE, WORD_LIMITS } from '@/constants/word';
 import type { WordFormValues } from '@/features/words/word.schema';
+import { getEnglishIpaAutofillValue } from '@/features/words/word-ipa';
 
 const {
   InputCheckbox,
@@ -53,6 +55,33 @@ export function WordFormDialog({
 }: WordFormDialogProps) {
   const t = useTranslations();
   const imageUrl = useWatch({ control: form.control, name: 'imageUrl' });
+  const word = useWatch({ control: form.control, name: 'word' });
+  const lastGeneratedIpa = useRef<string | null>(null);
+
+  useEffect(() => {
+    lastGeneratedIpa.current = null;
+  }, [editingId, open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const nextIpa = getEnglishIpaAutofillValue(
+      word,
+      form.getValues('pronunciationIpa'),
+      lastGeneratedIpa.current,
+    );
+
+    if (nextIpa === null) {
+      return;
+    }
+
+    lastGeneratedIpa.current = nextIpa || null;
+    form.setValue('pronunciationIpa', nextIpa, {
+      shouldDirty: false,
+    });
+  }, [form, open, word]);
 
   return (
     <Dialog
@@ -107,7 +136,6 @@ export function WordFormDialog({
                 <InputMultiCombobox
                   field='categoryIds'
                   label={t('words.manager.categoriesLabel')}
-                  hint={t('words.manager.categoriesHint')}
                   placeholder={t('words.manager.categoriesPlaceholder')}
                   searchPlaceholder={t('words.manager.categoriesSearchPlaceholder')}
                   noResultsLabel={t('words.manager.categoriesNoResults')}
@@ -122,7 +150,6 @@ export function WordFormDialog({
                   field='meaningsTh'
                   id='meaning-th'
                   label={t('words.manager.meaningsThLabel')}
-                  hint={t('words.manager.meaningsThHint')}
                   addLabel={t('words.manager.addMeaning')}
                   removeLabel={(meaning) => t('words.manager.removeMeaning', { meaning })}
                   placeholder={t('words.manager.meaningsThPlaceholder')}

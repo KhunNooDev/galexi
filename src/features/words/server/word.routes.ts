@@ -1,8 +1,10 @@
 import 'server-only';
 
 import { Elysia } from 'elysia';
+import { z } from 'zod';
 
 import { API_PATH } from '@/constants/api';
+import { ADMIN_PAGE_SIZE, ADMIN_PAGE_SIZES } from '@/constants/pagination';
 import { categoriesExist } from '@/features/categories/server/category.service';
 import {
   createWord,
@@ -22,6 +24,17 @@ import { idParamSchema } from '@/server/api/validation';
 const wordApiInputSchema = wordInputSchema.extend({
   imageUrl: optionalWordImageReferenceSchema,
 });
+const wordListQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce
+    .number()
+    .refine((value) => ADMIN_PAGE_SIZES.includes(value as (typeof ADMIN_PAGE_SIZES)[number]))
+    .default(ADMIN_PAGE_SIZE),
+  query: z.string().max(200).default(''),
+  categoryId: z.coerce.number().int().positive().optional(),
+  partOfSpeech: z.string().max(80).default(''),
+  sort: z.enum(['default', 'word-ascending', 'word-descending']).default('default'),
+});
 
 function handleWordError(error: unknown) {
   if (
@@ -37,11 +50,15 @@ function handleWordError(error: unknown) {
 export const wordRoutes = new Elysia({ name: 'word-routes' })
   .use(requireAdmin)
   // Read
-  .get(API_PATH.WORDS, async () => {
-    const words = await listWords();
+  .get(
+    API_PATH.WORDS,
+    async ({ query }) => {
+      const page = await listWords({ ...query, categoryId: query.categoryId ?? null });
 
-    return ok({ words });
-  })
+      return ok(page);
+    },
+    { query: wordListQuerySchema },
+  )
   .get(
     API_PATH.WORD_BY_ID,
     async ({ params }) => {

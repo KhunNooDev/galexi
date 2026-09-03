@@ -4,13 +4,13 @@ import { Elysia } from 'elysia';
 import { z } from 'zod';
 
 import { API_PATH } from '@/constants/api';
-import { CATEGORY_LIMITS } from '@/constants/category';
+import { ADMIN_PAGE_SIZE, ADMIN_PAGE_SIZES } from '@/constants/pagination';
 import { categoryInputSchema } from '@/features/categories/category.schema';
 import {
   createCategory,
   deleteCategory,
-  listCategories,
-  reorderCategories,
+  listCategoryPage,
+  moveCategory,
   updateCategory,
 } from '@/features/categories/server/category.service';
 import { API_ERROR_CODE } from '@/server/api/error-codes';
@@ -19,11 +19,17 @@ import { requireAdmin } from '@/server/api/middleware/require-admin';
 import { conflict, created, notFound, ok } from '@/server/api/response';
 import { idParamSchema } from '@/server/api/validation';
 
-const categoryOrderSchema = z.object({
-  categoryIds: z
-    .array(z.number().int().positive())
-    .max(CATEGORY_LIMITS.REORDER_MAX_COUNT)
-    .refine((ids) => new Set(ids).size === ids.length),
+const categoryListQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce
+    .number()
+    .refine((value) => ADMIN_PAGE_SIZES.includes(value as (typeof ADMIN_PAGE_SIZES)[number]))
+    .default(ADMIN_PAGE_SIZE),
+  query: z.string().max(200).default(''),
+});
+const categoryMoveSchema = z.object({
+  categoryId: z.number().int().positive(),
+  direction: z.union([z.literal(-1), z.literal(1)]),
 });
 
 function handleCategoryError(error: unknown) {
@@ -37,11 +43,15 @@ function handleCategoryError(error: unknown) {
 export const categoryRoutes = new Elysia({ name: 'category-routes' })
   .use(requireAdmin)
   // Read
-  .get(API_PATH.CATEGORIES, async () => {
-    const categories = await listCategories();
+  .get(
+    API_PATH.CATEGORIES,
+    async ({ query }) => {
+      const page = await listCategoryPage(query);
 
-    return ok({ categories });
-  })
+      return ok(page);
+    },
+    { query: categoryListQuerySchema },
+  )
   // Create
   .post(
     API_PATH.CATEGORIES,
@@ -62,12 +72,16 @@ export const categoryRoutes = new Elysia({ name: 'category-routes' })
   .patch(
     API_PATH.CATEGORIES_REORDER,
     async ({ body }) => {
-      const categories = await reorderCategories(body.categoryIds);
+      const moved = await moveCategory(body.categoryId, body.direction);
 
-      return ok({ categories });
+      if (!moved) {
+        return notFound(API_ERROR_CODE.CATEGORY_NOT_FOUND, 'Category not found');
+      }
+
+      return ok({});
     },
     {
-      body: categoryOrderSchema,
+      body: categoryMoveSchema,
     },
   )
   // Update

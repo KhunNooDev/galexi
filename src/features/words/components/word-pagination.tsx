@@ -36,6 +36,7 @@ function getVisiblePageNumbers(activePage: number, totalPages: number) {
 }
 
 type WordPaginationProps = {
+  kind?: 'words' | 'categories';
   activePage: number;
   totalPages: number;
   pageSize: number;
@@ -47,6 +48,7 @@ type WordPaginationProps = {
 };
 
 export function WordPagination({
+  kind = 'words',
   activePage,
   totalPages,
   pageSize,
@@ -58,19 +60,43 @@ export function WordPagination({
 }: WordPaginationProps) {
   const t = useTranslations();
   const pageNumbers = getVisiblePageNumbers(activePage, totalPages);
+  const paginationLabel =
+    kind === 'words' ? t('words.manager.paginationLabel') : t('categories.manager.paginationLabel');
+  const pageSizeLabel =
+    kind === 'words' ? t('words.manager.pageSizeLabel') : t('categories.manager.pageSizeLabel');
+  const firstPageLabel =
+    kind === 'words' ? t('words.manager.firstPage') : t('categories.manager.firstPage');
+  const previousPageLabel =
+    kind === 'words' ? t('words.manager.previousPage') : t('categories.manager.previousPage');
+  const nextPageLabel =
+    kind === 'words' ? t('words.manager.nextPage') : t('categories.manager.nextPage');
+  const lastPageLabel =
+    kind === 'words' ? t('words.manager.lastPage') : t('categories.manager.lastPage');
+  const showingResults =
+    kind === 'words'
+      ? t('words.manager.showingResults', {
+          from: (activePage - 1) * pageSize + 1,
+          to: Math.min(activePage * pageSize, totalResults),
+          total: totalResults,
+        })
+      : t('categories.manager.showingResults', {
+          from: (activePage - 1) * pageSize + 1,
+          to: Math.min(activePage * pageSize, totalResults),
+          total: totalResults,
+        });
 
   return (
     <div className='galexi-panel flex flex-col gap-3 p-3 sm:p-4 md:flex-row md:items-center md:justify-between'>
       <nav
         className='order-2 flex items-center justify-center gap-0 md:order-1 md:justify-start md:gap-1'
-        aria-label={t('words.manager.paginationLabel')}
+        aria-label={paginationLabel}
       >
         <Button
           type='button'
           variant='outline'
           size='icon'
-          className='hidden cursor-pointer rounded-xl border-border bg-surface md:inline-flex dark:bg-surface'
-          aria-label={t('words.manager.firstPage')}
+          className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
+          aria-label={firstPageLabel}
           disabled={activePage === 1}
           onClick={() => onPageChange(1)}
         >
@@ -80,24 +106,31 @@ export function WordPagination({
           type='button'
           variant='outline'
           size='icon'
-          className='cursor-pointer rounded-xl border-border bg-surface dark:bg-surface'
-          aria-label={t('words.manager.previousPage')}
+          className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
+          aria-label={previousPageLabel}
           disabled={activePage === 1}
           onClick={() => onPageChange(Math.max(1, activePage - 1))}
         >
           <ChevronLeft aria-hidden='true' className='size-4' />
         </Button>
-        {pageNumbers.map((page) => (
+        {pageNumbers.map((page, index) => (
           <Button
             key={page}
             type='button'
             variant={page === activePage ? 'default' : 'ghost'}
             size='icon'
             className={cn(
-              'cursor-pointer rounded-xl',
+              'size-8 cursor-pointer rounded-xl sm:size-9',
+              pageNumbers.length === MAX_VISIBLE_PAGE_BUTTONS &&
+                (index === 0 || index === pageNumbers.length - 1) &&
+                'max-[359px]:hidden',
               page === activePage && 'shadow-md shadow-primary/20',
             )}
-            aria-label={t('words.manager.goToPage', { page })}
+            aria-label={
+              kind === 'words'
+                ? t('words.manager.goToPage', { page })
+                : t('categories.manager.goToPage', { page })
+            }
             aria-current={page === activePage ? 'page' : undefined}
             onClick={() => onPageChange(page)}
           >
@@ -108,8 +141,8 @@ export function WordPagination({
           type='button'
           variant='outline'
           size='icon'
-          className='cursor-pointer rounded-xl border-border bg-surface dark:bg-surface'
-          aria-label={t('words.manager.nextPage')}
+          className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
+          aria-label={nextPageLabel}
           disabled={activePage === totalPages}
           onClick={() => onPageChange(Math.min(totalPages, activePage + 1))}
         >
@@ -119,8 +152,8 @@ export function WordPagination({
           type='button'
           variant='outline'
           size='icon'
-          className='hidden cursor-pointer rounded-xl border-border bg-surface md:inline-flex dark:bg-surface'
-          aria-label={t('words.manager.lastPage')}
+          className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
+          aria-label={lastPageLabel}
           disabled={activePage === totalPages}
           onClick={() => onPageChange(totalPages)}
         >
@@ -130,19 +163,17 @@ export function WordPagination({
 
       <div className='order-1 flex items-center justify-between gap-2 border-b border-border pb-3 md:order-2 md:justify-end md:gap-3 md:border-0 md:pb-0'>
         <p className='min-w-0 flex-1 truncate text-xs text-muted-foreground sm:flex-none sm:text-sm'>
-          {t('words.manager.showingResults', {
-            from: (activePage - 1) * pageSize + 1,
-            to: Math.min(activePage * pageSize, totalResults),
-            total: totalResults,
-          })}
+          {showingResults}
         </p>
         <FilterCombobox
           value={String(pageSize)}
-          ariaLabel={t('words.manager.pageSizeLabel')}
+          ariaLabel={pageSizeLabel}
           className='w-18 shrink-0 sm:w-20'
+          contentClassName='min-w-28'
           options={PAGE_SIZE_OPTIONS}
-          searchPlaceholder={t('words.manager.pageSizeLabel')}
-          noResultsLabel={t('words.manager.pageSizeLabel')}
+          searchable={false}
+          searchPlaceholder={pageSizeLabel}
+          noResultsLabel={pageSizeLabel}
           onValueChange={(value) => onPageSizeChange(Number(value))}
         />
         <div className='flex rounded-xl border border-border bg-surface p-1 dark:bg-surface'>
@@ -151,7 +182,9 @@ export function WordPagination({
             variant={view === 'grid' ? 'default' : 'ghost'}
             size='icon-sm'
             className='cursor-pointer rounded-lg'
-            aria-label={t('words.manager.gridView')}
+            aria-label={
+              kind === 'words' ? t('words.manager.gridView') : t('categories.manager.gridView')
+            }
             aria-pressed={view === 'grid'}
             onClick={() => onViewChange('grid')}
           >
@@ -162,7 +195,9 @@ export function WordPagination({
             variant={view === 'list' ? 'default' : 'ghost'}
             size='icon-sm'
             className='cursor-pointer rounded-lg'
-            aria-label={t('words.manager.listView')}
+            aria-label={
+              kind === 'words' ? t('words.manager.listView') : t('categories.manager.listView')
+            }
             aria-pressed={view === 'list'}
             onClick={() => onViewChange('list')}
           >

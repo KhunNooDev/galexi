@@ -1,25 +1,28 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  type AdminCategory,
+  type AdminCategoryPage,
   categoriesApi,
   type CategoryInput,
 } from '@/features/categories/category.api';
 import { categoryKeys } from '@/features/categories/category.keys';
+import {
+  type CategoryListParams,
+  DEFAULT_CATEGORY_LIST_PARAMS,
+} from '@/features/categories/category-list';
 
-function sortCategories(categories: AdminCategory[]) {
-  return [...categories].sort(
-    (left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name),
+export function useCategories(initialData: AdminCategoryPage, params: CategoryListParams) {
+  const isInitialPage = Object.entries(DEFAULT_CATEGORY_LIST_PARAMS).every(
+    ([key, value]) => params[key as keyof CategoryListParams] === value,
   );
-}
 
-export function useCategories(initialData: AdminCategory[]) {
   return useQuery({
-    queryKey: categoryKeys.admin(),
-    queryFn: ({ signal }) => categoriesApi.list(signal),
-    initialData,
+    queryKey: categoryKeys.adminPage(params),
+    queryFn: ({ signal }) => categoriesApi.list(params, signal),
+    initialData: isInitialPage ? initialData : undefined,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 }
@@ -28,10 +31,7 @@ export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (values: CategoryInput) => categoriesApi.create(values),
-    onSuccess: (category) =>
-      queryClient.setQueryData<AdminCategory[]>(categoryKeys.admin(), (current = []) =>
-        sortCategories([...current, category]),
-      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: categoryKeys.admin() }),
   });
 }
 
@@ -40,10 +40,7 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: ({ id, values }: { id: number; values: CategoryInput }) =>
       categoriesApi.update(id, values),
-    onSuccess: (category) =>
-      queryClient.setQueryData<AdminCategory[]>(categoryKeys.admin(), (current = []) =>
-        sortCategories(current.map((item) => (item.id === category.id ? category : item))),
-      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: categoryKeys.admin() }),
   });
 }
 
@@ -51,17 +48,15 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => categoriesApi.remove(id),
-    onSuccess: ({ id }) =>
-      queryClient.setQueryData<AdminCategory[]>(categoryKeys.admin(), (current = []) =>
-        current.filter((category) => category.id !== id),
-      ),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: categoryKeys.admin() }),
   });
 }
 
-export function useReorderCategories() {
+export function useMoveCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (ids: number[]) => categoriesApi.reorder(ids),
-    onSuccess: (categories) => queryClient.setQueryData(categoryKeys.admin(), categories),
+    mutationFn: ({ id, direction }: { id: number; direction: -1 | 1 }) =>
+      categoriesApi.move(id, direction),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: categoryKeys.admin() }),
   });
 }

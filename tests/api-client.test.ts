@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test';
 
 import type { AdminWord, WordInput } from '@/features/words/word.api';
+import { DEFAULT_WORD_LIST_PARAMS } from '@/features/words/word-list';
 
 mock.module('client-only', () => ({}));
 
@@ -56,12 +57,12 @@ describe('Eden API client wrappers', () => {
 
   it('preserves same-origin Word list requests and AbortSignal forwarding', async () => {
     const controller = new AbortController();
-    const words = [adminWord];
-    const fetchMock = stubFetch(async () => Response.json({ data: { words } }));
+    const page = { page: 1, total: 1, words: [adminWord] };
+    const fetchMock = stubFetch(async () => Response.json({ data: page }));
 
-    await expect(wordsApi.list(controller.signal)).resolves.toEqual(words);
+    await expect(wordsApi.list(DEFAULT_WORD_LIST_PARAMS, controller.signal)).resolves.toEqual(page);
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/words',
+      '/api/words?page=1&pageSize=6&query=&partOfSpeech=&sort=default',
       expect.objectContaining({ method: 'GET', signal: controller.signal }),
     );
   });
@@ -100,14 +101,27 @@ describe('Eden API client wrappers', () => {
     });
   });
 
-  it('preserves Category reorder path, payload, and return shape', async () => {
-    const categories = [{ id: 2, name: 'Travel', slug: 'travel', sortOrder: 0, wordCount: 3 }];
-    const fetchMock = stubFetch(async () => Response.json({ data: { categories } }));
+  it('preserves Category move path and payload', async () => {
+    const fetchMock = stubFetch(async () => Response.json({ data: {} }));
 
-    await expect(categoriesApi.reorder([2])).resolves.toEqual(categories);
+    await expect(categoriesApi.move(2, -1)).resolves.toEqual({});
     expect(fetchMock).toHaveBeenCalledWith(
       '/api/categories/reorder',
-      expect.objectContaining({ body: JSON.stringify({ categoryIds: [2] }), method: 'PATCH' }),
+      expect.objectContaining({
+        body: JSON.stringify({ categoryId: 2, direction: -1 }),
+        method: 'PATCH',
+      }),
+    );
+  });
+
+  it('forwards Category pagination through the typed client', async () => {
+    const page = { categories: [], nextSortOrder: 12, page: 2, total: 12 };
+    const fetchMock = stubFetch(async () => Response.json({ data: page }));
+
+    await expect(categoriesApi.list({ page: 2, pageSize: 6, query: 'day' })).resolves.toEqual(page);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/categories?page=2&pageSize=6&query=day',
+      expect.objectContaining({ method: 'GET' }),
     );
   });
 });

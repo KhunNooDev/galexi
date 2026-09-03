@@ -1,10 +1,11 @@
 import 'server-only';
 
-import { and, asc, desc, eq, ilike, max, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, max, or, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
 import { words, wordSenseCategories, wordSenses } from '@/db/schema';
 import type { WordInput } from '@/features/words/word.schema';
+import type { WordListParams } from '@/features/words/word-list';
 
 export type WordTransaction = Parameters<
   Parameters<ReturnType<typeof getDatabase>['transaction']>[0]
@@ -111,12 +112,55 @@ export async function getNextSenseOrder(
   return (result?.value ?? 0) + 1;
 }
 
-export function listWordSenses() {
-  return getDatabase()
-    .select(wordSenseColumns)
-    .from(wordSenses)
-    .innerJoin(words, eq(words.id, wordSenses.wordId))
-    .orderBy(desc(wordSenses.createdAt), desc(wordSenses.id));
+export async function listWordSenses(params: WordListParams) {
+  const normalizedQuery = params.query.trim();
+  const predicates = [
+    normalizedQuery
+      ? or(
+          ilike(words.word, `%${normalizedQuery}%`),
+          ilike(wordSenses.partOfSpeech, `%${normalizedQuery}%`),
+          ilike(wordSenses.pronunciationIpa, `%${normalizedQuery}%`),
+          ilike(wordSenses.pronunciationThai, `%${normalizedQuery}%`),
+          sql`array_to_string(${wordSenses.meaningsTh}, ' ') ilike ${`%${normalizedQuery}%`}`,
+        )
+      : undefined,
+    params.partOfSpeech
+      ? sql`lower(${wordSenses.partOfSpeech}) = lower(${params.partOfSpeech})`
+      : undefined,
+    params.categoryId
+      ? sql`exists (
+          select 1
+          from ${wordSenseCategories}
+          where ${wordSenseCategories.wordSenseId} = ${wordSenses.id}
+            and ${wordSenseCategories.categoryId} = ${params.categoryId}
+        )`
+      : undefined,
+  ].filter((predicate) => predicate !== undefined);
+  const where = predicates.length > 0 ? and(...predicates) : undefined;
+  const order =
+    params.sort === 'word-ascending'
+      ? [asc(words.word), asc(wordSenses.id)]
+      : params.sort === 'word-descending'
+        ? [desc(words.word), desc(wordSenses.id)]
+        : [desc(wordSenses.createdAt), desc(wordSenses.id)];
+  const database = getDatabase();
+  const [items, [countResult]] = await Promise.all([
+    database
+      .select(wordSenseColumns)
+      .from(wordSenses)
+      .innerJoin(words, eq(words.id, wordSenses.wordId))
+      .where(where)
+      .orderBy(...order)
+      .limit(params.pageSize)
+      .offset((params.page - 1) * params.pageSize),
+    database
+      .select({ total: count().mapWith(Number) })
+      .from(wordSenses)
+      .innerJoin(words, eq(words.id, wordSenses.wordId))
+      .where(where),
+  ]);
+
+  return { page: params.page, total: countResult.total, words: items };
 }
 
 export async function findWordSenseById(id: number) {

@@ -1,20 +1,26 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
-  type AdminWord,
+  type AdminWordPage,
   type UpdateWordInput,
   type WordInput,
   wordsApi,
 } from '@/features/words/word.api';
 import { wordKeys } from '@/features/words/word.keys';
+import { DEFAULT_WORD_LIST_PARAMS, type WordListParams } from '@/features/words/word-list';
 
-export function useWords(initialData: AdminWord[]) {
+export function useWords(initialData: AdminWordPage, params: WordListParams) {
+  const isInitialPage = Object.entries(DEFAULT_WORD_LIST_PARAMS).every(
+    ([key, value]) => params[key as keyof WordListParams] === value,
+  );
+
   return useQuery({
-    queryKey: wordKeys.admin(),
-    queryFn: ({ signal }) => wordsApi.list(signal),
-    initialData,
+    queryKey: wordKeys.adminPage(params),
+    queryFn: ({ signal }) => wordsApi.list(params, signal),
+    initialData: isInitialPage ? initialData : undefined,
+    placeholderData: keepPreviousData,
     staleTime: 30_000,
   });
 }
@@ -25,11 +31,8 @@ export function useCreateWord() {
   return useMutation({
     mutationFn: (values: WordInput) => wordsApi.create(values),
     onMutate: () => queryClient.cancelQueries({ queryKey: wordKeys.admin() }),
-    onSuccess: (createdWord) => {
-      queryClient.setQueryData<AdminWord[]>(wordKeys.admin(), (current = []) => [
-        createdWord,
-        ...current,
-      ]);
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: wordKeys.admin() });
     },
   });
 }
@@ -40,10 +43,8 @@ export function useUpdateWord() {
   return useMutation({
     mutationFn: (input: UpdateWordInput) => wordsApi.update(input),
     onMutate: () => queryClient.cancelQueries({ queryKey: wordKeys.admin() }),
-    onSuccess: (updatedWord) => {
-      queryClient.setQueryData<AdminWord[]>(wordKeys.admin(), (current = []) =>
-        current.map((word) => (word.id === updatedWord.id ? updatedWord : word)),
-      );
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: wordKeys.admin() });
     },
   });
 }
@@ -54,10 +55,8 @@ export function useDeleteWord() {
   return useMutation({
     mutationFn: (id: number) => wordsApi.remove(id),
     onMutate: () => queryClient.cancelQueries({ queryKey: wordKeys.admin() }),
-    onSuccess: ({ id }) => {
-      queryClient.setQueryData<AdminWord[]>(wordKeys.admin(), (current = []) =>
-        current.filter((word) => word.id !== id),
-      );
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: wordKeys.admin() });
     },
   });
 }

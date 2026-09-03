@@ -1,6 +1,7 @@
 import type { Treaty } from '@elysiajs/eden';
 
 import type { CategoryInput as DomainCategoryInput } from '@/features/categories/category.schema';
+import type { CategoryListParams } from '@/features/categories/category-list';
 import { apiClient } from '@/lib/api/client';
 import { throwApiError } from '@/lib/api/errors';
 
@@ -9,17 +10,18 @@ const categoriesRoute = apiClient.api.categories;
 type CategoriesResponse = Treaty.Data<typeof categoriesRoute.get>;
 
 export type AdminCategory = CategoriesResponse['data']['categories'][number];
+export type AdminCategoryPage = CategoriesResponse['data'];
 export type CategoryInput = DomainCategoryInput;
 
 export const categoriesApi = {
-  async list(signal?: AbortSignal) {
-    const { data, error } = await categoriesRoute.get({ fetch: { signal } });
+  async list(params: CategoryListParams, signal?: AbortSignal) {
+    const { data, error } = await categoriesRoute.get({ fetch: { signal }, query: params });
 
     if (error) {
       return throwApiError(error);
     }
 
-    return data.data.categories;
+    return data.data;
   },
 
   async create(values: CategoryInput) {
@@ -52,13 +54,13 @@ export const categoriesApi = {
     return data.data;
   },
 
-  async reorder(categoryIds: number[]) {
-    const { data, error } = await categoriesRoute.reorder.patch({ categoryIds });
+  async move(categoryId: number, direction: -1 | 1) {
+    const { data, error } = await categoriesRoute.reorder.patch({ categoryId, direction });
 
     if (error) {
       return throwApiError(error);
     }
 
-    return data.data.categories;
+    return data.data;
   },
 };

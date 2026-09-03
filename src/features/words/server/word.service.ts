@@ -25,6 +25,7 @@ import {
   getWordImageLockQuery,
 } from '@/features/words/server/word-image.service';
 import type { WordInput } from '@/features/words/word.schema';
+import type { WordListParams } from '@/features/words/word-list';
 
 async function validateWordImage(
   transaction: WordTransaction,
@@ -42,8 +43,8 @@ async function validateWordImage(
   }
 }
 
-export function listWords() {
-  return listWordSenses();
+export function listWords(params: WordListParams) {
+  return listWordSenses(params);
 }
 
 export function getWordById(id: number) {

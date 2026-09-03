@@ -7,6 +7,7 @@ import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
 import { listCategories } from '@/features/categories/server/category.service';
 import { WordManager } from '@/features/words/components/word-manager';
 import { listWords } from '@/features/words/server/word.service';
+import { DEFAULT_WORD_LIST_PARAMS } from '@/features/words/word-list';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 export default async function ManageWordsPage() {
@@ -20,7 +21,10 @@ export default async function ManageWordsPage() {
     redirect(ROUTES.PUBLIC_WORDS);
   }
 
-  const [words, categories] = await Promise.all([listWords(), listCategories()]);
+  const [wordPage, categories] = await Promise.all([
+    listWords(DEFAULT_WORD_LIST_PARAMS),
+    listCategories(),
+  ]);
 
   return (
     <main className='relative min-h-svh overflow-x-clip bg-background pb-10'>
@@ -34,7 +38,7 @@ export default async function ManageWordsPage() {
 
         <div className='px-4 py-8 sm:px-8 lg:py-10'>
           <QueryProvider>
-            <WordManager initialWords={words} categories={categories} />
+            <WordManager initialPage={wordPage} categories={categories} />
           </QueryProvider>
         </div>
       </div>

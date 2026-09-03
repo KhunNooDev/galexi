@@ -1,6 +1,7 @@
 import type { Treaty } from '@elysiajs/eden';
 
 import type { WordInput as DomainWordInput } from '@/features/words/word.schema';
+import type { WordListParams } from '@/features/words/word-list';
 import { apiClient } from '@/lib/api/client';
 import { throwApiError } from '@/lib/api/errors';
 
@@ -10,6 +11,7 @@ const wordImageCleanupRoute = apiClient.api['word-images'].cleanup;
 type WordsResponse = Treaty.Data<typeof wordsRoute.get>;
 
 export type AdminWord = WordsResponse['data']['words'][number];
+export type AdminWordPage = WordsResponse['data'];
 export type WordInput = DomainWordInput;
 export type UpdateWordInput = {
   id: number;
@@ -17,14 +19,20 @@ export type UpdateWordInput = {
 };
 
 export const wordsApi = {
-  async list(signal?: AbortSignal) {
-    const { data, error } = await wordsRoute.get({ fetch: { signal } });
+  async list(params: WordListParams, signal?: AbortSignal) {
+    const { data, error } = await wordsRoute.get({
+      fetch: { signal },
+      query: {
+        ...params,
+        categoryId: params.categoryId ?? undefined,
+      },
+    });
 
     if (error) {
       return throwApiError(error);
     }
 
-    return data.data.words;
+    return data.data;
   },
 
   async create(values: WordInput) {

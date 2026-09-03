@@ -1,6 +1,6 @@
 'use client';
 
-import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -16,20 +16,26 @@ type FilterOption = {
 type FilterComboboxProps = {
   ariaLabel: string;
   className?: string;
+  contentClassName?: string;
   noResultsLabel: string;
   onValueChange: (value: string) => void;
   options: readonly FilterOption[];
+  searchable?: boolean;
   searchPlaceholder: string;
+  startIcon?: ReactNode;
   value: string;
 };
 
 export function FilterCombobox({
   ariaLabel,
   className,
+  contentClassName,
   noResultsLabel,
   onValueChange,
   options,
+  searchable = true,
   searchPlaceholder,
+  startIcon,
   value,
 }: FilterComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -39,6 +45,10 @@ export function FilterCombobox({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const selectedOption = options.find((option) => option.value === value) ?? options[0];
   const filteredOptions = useMemo(() => {
+    if (!searchable) {
+      return options;
+    }
+
     const normalizedQuery = query.trim().toLocaleLowerCase();
 
     if (!normalizedQuery) {
@@ -46,7 +56,7 @@ export function FilterCombobox({
     }
 
     return options.filter((option) => option.label.toLocaleLowerCase().includes(normalizedQuery));
-  }, [options, query]);
+  }, [options, query, searchable]);
 
   function getOptionElements() {
     return Array.from(listboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? []);
@@ -99,7 +109,10 @@ export function FilterCombobox({
             className,
           )}
         >
-          <span className='truncate'>{selectedOption?.label}</span>
+          <span className='flex min-w-0 items-center gap-2'>
+            {startIcon ? <span className='shrink-0 text-muted-foreground'>{startIcon}</span> : null}
+            <span className='truncate'>{selectedOption?.label}</span>
+          </span>
           <ChevronDown
             aria-hidden='true'
             className={cn(
@@ -112,44 +125,54 @@ export function FilterCombobox({
       <PopoverContent
         align='start'
         sideOffset={8}
-        className='w-(--radix-popover-trigger-width) min-w-56 rounded-2xl border-border bg-surface p-2 shadow-2xl'
+        className={cn(
+          'w-(--radix-popover-trigger-width) min-w-56 rounded-2xl border-border bg-surface p-2 shadow-2xl',
+          contentClassName,
+        )}
         onOpenAutoFocus={(event) => {
-          event.preventDefault();
-          searchInputRef.current?.focus();
+          if (searchable) {
+            event.preventDefault();
+            searchInputRef.current?.focus();
+          }
         }}
       >
-        <div className='relative'>
-          <Search
-            aria-hidden='true'
-            className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground'
-          />
-          <Input
-            ref={searchInputRef}
-            role='combobox'
-            aria-autocomplete='list'
-            aria-controls={listboxId}
-            aria-expanded='true'
-            value={query}
-            placeholder={searchPlaceholder}
-            className='h-10 rounded-xl border-border bg-field pr-3 pl-9 dark:bg-field'
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                focusEdgeOption('first');
-              } else if (event.key === 'ArrowUp') {
-                event.preventDefault();
-                focusEdgeOption('last');
-              }
-            }}
-          />
-        </div>
+        {searchable && (
+          <div className='relative'>
+            <Search
+              aria-hidden='true'
+              className='pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground'
+            />
+            <Input
+              ref={searchInputRef}
+              role='combobox'
+              aria-autocomplete='list'
+              aria-controls={listboxId}
+              aria-expanded='true'
+              value={query}
+              placeholder={searchPlaceholder}
+              className='h-10 rounded-xl border-border bg-field pr-3 pl-9 dark:bg-field'
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  focusEdgeOption('first');
+                } else if (event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  focusEdgeOption('last');
+                }
+              }}
+            />
+          </div>
+        )}
         <div
           ref={listboxRef}
           id={listboxId}
           role='listbox'
           aria-label={ariaLabel}
-          className='mt-2 max-h-64 touch-pan-y scrollbar-gutter-stable overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]'
+          className={cn(
+            'max-h-64 touch-pan-y overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]',
+            searchable && 'mt-2 scrollbar-gutter-stable',
+          )}
         >
           {filteredOptions.length === 0 ? (
             <p className='px-3 py-6 text-center text-sm text-muted-foreground'>{noResultsLabel}</p>

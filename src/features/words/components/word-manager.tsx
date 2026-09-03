@@ -14,7 +14,7 @@ import { WordFormDialog } from '@/features/words/components/word-form-dialog';
 import { WordManagerToolbar } from '@/features/words/components/word-manager-toolbar';
 import { WordPagination, type WordView } from '@/features/words/components/word-pagination';
 import { useWordImageUpload } from '@/features/words/use-word-image-upload';
-import type { AdminWord } from '@/features/words/word.api';
+import type { AdminWord, AdminWordPage } from '@/features/words/word.api';
 import {
   useCreateWord,
   useDeleteWord,
@@ -22,6 +22,7 @@ import {
   useWords,
 } from '@/features/words/word.queries';
 import { createWordFormSchema, type WordFormValues } from '@/features/words/word.schema';
+import type { WordSort } from '@/features/words/word-list';
 import { ApiError } from '@/lib/api/errors';
 
 const defaultValues: WordFormValues = {
@@ -39,10 +40,10 @@ const defaultValues: WordFormValues = {
 
 export function WordManager({
   categories,
-  initialWords,
+  initialPage,
 }: {
   categories: { id: number; name: string }[];
-  initialWords: AdminWord[];
+  initialPage: AdminWordPage;
 }) {
   const t = useTranslations();
   const schema = useMemo(
@@ -57,7 +58,30 @@ export function WordManager({
       }),
     [t],
   );
-  const wordsQuery = useWords(initialWords);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [partOfSpeechFilter, setPartOfSpeechFilter] = useState('');
+  const [sort, setSort] = useState<WordSort>('default');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+  const [view, setView] = useState<WordView>('grid');
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [wordToDelete, setWordToDelete] = useState<AdminWord | null>(null);
+  const listParams = useMemo(
+    () => ({
+      page: currentPage,
+      pageSize,
+      query: searchQuery,
+      categoryId: categoryFilter ? Number(categoryFilter) : null,
+      partOfSpeech: partOfSpeechFilter,
+      sort,
+    }),
+    [categoryFilter, currentPage, pageSize, partOfSpeechFilter, searchQuery, sort],
+  );
+  const wordsQuery = useWords(initialPage, listParams);
   const createWordMutation = useCreateWord();
   const updateWordMutation = useUpdateWord();
   const deleteWordMutation = useDeleteWord();
@@ -65,22 +89,12 @@ export function WordManager({
     invalidTypeMessage: t('words.manager.validation.invalidImageType'),
     imageTooLargeMessage: t('words.manager.validation.imageTooLarge'),
   });
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [partOfSpeechFilter, setPartOfSpeechFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
-  const [view, setView] = useState<WordView>('grid');
-  const [requestError, setRequestError] = useState<string | null>(null);
-  const [wordToDelete, setWordToDelete] = useState<AdminWord | null>(null);
   const form = useForm<WordFormValues, unknown, WordFormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   });
-  const words = wordsQuery.data;
+  const page = wordsQuery.data ?? { page: currentPage, total: 0, words: [] };
+  const words = page.words;
   const deletingId = deleteWordMutation.isPending ? deleteWordMutation.variables : null;
   const isSaving =
     form.formState.isSubmitting || createWordMutation.isPending || updateWordMutation.isPending;
@@ -96,30 +110,9 @@ export function WordManager({
   const deleteRequestError = deleteWordMutation.error ? t('words.manager.requestError') : null;
   const pageRequestError = wordsQuery.error ? t('words.manager.requestError') : null;
 
-  const filteredWords = useMemo(() => {
-    const query = searchQuery.trim().toLocaleLowerCase();
-
-    return words.filter((word) => {
-      const matchesQuery =
-        !query ||
-        [
-          word.word,
-          word.partOfSpeech,
-          word.pronunciationIpa,
-          word.pronunciationThai,
-          ...word.meaningsTh,
-        ].some((value) => value.toLocaleLowerCase().includes(query));
-      const matchesCategory =
-        !categoryFilter ||
-        word.categories.some((category) => category.id === Number(categoryFilter));
-      const matchesPartOfSpeech = !partOfSpeechFilter || word.partOfSpeech === partOfSpeechFilter;
-
-      return matchesQuery && matchesCategory && matchesPartOfSpeech;
-    });
-  }, [categoryFilter, partOfSpeechFilter, searchQuery, words]);
-  const totalPages = Math.max(1, Math.ceil(filteredWords.length / pageSize));
-  const activePage = Math.min(currentPage, totalPages);
-  const paginatedWords = filteredWords.slice((activePage - 1) * pageSize, activePage * pageSize);
+  const totalPages = Math.max(1, Math.ceil(page.total / pageSize));
+  const loadedPage = Number.isFinite(page.page) ? page.page : currentPage;
+  const activePage = Math.min(loadedPage, totalPages);
 
   function resetForm() {
     setEditingId(null);
@@ -183,6 +176,7 @@ export function WordManager({
       }
 
       await createWordMutation.mutateAsync(nextValues);
+      setCurrentPage(1);
       closeDialog();
     } catch (error) {
       if (uploadedImagePath) {
@@ -219,6 +213,10 @@ export function WordManager({
 
     try {
       await deleteWordMutation.mutateAsync(id);
+
+      if (words.length === 1 && currentPage > 1) {
+        setCurrentPage((page) => page - 1);
+      }
 
       if (editingId === id) {
         resetForm();
@@ -269,10 +267,11 @@ export function WordManager({
 
       <section className='space-y-4' aria-labelledby='word-list-title'>
         <WordManagerToolbar
-          resultCount={filteredWords.length}
+          resultCount={page.total}
           categories={categories}
           categoryFilter={categoryFilter}
           partOfSpeechFilter={partOfSpeechFilter}
+          sort={sort}
           onSearch={(query) => {
             setSearchQuery(query);
             setCurrentPage(1);
@@ -285,15 +284,19 @@ export function WordManager({
             setPartOfSpeechFilter(value);
             setCurrentPage(1);
           }}
+          onSortChange={(value) => {
+            setSort(value);
+            setCurrentPage(1);
+          }}
           onCreate={openCreateDialog}
         />
 
-        {filteredWords.length > 0 && (
+        {page.total > 0 && (
           <WordPagination
             activePage={activePage}
             totalPages={totalPages}
             pageSize={pageSize}
-            totalResults={filteredWords.length}
+            totalResults={page.total}
             view={view}
             onPageChange={setCurrentPage}
             onPageSizeChange={(nextPageSize) => {
@@ -304,18 +307,21 @@ export function WordManager({
           />
         )}
 
-        <WordCollection
-          allWordsCount={words.length}
-          filteredWordsCount={filteredWords.length}
-          words={paginatedWords}
-          view={view}
-          deletingId={deletingId}
-          onEdit={editWord}
-          onDelete={(word) => {
-            clearDeleteError();
-            setWordToDelete(word);
-          }}
-        />
+        <div className='transition-opacity' aria-busy={wordsQuery.isFetching}>
+          <WordCollection
+            words={words}
+            isFiltering={Boolean(
+              searchQuery || categoryFilter || partOfSpeechFilter || sort !== 'default',
+            )}
+            view={view}
+            deletingId={deletingId}
+            onEdit={editWord}
+            onDelete={(word) => {
+              clearDeleteError();
+              setWordToDelete(word);
+            }}
+          />
+        </div>
       </section>
     </div>
   );

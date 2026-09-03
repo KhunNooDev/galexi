@@ -24,12 +24,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import type { AdminCategory } from '@/features/categories/category.api';
+import type { AdminCategory, AdminCategoryPage } from '@/features/categories/category.api';
 import {
   useCategories,
   useCreateCategory,
   useDeleteCategory,
-  useReorderCategories,
+  useMoveCategory,
   useUpdateCategory,
 } from '@/features/categories/category.queries';
 import {
@@ -37,11 +37,14 @@ import {
   type CategoryFormValues,
   createCategoryFormSchema,
 } from '@/features/categories/category.schema';
+import type { CategoryListParams } from '@/features/categories/category-list';
+import { WordPagination, type WordView } from '@/features/words/components/word-pagination';
 import { ApiError } from '@/lib/api/errors';
+import { cn } from '@/lib/utils';
 
 const { InputText } = createFormInputs<CategoryFormInput>();
 
-export function CategoryManager({ initialCategories }: { initialCategories: AdminCategory[] }) {
+export function CategoryManager({ initialPage }: { initialPage: AdminCategoryPage }) {
   const t = useTranslations();
   const schema = useMemo(
     () =>
@@ -54,35 +57,43 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
       }),
     [t],
   );
-  const categoriesQuery = useCategories(initialCategories);
-  const createMutation = useCreateCategory();
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
-  const reorderMutation = useReorderCategories();
   const [query, setQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+  const [view, setView] = useState<WordView>('grid');
   const [editing, setEditing] = useState<AdminCategory | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState<AdminCategory | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const listParams = useMemo<CategoryListParams>(
+    () => ({ page: currentPage, pageSize, query }),
+    [currentPage, pageSize, query],
+  );
+  const categoriesQuery = useCategories(initialPage, listParams);
+  const createMutation = useCreateCategory();
+  const updateMutation = useUpdateCategory();
+  const deleteMutation = useDeleteCategory();
+  const moveMutation = useMoveCategory();
   const form = useForm<CategoryFormInput, unknown, CategoryFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: '', slug: '', sortOrder: '0' },
   });
-  const categories = categoriesQuery.data;
+  const page = categoriesQuery.data ?? {
+    categories: [],
+    nextSortOrder: initialPage.nextSortOrder,
+    page: currentPage,
+    total: 0,
+  };
+  const categories = page.categories;
   const isFiltering = query.trim().length > 0;
-  const filtered = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase();
-    return normalizedQuery
-      ? categories.filter((category) =>
-          `${category.name} ${category.slug}`.toLocaleLowerCase().includes(normalizedQuery),
-        )
-      : categories;
-  }, [categories, query]);
+  const totalPages = Math.max(1, Math.ceil(page.total / pageSize));
+  const loadedPage = Number.isFinite(page.page) ? page.page : currentPage;
+  const activePage = Math.min(loadedPage, totalPages);
 
   function openCreate() {
     setEditing(null);
-    form.reset({ name: '', slug: '', sortOrder: String(categories.length) });
+    form.reset({ name: '', slug: '', sortOrder: String(page.nextSortOrder) });
     setDialogOpen(true);
   }
 
@@ -95,8 +106,11 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
   async function save(values: CategoryFormValues) {
     setRequestError(null);
     try {
-      if (editing) await updateMutation.mutateAsync({ id: editing.id, values });
-      else await createMutation.mutateAsync(values);
+      if (editing) {
+        await updateMutation.mutateAsync({ id: editing.id, values });
+      } else {
+        await createMutation.mutateAsync(values);
+      }
       setDialogOpen(false);
     } catch (error) {
       setRequestError(
@@ -110,18 +124,15 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
   function move(category: AdminCategory, direction: -1 | 1) {
     if (isFiltering) return;
 
-    const index = categories.findIndex((item) => item.id === category.id);
-    const target = index + direction;
-    if (target < 0 || target >= categories.length) return;
-    const next = [...categories];
-    [next[index], next[target]] = [next[target], next[index]];
     setRequestError(null);
-    void reorderMutation
-      .mutateAsync(next.map((item) => item.id))
+    void moveMutation
+      .mutateAsync({ id: category.id, direction })
       .catch(() => setRequestError(t('categories.manager.requestError')));
   }
 
   function renderCategoryActions(category: AdminCategory, index: number) {
+    const absoluteIndex = (activePage - 1) * pageSize + index;
+
     return (
       <Popover>
         <PopoverTrigger asChild>
@@ -140,7 +151,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
             type='button'
             variant='ghost'
             className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-surface-foreground hover:bg-secondary-hover'
-            disabled={isFiltering || index === 0 || reorderMutation.isPending}
+            disabled={isFiltering || absoluteIndex === 0 || moveMutation.isPending}
             onClick={() => move(category, -1)}
           >
             <ArrowUp aria-hidden='true' className='size-4 text-muted-foreground' />
@@ -150,7 +161,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
             type='button'
             variant='ghost'
             className='h-10 w-full cursor-pointer justify-start rounded-lg px-3 text-surface-foreground hover:bg-secondary-hover'
-            disabled={isFiltering || index === categories.length - 1 || reorderMutation.isPending}
+            disabled={isFiltering || absoluteIndex === page.total - 1 || moveMutation.isPending}
             onClick={() => move(category, 1)}
           >
             <ArrowDown aria-hidden='true' className='size-4 text-muted-foreground' />
@@ -203,7 +214,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
                 {t('categories.manager.title')}
               </h1>
               <p className='mt-0.5 text-sm text-muted-foreground'>
-                {t('categories.manager.resultCount', { count: filtered.length })}
+                {t('categories.manager.resultCount', { count: page.total })}
               </p>
             </div>
           </div>
@@ -223,6 +234,7 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
           onSubmit={(event) => {
             event.preventDefault();
             setQuery(searchInput);
+            setCurrentPage(1);
           }}
         >
           <label className='relative min-w-0 flex-1'>
@@ -250,39 +262,74 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
         </form>
       </div>
 
-      {filtered.length === 0 ? (
+      {page.total > 0 && (
+        <div className='mt-4'>
+          <WordPagination
+            kind='categories'
+            activePage={activePage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalResults={page.total}
+            view={view}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize);
+              setCurrentPage(1);
+            }}
+            onViewChange={setView}
+          />
+        </div>
+      )}
+
+      {categories.length === 0 ? (
         <p className='galexi-empty mt-4'>
           {query ? t('categories.manager.noResults') : t('categories.manager.empty')}
         </p>
       ) : (
-        <ul className='mt-4 grid gap-4 lg:grid-cols-2'>
-          {filtered.map((category) => {
-            const index = categories.findIndex((item) => item.id === category.id);
+        <ul
+          className={cn('mt-4 grid gap-4', view === 'grid' && 'lg:grid-cols-2')}
+          aria-busy={categoriesQuery.isFetching}
+        >
+          {categories.map((category, index) => {
             return (
               <li
                 key={category.id}
-                className='group flex min-h-44 gap-4 rounded-3xl border border-border bg-surface p-4 shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8 sm:p-5'
+                className={cn(
+                  'group flex border border-border bg-surface shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8',
+                  view === 'grid'
+                    ? 'min-h-28 gap-3 rounded-3xl p-3 sm:p-4'
+                    : 'items-center gap-3 rounded-2xl px-3 py-2.5 sm:px-4',
+                )}
               >
-                <span className='inline-flex size-20 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-secondary-hover text-primary sm:size-24'>
-                  <Tags aria-hidden='true' className='size-7' />
+                <span
+                  className={cn(
+                    'inline-flex shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-secondary-hover text-primary',
+                    view === 'grid' ? 'size-12 sm:size-14' : 'size-10 rounded-xl',
+                  )}
+                >
+                  <Tags aria-hidden='true' className={view === 'grid' ? 'size-6' : 'size-5'} />
                 </span>
-                <div className='flex min-w-0 flex-1 flex-col'>
-                  <div className='flex items-start gap-2'>
-                    <div className='min-w-0 flex-1'>
-                      <h2 className='text-lg font-semibold wrap-break-word text-surface-foreground sm:text-xl'>
-                        {category.name}
-                      </h2>
-                      <p className='mt-1 text-sm text-muted-foreground'>/{category.slug}</p>
-                    </div>
-                    {renderCategoryActions(category, index)}
-                  </div>
-                  <Badge
-                    variant='secondary'
-                    className='mt-4 w-fit bg-primary/10 px-2.5 py-1 text-primary'
+                <div className='min-w-0 flex-1'>
+                  <h2
+                    className={cn(
+                      'font-semibold wrap-break-word text-surface-foreground',
+                      view === 'grid' ? 'text-lg' : 'truncate text-base',
+                    )}
                   >
-                    {t('categories.wordCount', { count: category.wordCount })}
-                  </Badge>
+                    {category.name}
+                  </h2>
+                  <p className='mt-0.5 truncate text-xs text-muted-foreground'>/{category.slug}</p>
                 </div>
+                <Badge
+                  variant='secondary'
+                  className={cn(
+                    'shrink-0 bg-primary/10 text-primary',
+                    view === 'grid' ? 'self-end px-2.5 py-1' : 'px-2 py-0.5',
+                  )}
+                >
+                  {t('categories.wordCount', { count: category.wordCount })}
+                </Badge>
+                {renderCategoryActions(category, index)}
               </li>
             );
           })}
@@ -345,7 +392,12 @@ export function CategoryManager({ initialCategories }: { initialCategories: Admi
           setRequestError(null);
           void deleteMutation
             .mutateAsync(deleting.id)
-            .then(() => setDeleting(null))
+            .then(() => {
+              if (categories.length === 1 && currentPage > 1) {
+                setCurrentPage((page) => page - 1);
+              }
+              setDeleting(null);
+            })
             .catch(() => setRequestError(t('categories.manager.requestError')));
         }}
       />

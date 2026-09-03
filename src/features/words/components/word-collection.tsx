@@ -22,9 +22,8 @@ import type { AdminWord } from '@/features/words/word.api';
 import { cn } from '@/lib/utils';
 
 type WordCollectionProps = {
-  allWordsCount: number;
-  filteredWordsCount: number;
   words: AdminWord[];
+  isFiltering: boolean;
   view: WordView;
   deletingId: number | null;
   onEdit: (word: AdminWord) => void;
@@ -130,9 +129,8 @@ function VisibilityBadge({ word }: { word: AdminWord }) {
 }
 
 export function WordCollection({
-  allWordsCount,
-  filteredWordsCount,
   words,
+  isFiltering,
   view,
   deletingId,
   onEdit,
@@ -140,12 +138,12 @@ export function WordCollection({
 }: WordCollectionProps) {
   const t = useTranslations();
 
-  if (allWordsCount === 0) {
-    return <p className='galexi-empty'>{t('words.manager.empty')}</p>;
-  }
-
-  if (filteredWordsCount === 0) {
-    return <p className='galexi-empty'>{t('words.manager.noSearchResults')}</p>;
+  if (words.length === 0) {
+    return (
+      <p className='galexi-empty'>
+        {isFiltering ? t('words.manager.noSearchResults') : t('words.manager.empty')}
+      </p>
+    );
   }
 
   if (view === 'grid') {

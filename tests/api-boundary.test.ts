@@ -10,9 +10,9 @@ const mocks = {
   getCurrentIdentity: mock(),
   getWordById: mock(),
   getWordImageUrl: mock(),
-  listCategories: mock(),
+  listCategoryPage: mock(),
   listWords: mock(),
-  reorderCategories: mock(),
+  moveCategory: mock(),
   updateCategory: mock(),
   updateWord: mock(),
 };
@@ -23,8 +23,8 @@ mock.module('@/features/categories/server/category.service', () => ({
   categoriesExist: mocks.categoriesExist,
   createCategory: mocks.createCategory,
   deleteCategory: mocks.deleteCategory,
-  listCategories: mocks.listCategories,
-  reorderCategories: mocks.reorderCategories,
+  listCategoryPage: mocks.listCategoryPage,
+  moveCategory: mocks.moveCategory,
   updateCategory: mocks.updateCategory,
 }));
 mock.module('@/features/words/server/word.service', () => ({
@@ -124,6 +124,47 @@ describe('Elysia API boundary', () => {
         word: 'hello',
       }),
     );
+  });
+
+  it('validates and forwards administrator Word pagination filters', async () => {
+    const page = { page: 2, total: 42, words: [{ id: 7, word: 'play' }] };
+    mocks.getCurrentIdentity.mockResolvedValue({
+      email: 'admin@example.com',
+      kind: 'admin',
+      userId: 'admin-id',
+    });
+    mocks.listWords.mockResolvedValue(page);
+
+    const response = await apiRequest(
+      '/api/words?page=2&pageSize=12&query=play&categoryId=3&partOfSpeech=verb&sort=word-ascending',
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ data: page });
+    expect(mocks.listWords).toHaveBeenCalledWith({
+      categoryId: 3,
+      page: 2,
+      pageSize: 12,
+      partOfSpeech: 'verb',
+      query: 'play',
+      sort: 'word-ascending',
+    });
+  });
+
+  it('forwards default administrator Category pagination values', async () => {
+    const page = { categories: [], nextSortOrder: 0, page: 1, total: 0 };
+    mocks.getCurrentIdentity.mockResolvedValue({
+      email: 'admin@example.com',
+      kind: 'admin',
+      userId: 'admin-id',
+    });
+    mocks.listCategoryPage.mockResolvedValue(page);
+
+    const response = await apiRequest('/api/categories');
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ data: page });
+    expect(mocks.listCategoryPage).toHaveBeenCalledWith({ page: 1, pageSize: 6, query: '' });
   });
 
   it('maps Zod path validation failures to HTTP 400', async () => {

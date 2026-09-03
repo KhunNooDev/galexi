@@ -4,8 +4,9 @@ import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
 import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES, ROUTES } from '@/constants/routes';
+import { DEFAULT_CATEGORY_LIST_PARAMS } from '@/features/categories/category-list';
 import { CategoryManager } from '@/features/categories/components/category-manager';
-import { listCategories } from '@/features/categories/server/category.service';
+import { listCategoryPage } from '@/features/categories/server/category.service';
 import { getCurrentIdentity } from '@/lib/supabase/auth';
 
 export default async function ManageCategoriesPage() {
@@ -14,7 +15,7 @@ export default async function ManageCategoriesPage() {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
   if (identity.kind !== IDENTITY_KIND.ADMIN) redirect(ROUTES.CATEGORIES);
-  const categories = await listCategories();
+  const categoryPage = await listCategoryPage(DEFAULT_CATEGORY_LIST_PARAMS);
 
   return (
     <main className='relative min-h-svh overflow-x-clip bg-background pb-10'>
@@ -27,7 +28,7 @@ export default async function ManageCategoriesPage() {
         <PageHeader brand identity={identity} />
         <div className='px-4 py-8 sm:px-8 lg:py-10'>
           <QueryProvider>
-            <CategoryManager initialCategories={categories} />
+            <CategoryManager initialPage={categoryPage} />
           </QueryProvider>
         </div>
       </div>

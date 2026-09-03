@@ -1,10 +1,11 @@
 import 'server-only';
 
-import { and, asc, count, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, ilike, inArray, lt, max, or, sql } from 'drizzle-orm';
 
 import { getDatabase } from '@/db';
 import { categories, words, wordSenseCategories, wordSenses } from '@/db/schema';
 import type { CategoryInput } from '@/features/categories/category.schema';
+import type { CategoryListParams } from '@/features/categories/category-list';
 
 const categoryColumns = {
   id: categories.id,
@@ -37,6 +38,45 @@ export function listCategories() {
     .leftJoin(wordSenseCategories, eq(wordSenseCategories.categoryId, categories.id))
     .groupBy(categories.id)
     .orderBy(asc(categories.sortOrder), asc(categories.name));
+}
+
+export async function listCategoryPage(params: CategoryListParams) {
+  const normalizedQuery = params.query.trim();
+  const where = normalizedQuery
+    ? or(
+        ilike(categories.name, `%${normalizedQuery}%`),
+        ilike(categories.slug, `%${normalizedQuery}%`),
+      )
+    : undefined;
+  const database = getDatabase();
+  const [items, [countResult], [orderResult]] = await Promise.all([
+    database
+      .select({
+        ...categoryColumns,
+        wordCount: count(wordSenseCategories.wordSenseId).mapWith(Number),
+      })
+      .from(categories)
+      .leftJoin(wordSenseCategories, eq(wordSenseCategories.categoryId, categories.id))
+      .where(where)
+      .groupBy(categories.id)
+      .orderBy(asc(categories.sortOrder), asc(categories.name), asc(categories.id))
+      .limit(params.pageSize)
+      .offset((params.page - 1) * params.pageSize),
+    database
+      .select({ total: count().mapWith(Number) })
+      .from(categories)
+      .where(where),
+    database
+      .select({ highestSortOrder: max(categories.sortOrder).mapWith(Number) })
+      .from(categories),
+  ]);
+
+  return {
+    categories: items,
+    nextSortOrder: (orderResult.highestSortOrder ?? -1) + 1,
+    page: params.page,
+    total: countResult.total,
+  };
 }
 
 // Public queries
@@ -145,14 +185,101 @@ export async function deleteCategory(id: number) {
   return category ?? null;
 }
 
-export async function reorderCategories(categoryIds: number[]) {
-  await getDatabase().transaction(async (transaction) => {
-    for (const [sortOrder, id] of categoryIds.entries()) {
-      await transaction.update(categories).set({ sortOrder }).where(eq(categories.id, id));
-    }
-  });
+export async function moveCategory(id: number, direction: -1 | 1) {
+  return getDatabase().transaction(async (transaction) => {
+    await transaction.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended('galexi:category-order', 0))`,
+    );
 
-  return listCategories();
+    const [current] = await transaction
+      .select({ id: categories.id, name: categories.name, sortOrder: categories.sortOrder })
+      .from(categories)
+      .where(eq(categories.id, id))
+      .limit(1)
+      .for('update');
+
+    if (!current) {
+      return false;
+    }
+
+    const beforeCurrent = or(
+      lt(categories.sortOrder, current.sortOrder),
+      and(eq(categories.sortOrder, current.sortOrder), lt(categories.name, current.name)),
+      and(
+        eq(categories.sortOrder, current.sortOrder),
+        eq(categories.name, current.name),
+        lt(categories.id, current.id),
+      ),
+    );
+    const afterCurrent = or(
+      gt(categories.sortOrder, current.sortOrder),
+      and(eq(categories.sortOrder, current.sortOrder), gt(categories.name, current.name)),
+      and(
+        eq(categories.sortOrder, current.sortOrder),
+        eq(categories.name, current.name),
+        gt(categories.id, current.id),
+      ),
+    );
+    const [target] = await transaction
+      .select({ id: categories.id, sortOrder: categories.sortOrder })
+      .from(categories)
+      .where(direction === -1 ? beforeCurrent : afterCurrent)
+      .orderBy(
+        direction === -1 ? desc(categories.sortOrder) : asc(categories.sortOrder),
+        direction === -1 ? desc(categories.name) : asc(categories.name),
+        direction === -1 ? desc(categories.id) : asc(categories.id),
+      )
+      .limit(1)
+      .for('update');
+
+    if (!target) {
+      return false;
+    }
+
+    if (current.sortOrder === target.sortOrder) {
+      await transaction.execute(sql`
+        with ranked as (
+          select
+            ${categories.id} as id,
+            (row_number() over (
+              order by ${categories.sortOrder}, ${categories.name}, ${categories.id}
+            ) - 1)::integer as sort_order
+          from ${categories}
+        ),
+        desired as (
+          select
+            id,
+            case
+              when id = ${current.id} then (
+                select sort_order from ranked where id = ${target.id}
+              )
+              when id = ${target.id} then (
+                select sort_order from ranked where id = ${current.id}
+              )
+              else sort_order
+            end as sort_order
+          from ranked
+        )
+        update ${categories}
+        set sort_order = desired.sort_order
+        from desired
+        where ${categories.id} = desired.id
+          and ${categories.sortOrder} is distinct from desired.sort_order
+      `);
+    } else {
+      await transaction
+        .update(categories)
+        .set({
+          sortOrder: sql<number>`case
+            when ${categories.id} = ${current.id} then ${target.sortOrder}
+            else ${current.sortOrder}
+          end`,
+        })
+        .where(inArray(categories.id, [current.id, target.id]));
+    }
+
+    return true;
+  });
 }
 
 export async function categoriesExist(categoryIds: number[]) {

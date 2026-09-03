@@ -2,12 +2,13 @@
 
 import { type FormEvent, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { BookOpenText, Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowUpDown, BookOpenText, Plus, Search, SlidersHorizontal } from 'lucide-react';
 
 import { FilterCombobox } from '@/components/filter-combobox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PART_OF_SPEECH_OPTIONS } from '@/constants/part-of-speech';
+import type { WordSort } from '@/features/words/word-list';
 import { cn } from '@/lib/utils';
 
 type WordManagerToolbarProps = {
@@ -15,9 +16,11 @@ type WordManagerToolbarProps = {
   categories: { id: number; name: string }[];
   categoryFilter: string;
   partOfSpeechFilter: string;
+  sort: WordSort;
   onSearch: (query: string) => void;
   onCategoryFilterChange: (value: string) => void;
   onPartOfSpeechFilterChange: (value: string) => void;
+  onSortChange: (value: WordSort) => void;
   onCreate: () => void;
 };
 
@@ -26,9 +29,11 @@ export function WordManagerToolbar({
   categories,
   categoryFilter,
   partOfSpeechFilter,
+  sort,
   onSearch,
   onCategoryFilterChange,
   onPartOfSpeechFilterChange,
+  onSortChange,
   onCreate,
 }: WordManagerToolbarProps) {
   const t = useTranslations();
@@ -43,6 +48,14 @@ export function WordManagerToolbar({
   );
   const partOfSpeechOptions = useMemo(
     () => [{ label: t('words.manager.allPartsOfSpeech'), value: '' }, ...PART_OF_SPEECH_OPTIONS],
+    [t],
+  );
+  const sortOptions = useMemo(
+    () => [
+      { label: t('words.manager.sortDefault'), value: 'default' },
+      { label: t('words.manager.sortWordAscending'), value: 'word-ascending' },
+      { label: t('words.manager.sortWordDescending'), value: 'word-descending' },
+    ],
     [t],
   );
   const activeFilterCount = Number(Boolean(categoryFilter)) + Number(Boolean(partOfSpeechFilter));
@@ -127,7 +140,7 @@ export function WordManagerToolbar({
       </form>
 
       {filterPanelOpen && (
-        <div className='grid animate-in gap-3 border-t border-border pt-4 duration-150 fade-in-0 slide-in-from-top-1 sm:grid-cols-2'>
+        <div className='grid animate-in gap-3 border-t border-border pt-4 duration-150 fade-in-0 slide-in-from-top-1 sm:grid-cols-3'>
           <FilterCombobox
             value={categoryFilter}
             ariaLabel={t('words.manager.categoryFilterLabel')}
@@ -143,6 +156,16 @@ export function WordManagerToolbar({
             searchPlaceholder={t('words.manager.partOfSpeechSearchPlaceholder')}
             noResultsLabel={t('words.manager.partOfSpeechNoResults')}
             onValueChange={onPartOfSpeechFilterChange}
+          />
+          <FilterCombobox
+            value={sort}
+            ariaLabel={t('words.manager.sortLabel')}
+            options={sortOptions}
+            searchable={false}
+            searchPlaceholder={t('words.manager.sortLabel')}
+            noResultsLabel={t('words.manager.sortLabel')}
+            startIcon={<ArrowUpDown aria-hidden='true' className='size-4' />}
+            onValueChange={(value) => onSortChange(value as WordSort)}
           />
         </div>
       )}
