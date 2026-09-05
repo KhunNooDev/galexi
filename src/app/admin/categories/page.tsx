@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 
+import { AdminManagerSkeleton } from '@/components/admin-loading-skeleton';
 import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
 import { IDENTITY_KIND } from '@/constants/identity';
@@ -15,7 +17,6 @@ export default async function ManageCategoriesPage() {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
   if (identity.kind !== IDENTITY_KIND.ADMIN) redirect(ROUTES.CATEGORIES);
-  const categoryPage = await listCategoryPage(DEFAULT_CATEGORY_LIST_PARAMS);
 
   return (
     <main className='relative min-h-svh overflow-x-clip bg-background pb-10'>
@@ -27,11 +28,21 @@ export default async function ManageCategoriesPage() {
       <div className='relative mx-auto max-w-7xl'>
         <PageHeader brand identity={identity} />
         <div className='px-4 py-8 sm:px-8 lg:py-10'>
-          <QueryProvider>
-            <CategoryManager initialPage={categoryPage} />
-          </QueryProvider>
+          <Suspense fallback={<AdminManagerSkeleton kind='categories' />}>
+            <CategoriesContent />
+          </Suspense>
         </div>
       </div>
     </main>
+  );
+}
+
+async function CategoriesContent() {
+  const categoryPage = await listCategoryPage(DEFAULT_CATEGORY_LIST_PARAMS);
+
+  return (
+    <QueryProvider>
+      <CategoryManager initialPage={categoryPage} />
+    </QueryProvider>
   );
 }

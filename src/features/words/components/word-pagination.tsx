@@ -36,6 +36,7 @@ function getVisiblePageNumbers(activePage: number, totalPages: number) {
 }
 
 type WordPaginationProps = {
+  pending?: boolean;
   kind?: 'words' | 'categories';
   activePage: number;
   totalPages: number;
@@ -48,6 +49,7 @@ type WordPaginationProps = {
 };
 
 export function WordPagination({
+  pending = false,
   kind = 'words',
   activePage,
   totalPages,
@@ -97,7 +99,7 @@ export function WordPagination({
           size='icon'
           className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
           aria-label={firstPageLabel}
-          disabled={activePage === 1}
+          disabled={pending || activePage === 1}
           onClick={() => onPageChange(1)}
         >
           <ChevronsLeft aria-hidden='true' className='size-4' />
@@ -108,7 +110,7 @@ export function WordPagination({
           size='icon'
           className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
           aria-label={previousPageLabel}
-          disabled={activePage === 1}
+          disabled={pending || activePage === 1}
           onClick={() => onPageChange(Math.max(1, activePage - 1))}
         >
           <ChevronLeft aria-hidden='true' className='size-4' />
@@ -132,6 +134,7 @@ export function WordPagination({
                 : t('categories.manager.goToPage', { page })
             }
             aria-current={page === activePage ? 'page' : undefined}
+            disabled={pending}
             onClick={() => onPageChange(page)}
           >
             {page}
@@ -143,7 +146,7 @@ export function WordPagination({
           size='icon'
           className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
           aria-label={nextPageLabel}
-          disabled={activePage === totalPages}
+          disabled={pending || activePage === totalPages}
           onClick={() => onPageChange(Math.min(totalPages, activePage + 1))}
         >
           <ChevronRight aria-hidden='true' className='size-4' />
@@ -154,7 +157,7 @@ export function WordPagination({
           size='icon'
           className='size-8 cursor-pointer rounded-xl border-border bg-surface sm:size-9 dark:bg-surface'
           aria-label={lastPageLabel}
-          disabled={activePage === totalPages}
+          disabled={pending || activePage === totalPages}
           onClick={() => onPageChange(totalPages)}
         >
           <ChevronsRight aria-hidden='true' className='size-4' />

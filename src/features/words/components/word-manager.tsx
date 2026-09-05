@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { FetchingContent } from '@/components/fetching-content';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { WORD_LIMITS } from '@/constants/word';
 import { DeleteWordDialog } from '@/features/words/components/delete-word-dialog';
@@ -293,6 +294,7 @@ export function WordManager({
 
         {page.total > 0 && (
           <WordPagination
+            pending={wordsQuery.isFetching}
             activePage={activePage}
             totalPages={totalPages}
             pageSize={pageSize}
@@ -307,7 +309,11 @@ export function WordManager({
           />
         )}
 
-        <div className='transition-opacity' aria-busy={wordsQuery.isFetching}>
+        <FetchingContent
+          fetching={wordsQuery.isFetching}
+          stale={wordsQuery.isPlaceholderData}
+          label={t('boundaries.adminUpdating')}
+        >
           <WordCollection
             words={words}
             isFiltering={Boolean(
@@ -321,7 +327,7 @@ export function WordManager({
               setWordToDelete(word);
             }}
           />
-        </div>
+        </FetchingContent>
       </section>
     </div>
   );

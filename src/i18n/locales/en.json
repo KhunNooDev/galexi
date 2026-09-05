@@ -6,6 +6,7 @@
   "boundaries": {
     "loading": "Loading Galexi...",
     "adminLoading": "Loading dictionary management...",
+    "adminUpdating": "Loading…",
     "categoriesLoading": "Loading vocabulary topics...",
     "categoryLoading": "Loading category vocabulary...",
     "homeLoading": "Loading home...",

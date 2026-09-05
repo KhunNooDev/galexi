@@ -18,6 +18,7 @@ import {
 
 import { AlertDialog } from '@/components/alert-dialog';
 import { Dialog } from '@/components/dialog';
+import { FetchingContent } from '@/components/fetching-content';
 import { createFormInputs, Form } from '@/components/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -265,6 +266,7 @@ export function CategoryManager({ initialPage }: { initialPage: AdminCategoryPag
       {page.total > 0 && (
         <div className='mt-4'>
           <WordPagination
+            pending={categoriesQuery.isFetching}
             kind='categories'
             activePage={activePage}
             totalPages={totalPages}
@@ -281,60 +283,67 @@ export function CategoryManager({ initialPage }: { initialPage: AdminCategoryPag
         </div>
       )}
 
-      {categories.length === 0 ? (
-        <p className='galexi-empty mt-4'>
-          {query ? t('categories.manager.noResults') : t('categories.manager.empty')}
-        </p>
-      ) : (
-        <ul
-          className={cn('mt-4 grid gap-4', view === 'grid' && 'lg:grid-cols-2')}
-          aria-busy={categoriesQuery.isFetching}
+      <div className='mt-4'>
+        <FetchingContent
+          fetching={categoriesQuery.isFetching}
+          stale={categoriesQuery.isPlaceholderData}
+          label={t('boundaries.adminUpdating')}
         >
-          {categories.map((category, index) => {
-            return (
-              <li
-                key={category.id}
-                className={cn(
-                  'group flex border border-border bg-surface shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8',
-                  view === 'grid'
-                    ? 'min-h-28 gap-3 rounded-3xl p-3 sm:p-4'
-                    : 'items-center gap-3 rounded-2xl px-3 py-2.5 sm:px-4',
-                )}
-              >
-                <span
-                  className={cn(
-                    'inline-flex shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-secondary-hover text-primary',
-                    view === 'grid' ? 'size-12 sm:size-14' : 'size-10 rounded-xl',
-                  )}
-                >
-                  <Tags aria-hidden='true' className={view === 'grid' ? 'size-6' : 'size-5'} />
-                </span>
-                <div className='min-w-0 flex-1'>
-                  <h2
+          {categories.length === 0 ? (
+            <p className='galexi-empty'>
+              {query ? t('categories.manager.noResults') : t('categories.manager.empty')}
+            </p>
+          ) : (
+            <ul className={cn('grid gap-4', view === 'grid' && 'lg:grid-cols-2')}>
+              {categories.map((category, index) => {
+                return (
+                  <li
+                    key={category.id}
                     className={cn(
-                      'font-semibold wrap-break-word text-surface-foreground',
-                      view === 'grid' ? 'text-lg' : 'truncate text-base',
+                      'group flex border border-border bg-surface shadow-[0_16px_45px_rgb(34_74_150/7%)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/8',
+                      view === 'grid'
+                        ? 'min-h-28 gap-3 rounded-3xl p-3 sm:p-4'
+                        : 'items-center gap-3 rounded-2xl px-3 py-2.5 sm:px-4',
                     )}
                   >
-                    {category.name}
-                  </h2>
-                  <p className='mt-0.5 truncate text-xs text-muted-foreground'>/{category.slug}</p>
-                </div>
-                <Badge
-                  variant='secondary'
-                  className={cn(
-                    'shrink-0 bg-primary/10 text-primary',
-                    view === 'grid' ? 'self-end px-2.5 py-1' : 'px-2 py-0.5',
-                  )}
-                >
-                  {t('categories.wordCount', { count: category.wordCount })}
-                </Badge>
-                {renderCategoryActions(category, index)}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                    <span
+                      className={cn(
+                        'inline-flex shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-secondary-hover text-primary',
+                        view === 'grid' ? 'size-12 sm:size-14' : 'size-10 rounded-xl',
+                      )}
+                    >
+                      <Tags aria-hidden='true' className={view === 'grid' ? 'size-6' : 'size-5'} />
+                    </span>
+                    <div className='min-w-0 flex-1'>
+                      <h2
+                        className={cn(
+                          'font-semibold wrap-break-word text-surface-foreground',
+                          view === 'grid' ? 'text-lg' : 'truncate text-base',
+                        )}
+                      >
+                        {category.name}
+                      </h2>
+                      <p className='mt-0.5 truncate text-xs text-muted-foreground'>
+                        /{category.slug}
+                      </p>
+                    </div>
+                    <Badge
+                      variant='secondary'
+                      className={cn(
+                        'shrink-0 bg-primary/10 text-primary',
+                        view === 'grid' ? 'self-end px-2.5 py-1' : 'px-2 py-0.5',
+                      )}
+                    >
+                      {t('categories.wordCount', { count: category.wordCount })}
+                    </Badge>
+                    {renderCategoryActions(category, index)}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </FetchingContent>
+      </div>
 
       <Dialog
         open={dialogOpen}

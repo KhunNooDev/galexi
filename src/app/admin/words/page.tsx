@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 
+import { AdminManagerSkeleton } from '@/components/admin-loading-skeleton';
 import { PageHeader } from '@/components/page-header';
 import { QueryProvider } from '@/components/query-provider';
 import { IDENTITY_KIND } from '@/constants/identity';
@@ -21,11 +23,6 @@ export default async function ManageWordsPage() {
     redirect(ROUTES.PUBLIC_WORDS);
   }
 
-  const [wordPage, categories] = await Promise.all([
-    listWords(DEFAULT_WORD_LIST_PARAMS),
-    listCategories(),
-  ]);
-
   return (
     <main className='relative min-h-svh overflow-x-clip bg-background pb-10'>
       <div className='pointer-events-none absolute inset-0 overflow-hidden'>
@@ -37,11 +34,24 @@ export default async function ManageWordsPage() {
         <PageHeader brand identity={identity} />
 
         <div className='px-4 py-8 sm:px-8 lg:py-10'>
-          <QueryProvider>
-            <WordManager initialPage={wordPage} categories={categories} />
-          </QueryProvider>
+          <Suspense fallback={<AdminManagerSkeleton kind='words' />}>
+            <WordsContent />
+          </Suspense>
         </div>
       </div>
     </main>
+  );
+}
+
+async function WordsContent() {
+  const [wordPage, categories] = await Promise.all([
+    listWords(DEFAULT_WORD_LIST_PARAMS),
+    listCategories(),
+  ]);
+
+  return (
+    <QueryProvider>
+      <WordManager initialPage={wordPage} categories={categories} />
+    </QueryProvider>
   );
 }
