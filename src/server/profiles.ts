@@ -15,19 +15,11 @@ const profileColumns = {
 
 type ProfileUpdateInput = Pick<Profile, 'avatarUrl' | 'displayName'>;
 
-export async function getOrCreateProfile(identity: PermanentIdentity) {
-  const { userId } = identity;
-  const database = getDatabase();
-
-  await database
-    .insert(profiles)
-    .values({ userId })
-    .onConflictDoNothing({ target: profiles.userId });
-
-  const [profile] = await database
+export async function getProfile(identity: PermanentIdentity) {
+  const [profile] = await getDatabase()
     .select(profileColumns)
     .from(profiles)
-    .where(eq(profiles.userId, userId))
+    .where(eq(profiles.userId, identity.userId))
     .limit(1);
 
   if (!profile) {
@@ -35,6 +27,17 @@ export async function getOrCreateProfile(identity: PermanentIdentity) {
   }
 
   return profile;
+}
+
+export async function ensureProfile(identity: PermanentIdentity) {
+  const { userId } = identity;
+
+  await getDatabase()
+    .insert(profiles)
+    .values({ userId })
+    .onConflictDoNothing({ target: profiles.userId });
+
+  return getProfile(identity);
 }
 
 export async function updateProfile(identity: PermanentIdentity, values: ProfileUpdateInput) {

@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { z } from 'zod';
 
 import { AUTH_PASSWORD_MIN_LENGTH } from '@/constants/auth';
+import type { PermanentIdentity } from '@/constants/identity';
 import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES, getSafeAuthReturnTo, ROUTES } from '@/constants/routes';
 import { hashLearningTransferToken } from '@/features/learning/account/account-transfer-token';
@@ -26,14 +27,16 @@ import {
   setAuthSessionPersistence,
 } from '@/lib/supabase/server';
 
-async function redirectAfterAuthentication(returnTo?: string | null): Promise<never> {
+async function redirectAfterAuthentication(
+  identity: PermanentIdentity,
+  returnTo?: string | null,
+): Promise<never> {
   const safeReturnTo = getSafeAuthReturnTo(returnTo);
 
   if (safeReturnTo) {
     return redirect(safeReturnTo);
   }
 
-  const identity = await getCurrentIdentity();
   return redirect(
     identity.kind === IDENTITY_KIND.ADMIN ? ROUTES.MANAGE_WORDS : ROUTES.PUBLIC_WORDS,
   );
@@ -127,18 +130,13 @@ export async function signIn(
   const { email, password, rememberMe } = result.data;
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) {
+  if (error || !data.user || data.user.is_anonymous) {
     return { error: t('auth.validation.incorrectCredentials') };
   }
 
   await setAuthSessionPersistence(rememberMe);
 
-  if (
-    transferToken &&
-    currentIdentity.kind === IDENTITY_KIND.GUEST &&
-    data.user &&
-    !data.user.is_anonymous
-  ) {
+  if (transferToken && currentIdentity.kind === IDENTITY_KIND.GUEST) {
     let transferCompleted = false;
 
     try {
@@ -167,7 +165,8 @@ export async function signIn(
     );
   }
 
-  return redirectAfterAuthentication(returnTo);
+  const identity = await establishPermanentAccount(data.user);
+  return redirectAfterAuthentication(identity, returnTo);
 }
 
 export async function signUp(
@@ -213,7 +212,12 @@ export async function signUp(
     return { success: t('auth.validation.checkEmail') };
   }
 
-  return redirectAfterAuthentication(returnTo);
+  if (!data.user || data.user.is_anonymous) {
+    return { error: t('auth.validation.accountCreationFailed') };
+  }
+
+  const identity = await establishPermanentAccount(data.user);
+  return redirectAfterAuthentication(identity, returnTo);
 }
 
 export async function signOut() {

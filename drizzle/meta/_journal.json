@@ -183,6 +183,13 @@
       "when": 1787842601032,
       "tag": "0025_unusual_nitro",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788452348662,
+      "tag": "0026_backfill_permanent_accounts",
+      "breakpoints": true
     }
   ]
 }

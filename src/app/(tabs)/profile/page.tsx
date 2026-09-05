@@ -8,7 +8,7 @@ import { ProfileForm } from '@/components/profile-form';
 import { IDENTITY_KIND } from '@/constants/identity';
 import { AUTH_ROUTES } from '@/constants/routes';
 import { getCurrentIdentity, getCurrentUser } from '@/lib/supabase/auth';
-import { getOrCreateProfile } from '@/server/profiles';
+import { getProfile } from '@/server/profiles';
 
 export default async function ProfilePage() {
   const identity = await getCurrentIdentity();
@@ -23,7 +23,7 @@ export default async function ProfilePage() {
     redirect(AUTH_ROUTES.SIGN_IN);
   }
 
-  const [t, profile] = await Promise.all([getTranslations(), getOrCreateProfile(identity)]);
+  const [t, profile] = await Promise.all([getTranslations(), getProfile(identity)]);
   const notAvailable = t('profile.notAvailable');
   const email = user.email ?? notAvailable;
   const displayName = profile.displayName.trim();

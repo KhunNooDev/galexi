@@ -100,7 +100,8 @@ the learner verifies the email before setting a password. The callback URL must 
 Galexi resolves every request to one application identity: `public`, `guest`, `member`, or `admin`.
 Public visitors have no Supabase session. Guests use Supabase Anonymous Sign-In and have an Auth user
 ID, but they are not members and do not receive profile or role rows. Permanent accounts use
-`user_roles` as the authorization source.
+`user_roles` as the authorization source. Role and profile rows are provisioned when an Auth account
+becomes permanent; normal page requests only read them.
 
 `profiles` describes a permanent user through application-facing fields such as display name and
 avatar. `user_roles` separately controls what that user is allowed to do through the `member` and

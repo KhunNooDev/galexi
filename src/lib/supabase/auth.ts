@@ -4,9 +4,9 @@ import { cache } from 'react';
 
 import type { AppIdentity, AuthenticatedAppIdentity, GuestIdentity } from '@/constants/identity';
 import { IDENTITY_KIND } from '@/constants/identity';
-import { USER_ROLE } from '@/constants/role';
+import { resolveAppIdentity } from '@/lib/supabase/resolve-identity';
 import { createClient } from '@/lib/supabase/server';
-import { getOrCreatePermanentUserRole } from '@/server/roles';
+import { getUserRole } from '@/server/roles';
 
 export const getCurrentUser = cache(async function getCurrentUser() {
   const supabase = await createClient();
@@ -21,26 +21,7 @@ export const getCurrentUser = cache(async function getCurrentUser() {
 
 export const getCurrentIdentity = cache(async function getCurrentIdentity(): Promise<AppIdentity> {
   const user = await getCurrentUser();
-
-  if (!user) {
-    return { email: null, kind: IDENTITY_KIND.PUBLIC, userId: null };
-  }
-
-  if (user.is_anonymous) {
-    return {
-      email: null,
-      kind: IDENTITY_KIND.GUEST,
-      userId: user.id,
-    };
-  }
-
-  const role = await getOrCreatePermanentUserRole(user.id);
-
-  return {
-    email: user.email ?? null,
-    kind: role === USER_ROLE.ADMIN ? IDENTITY_KIND.ADMIN : IDENTITY_KIND.MEMBER,
-    userId: user.id,
-  };
+  return resolveAppIdentity(user, getUserRole);
 });
 
 /**

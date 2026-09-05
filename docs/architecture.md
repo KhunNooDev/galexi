@@ -125,7 +125,7 @@ descriptive profile data and authorization state in separate tables:
 | Member   | Permanent user has the `member` role in `user_roles` | Member account and profile           |
 | Admin    | Permanent user has the `admin` role in `user_roles`  | Dictionary management                |
 
-The server-only identity resolver checks the anonymous Auth state before reading or creating a role.
+The server-only identity resolver checks the anonymous Auth state before reading the existing role.
 This prevents an anonymous user from being converted into an application member as a side effect of
 rendering a header or checking a route. Guest sessions are created only by an explicit learning entry
 action. Existing guest and permanent sessions are reused, and a permanent session is never replaced
@@ -141,14 +141,11 @@ database policy. Profile fields, Auth email addresses, user metadata, and client
 never authorization sources. Profile mutations accept only `display_name` and `avatar_url`; role
 changes require a separate future admin-only workflow.
 
-Profiles are created lazily on the server for permanent accounts and use the Auth user ID as their
-primary key. Permanent users can read and update only their own profile through row-level security.
-Deleting an Auth user cascades to the related profile and role records.
-
-Role and profile lifecycles are independent. A missing role record for a permanent account is created
-as `member` without reading or changing `profiles`; a missing profile is created with empty
-application fields without reading or changing `user_roles`. Anonymous accounts create neither.
-Pages that need both load them independently and combine the results only for presentation.
+Role and profile rows are provisioned idempotently when an Auth account becomes permanent. Normal
+identity and profile page requests only read those rows. A data migration backfills both rows for
+permanent accounts created before this lifecycle boundary; anonymous accounts receive neither.
+Permanent users can read and update only their own profile through row-level security. Deleting an
+Auth user cascades to the related profile and role records.
 
 Row-level security mirrors this model: public and authenticated users can select published rows,
 while only permanent authenticated users may select their own role or select and update their own

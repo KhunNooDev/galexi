@@ -1,0 +1,1456 @@
+{
+  "id": "e61f7731-46af-40c8-bd81-093fb0a4dd65",
+  "prevId": "152d1f8f-1a39-4d1f-8615-1761ae3830dd",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.categories": {
+      "name": "categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "categories_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "categories_slug_unique": {
+          "name": "categories_slug_unique",
+          "columns": [
+            {
+              "expression": "lower(\"slug\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "categories_sort_order_idx": {
+          "name": "categories_sort_order_idx",
+          "columns": [
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Admins can manage categories": {
+          "name": "Admins can manage categories",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)",
+          "withCheck": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)"
+        },
+        "Public can view categories for published words": {
+          "name": "Public can view categories for published words",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["anon", "authenticated"],
+          "using": "exists (select 1 from word_sense_categories relationship join word_senses sense on sense.id = relationship.word_sense_id where relationship.category_id = \"categories\".\"id\" and sense.is_public = true)"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.learning_account_transfers": {
+      "name": "learning_account_transfers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_user_id": {
+          "name": "source_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "destination_user_id": {
+          "name": "destination_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "learning_account_transfer_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "consumed_at": {
+          "name": "consumed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "learning_account_transfers_token_hash_uidx": {
+          "name": "learning_account_transfers_token_hash_uidx",
+          "columns": [
+            {
+              "expression": "token_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "learning_account_transfers_source_status_idx": {
+          "name": "learning_account_transfers_source_status_idx",
+          "columns": [
+            {
+              "expression": "source_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "learning_account_transfers_status_expires_idx": {
+          "name": "learning_account_transfers_status_expires_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "learning_account_transfers_destination_idx": {
+          "name": "learning_account_transfers_destination_idx",
+          "columns": [
+            {
+              "expression": "destination_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "learning_account_transfers_source_user_id_users_id_fk": {
+          "name": "learning_account_transfers_source_user_id_users_id_fk",
+          "tableFrom": "learning_account_transfers",
+          "columnsFrom": ["source_user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "learning_account_transfers_destination_user_id_users_id_fk": {
+          "name": "learning_account_transfers_destination_user_id_users_id_fk",
+          "tableFrom": "learning_account_transfers",
+          "columnsFrom": ["destination_user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "learning_account_transfers_expiry_check": {
+          "name": "learning_account_transfers_expiry_check",
+          "value": "\"learning_account_transfers\".\"expires_at\" > \"learning_account_transfers\".\"created_at\""
+        },
+        "learning_account_transfers_consumption_check": {
+          "name": "learning_account_transfers_consumption_check",
+          "value": "(\"learning_account_transfers\".\"status\" = 'consumed'::learning_account_transfer_status and \"learning_account_transfers\".\"consumed_at\" is not null and \"learning_account_transfers\".\"destination_user_id\" is not null) or (\"learning_account_transfers\".\"status\" <> 'consumed'::learning_account_transfer_status and \"learning_account_transfers\".\"consumed_at\" is null)"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.learning_profiles": {
+      "name": "learning_profiles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "goal": {
+          "name": "goal",
+          "type": "learning_goal",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "level": {
+          "name": "level",
+          "type": "learning_level",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "onboarding_completed_at": {
+          "name": "onboarding_completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "learning_profiles_user_id_users_id_fk": {
+          "name": "learning_profiles_user_id_users_id_fk",
+          "tableFrom": "learning_profiles",
+          "columnsFrom": ["user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Users can view their own learning profile": {
+          "name": "Users can view their own learning profile",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"learning_profiles\".\"user_id\""
+        },
+        "Users can create their own learning profile": {
+          "name": "Users can create their own learning profile",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "(select auth.uid()) = \"learning_profiles\".\"user_id\""
+        },
+        "Users can update their own learning profile": {
+          "name": "Users can update their own learning profile",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"learning_profiles\".\"user_id\"",
+          "withCheck": "(select auth.uid()) = \"learning_profiles\".\"user_id\""
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.learning_sessions": {
+      "name": "learning_sessions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lesson_key": {
+          "name": "lesson_key",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "learning_session_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'in_progress'"
+        },
+        "current_step": {
+          "name": "current_step",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "state": {
+          "name": "state",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "learning_sessions_user_status_updated_idx": {
+          "name": "learning_sessions_user_status_updated_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "learning_sessions_user_started_idx": {
+          "name": "learning_sessions_user_started_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "learning_sessions_user_id_users_id_fk": {
+          "name": "learning_sessions_user_id_users_id_fk",
+          "tableFrom": "learning_sessions",
+          "columnsFrom": ["user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Users can view their own learning sessions": {
+          "name": "Users can view their own learning sessions",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"learning_sessions\".\"user_id\""
+        },
+        "Users can create their own learning sessions": {
+          "name": "Users can create their own learning sessions",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "(select auth.uid()) = \"learning_sessions\".\"user_id\""
+        },
+        "Users can update their own learning sessions": {
+          "name": "Users can update their own learning sessions",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"learning_sessions\".\"user_id\"",
+          "withCheck": "(select auth.uid()) = \"learning_sessions\".\"user_id\""
+        }
+      },
+      "checkConstraints": {
+        "learning_sessions_lesson_key_check": {
+          "name": "learning_sessions_lesson_key_check",
+          "value": "length(btrim(\"learning_sessions\".\"lesson_key\")) > 0"
+        },
+        "learning_sessions_current_step_check": {
+          "name": "learning_sessions_current_step_check",
+          "value": "\"learning_sessions\".\"current_step\" >= 0"
+        },
+        "learning_sessions_score_check": {
+          "name": "learning_sessions_score_check",
+          "value": "\"learning_sessions\".\"score\" is null or (\"learning_sessions\".\"score\" >= 0 and \"learning_sessions\".\"score\" <= 100)"
+        },
+        "learning_sessions_completion_check": {
+          "name": "learning_sessions_completion_check",
+          "value": "(\"learning_sessions\".\"status\" = 'completed' and \"learning_sessions\".\"completed_at\" is not null) or (\"learning_sessions\".\"status\" <> 'completed' and \"learning_sessions\".\"completed_at\" is null)"
+        },
+        "learning_sessions_state_size_check": {
+          "name": "learning_sessions_state_size_check",
+          "value": "pg_column_size(\"learning_sessions\".\"state\") <= 32768"
+        },
+        "learning_sessions_state_type_check": {
+          "name": "learning_sessions_state_type_check",
+          "value": "jsonb_typeof(\"learning_sessions\".\"state\") = 'object'"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.profiles": {
+      "name": "profiles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "varchar(2048)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "profiles_user_id_users_id_fk": {
+          "name": "profiles_user_id_users_id_fk",
+          "tableFrom": "profiles",
+          "columnsFrom": ["user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Users can view their own profile": {
+          "name": "Users can view their own profile",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"profiles\".\"user_id\" and (((select auth.jwt()) ->> 'is_anonymous')::boolean) is false"
+        },
+        "Users can update their own profile": {
+          "name": "Users can update their own profile",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"profiles\".\"user_id\" and (((select auth.jwt()) ->> 'is_anonymous')::boolean) is false",
+          "withCheck": "(select auth.uid()) = \"profiles\".\"user_id\" and (((select auth.jwt()) ->> 'is_anonymous')::boolean) is false"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.user_roles": {
+      "name": "user_roles",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "app_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_roles_user_id_users_id_fk": {
+          "name": "user_roles_user_id_users_id_fk",
+          "tableFrom": "user_roles",
+          "columnsFrom": ["user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Users can view their own role": {
+          "name": "Users can view their own role",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"user_roles\".\"user_id\" and (((select auth.jwt()) ->> 'is_anonymous')::boolean) is false"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.user_word_progress": {
+      "name": "user_word_progress",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "word_sense_id": {
+          "name": "word_sense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seen_count": {
+          "name": "seen_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "correct_count": {
+          "name": "correct_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "incorrect_count": {
+          "name": "incorrect_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "mastery": {
+          "name": "mastery",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "user_word_progress_word_sense_id_idx": {
+          "name": "user_word_progress_word_sense_id_idx",
+          "columns": [
+            {
+              "expression": "word_sense_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "user_word_progress_user_last_seen_idx": {
+          "name": "user_word_progress_user_last_seen_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_seen_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "user_word_progress_user_id_users_id_fk": {
+          "name": "user_word_progress_user_id_users_id_fk",
+          "tableFrom": "user_word_progress",
+          "columnsFrom": ["user_id"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "user_word_progress_word_sense_id_word_senses_id_fk": {
+          "name": "user_word_progress_word_sense_id_word_senses_id_fk",
+          "tableFrom": "user_word_progress",
+          "columnsFrom": ["word_sense_id"],
+          "tableTo": "word_senses",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "user_word_progress_user_id_word_sense_id_pk": {
+          "name": "user_word_progress_user_id_word_sense_id_pk",
+          "columns": ["user_id", "word_sense_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "Users can view their own word progress": {
+          "name": "Users can view their own word progress",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"user_word_progress\".\"user_id\" and exists (\n  select 1\n  from \"word_senses\"\n  where \"word_senses\".\"id\" = \"user_word_progress\".\"word_sense_id\"\n    and (\n      \"word_senses\".\"is_public\" = true\n      or exists (\n        select 1\n        from \"user_roles\"\n        where \"user_roles\".\"user_id\" = (select auth.uid())\n          and \"user_roles\".\"role\" = 'admin'::app_role\n      )\n    )\n)"
+        },
+        "Users can create their own word progress": {
+          "name": "Users can create their own word progress",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "(select auth.uid()) = \"user_word_progress\".\"user_id\" and exists (\n  select 1\n  from \"word_senses\"\n  where \"word_senses\".\"id\" = \"user_word_progress\".\"word_sense_id\"\n    and (\n      \"word_senses\".\"is_public\" = true\n      or exists (\n        select 1\n        from \"user_roles\"\n        where \"user_roles\".\"user_id\" = (select auth.uid())\n          and \"user_roles\".\"role\" = 'admin'::app_role\n      )\n    )\n)"
+        },
+        "Users can update their own word progress": {
+          "name": "Users can update their own word progress",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "(select auth.uid()) = \"user_word_progress\".\"user_id\" and exists (\n  select 1\n  from \"word_senses\"\n  where \"word_senses\".\"id\" = \"user_word_progress\".\"word_sense_id\"\n    and (\n      \"word_senses\".\"is_public\" = true\n      or exists (\n        select 1\n        from \"user_roles\"\n        where \"user_roles\".\"user_id\" = (select auth.uid())\n          and \"user_roles\".\"role\" = 'admin'::app_role\n      )\n    )\n)",
+          "withCheck": "(select auth.uid()) = \"user_word_progress\".\"user_id\" and exists (\n  select 1\n  from \"word_senses\"\n  where \"word_senses\".\"id\" = \"user_word_progress\".\"word_sense_id\"\n    and (\n      \"word_senses\".\"is_public\" = true\n      or exists (\n        select 1\n        from \"user_roles\"\n        where \"user_roles\".\"user_id\" = (select auth.uid())\n          and \"user_roles\".\"role\" = 'admin'::app_role\n      )\n    )\n)"
+        }
+      },
+      "checkConstraints": {
+        "user_word_progress_seen_count_check": {
+          "name": "user_word_progress_seen_count_check",
+          "value": "\"user_word_progress\".\"seen_count\" >= 0"
+        },
+        "user_word_progress_correct_count_check": {
+          "name": "user_word_progress_correct_count_check",
+          "value": "\"user_word_progress\".\"correct_count\" >= 0"
+        },
+        "user_word_progress_incorrect_count_check": {
+          "name": "user_word_progress_incorrect_count_check",
+          "value": "\"user_word_progress\".\"incorrect_count\" >= 0"
+        },
+        "user_word_progress_mastery_check": {
+          "name": "user_word_progress_mastery_check",
+          "value": "\"user_word_progress\".\"mastery\" >= 0 and \"user_word_progress\".\"mastery\" <= 100"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.word_sense_categories": {
+      "name": "word_sense_categories",
+      "schema": "",
+      "columns": {
+        "word_sense_id": {
+          "name": "word_sense_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "word_sense_categories_category_id_idx": {
+          "name": "word_sense_categories_category_id_idx",
+          "columns": [
+            {
+              "expression": "category_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "word_sense_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "word_sense_categories_word_sense_id_word_senses_id_fk": {
+          "name": "word_sense_categories_word_sense_id_word_senses_id_fk",
+          "tableFrom": "word_sense_categories",
+          "columnsFrom": ["word_sense_id"],
+          "tableTo": "word_senses",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "word_sense_categories_category_id_categories_id_fk": {
+          "name": "word_sense_categories_category_id_categories_id_fk",
+          "tableFrom": "word_sense_categories",
+          "columnsFrom": ["category_id"],
+          "tableTo": "categories",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {
+        "word_sense_categories_word_sense_id_category_id_pk": {
+          "name": "word_sense_categories_word_sense_id_category_id_pk",
+          "columns": ["word_sense_id", "category_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {
+        "Admins can manage word sense categories": {
+          "name": "Admins can manage word sense categories",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)",
+          "withCheck": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)"
+        },
+        "Public can view categories for published word senses": {
+          "name": "Public can view categories for published word senses",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["anon", "authenticated"],
+          "using": "exists (select 1 from \"word_senses\" where \"word_senses\".\"id\" = \"word_sense_categories\".\"word_sense_id\" and \"word_senses\".\"is_public\" = true)"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.word_senses": {
+      "name": "word_senses",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "word_senses_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "word_id": {
+          "name": "word_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pronunciation_ipa": {
+          "name": "pronunciation_ipa",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "pronunciation_thai": {
+          "name": "pronunciation_thai",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "part_of_speech": {
+          "name": "part_of_speech",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "sense_order": {
+          "name": "sense_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "meanings_th": {
+          "name": "meanings_th",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "ARRAY[]::text[]"
+        },
+        "example_sentence": {
+          "name": "example_sentence",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "example_sentence_meaning_th": {
+          "name": "example_sentence_meaning_th",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "is_public": {
+          "name": "is_public",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "word_senses_word_id_idx": {
+          "name": "word_senses_word_id_idx",
+          "columns": [
+            {
+              "expression": "word_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "word_senses_created_at_idx": {
+          "name": "word_senses_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "word_senses_created_by_idx": {
+          "name": "word_senses_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "word_senses_updated_by_idx": {
+          "name": "word_senses_updated_by_idx",
+          "columns": [
+            {
+              "expression": "updated_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "word_senses_public_word_idx": {
+          "name": "word_senses_public_word_idx",
+          "columns": [
+            {
+              "expression": "word_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "part_of_speech",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sense_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "where": "\"word_senses\".\"is_public\" = true",
+          "concurrently": false
+        },
+        "word_senses_word_part_order_unique": {
+          "name": "word_senses_word_part_order_unique",
+          "columns": [
+            {
+              "expression": "word_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"part_of_speech\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sense_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "word_senses_word_id_words_id_fk": {
+          "name": "word_senses_word_id_words_id_fk",
+          "tableFrom": "word_senses",
+          "columnsFrom": ["word_id"],
+          "tableTo": "words",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "word_senses_created_by_users_id_fk": {
+          "name": "word_senses_created_by_users_id_fk",
+          "tableFrom": "word_senses",
+          "columnsFrom": ["created_by"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "word_senses_updated_by_users_id_fk": {
+          "name": "word_senses_updated_by_users_id_fk",
+          "tableFrom": "word_senses",
+          "columnsFrom": ["updated_by"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Admins can manage word senses": {
+          "name": "Admins can manage word senses",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)",
+          "withCheck": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)"
+        },
+        "Public can view published word senses": {
+          "name": "Public can view published word senses",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["anon", "authenticated"],
+          "using": "\"word_senses\".\"is_public\" = true"
+        }
+      },
+      "checkConstraints": {
+        "word_senses_sense_order_check": {
+          "name": "word_senses_sense_order_check",
+          "value": "\"word_senses\".\"sense_order\" > 0"
+        }
+      },
+      "isRLSEnabled": true
+    },
+    "public.words": {
+      "name": "words",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "identity": {
+            "name": "words_id_seq",
+            "increment": "1",
+            "minValue": "1",
+            "maxValue": "2147483647",
+            "startWith": "1",
+            "cache": "1",
+            "cycle": false,
+            "schema": "public",
+            "type": "always"
+          }
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "word": {
+          "name": "word",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "words_created_at_idx": {
+          "name": "words_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "words_created_by_idx": {
+          "name": "words_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "words_updated_by_idx": {
+          "name": "words_updated_by_idx",
+          "columns": [
+            {
+              "expression": "updated_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        },
+        "words_word_unique": {
+          "name": "words_word_unique",
+          "columns": [
+            {
+              "expression": "lower(\"word\")",
+              "isExpression": true,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {
+        "words_created_by_users_id_fk": {
+          "name": "words_created_by_users_id_fk",
+          "tableFrom": "words",
+          "columnsFrom": ["created_by"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        },
+        "words_updated_by_users_id_fk": {
+          "name": "words_updated_by_users_id_fk",
+          "tableFrom": "words",
+          "columnsFrom": ["updated_by"],
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "set null"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "Admins can manage words": {
+          "name": "Admins can manage words",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)",
+          "withCheck": "exists (select 1 from \"user_roles\" where \"user_roles\".\"user_id\" = (select auth.uid()) and \"user_roles\".\"role\" = 'admin'::app_role)"
+        },
+        "Public can view words with published senses": {
+          "name": "Public can view words with published senses",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["anon", "authenticated"],
+          "using": "exists (select 1 from word_senses where word_senses.word_id = \"words\".\"id\" and word_senses.is_public = true)"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "public.app_role": {
+      "name": "app_role",
+      "schema": "public",
+      "values": ["member", "admin"]
+    },
+    "public.learning_account_transfer_status": {
+      "name": "learning_account_transfer_status",
+      "schema": "public",
+      "values": ["pending", "consumed", "expired"]
+    },
+    "public.learning_goal": {
+      "name": "learning_goal",
+      "schema": "public",
+      "values": ["daily_conversation", "travel", "work", "school_exam"]
+    },
+    "public.learning_level": {
+      "name": "learning_level",
+      "schema": "public",
+      "values": ["starter", "beginner", "intermediate", "advanced"]
+    },
+    "public.learning_session_status": {
+      "name": "learning_session_status",
+      "schema": "public",
+      "values": ["in_progress", "completed", "abandoned"]
+    }
+  },
+  "schemas": {},
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
