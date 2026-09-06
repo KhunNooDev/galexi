@@ -151,16 +151,25 @@ export default async function LearningHomePage({
                   </p>
                 </div>
               </div>
-              <Button asChild className='rounded-full' variant='outline'>
-                <Link
-                  href={getLessonResultRoute(
-                    home.recentLesson.lessonKey,
-                    home.recentLesson.sessionId,
-                  )}
-                >
-                  {t('viewResult')}
-                </Link>
-              </Button>
+              <div className='flex flex-wrap gap-3'>
+                <Button asChild className='rounded-full'>
+                  <Link
+                    href={`${getLessonResultRoute(home.recentLesson.lessonKey, home.recentLesson.sessionId)}#review`}
+                  >
+                    {t('reviewVocabulary')}
+                  </Link>
+                </Button>
+                <Button asChild className='rounded-full' variant='outline'>
+                  <Link
+                    href={getLessonResultRoute(
+                      home.recentLesson.lessonKey,
+                      home.recentLesson.sessionId,
+                    )}
+                  >
+                    {t('viewResult')}
+                  </Link>
+                </Button>
+              </div>
             </section>
           )}
 

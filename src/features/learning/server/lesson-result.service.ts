@@ -74,7 +74,7 @@ export async function completeAndGetLessonResult(lesson: LessonDefinition, sessi
     const state = normalizeLessonSessionState(session.state, lesson.wordSenseIds);
 
     if (session.status === LEARNING_SESSION_STATUS.COMPLETED && state.result) {
-      return toLessonResult(state.result);
+      return toLessonResult(state.result, state.practice.answers);
     }
 
     if (session.status === LEARNING_SESSION_STATUS.COMPLETED) {
@@ -129,15 +129,19 @@ export async function completeAndGetLessonResult(lesson: LessonDefinition, sessi
       throw new Error('Unable to complete lesson session');
     }
 
-    return toLessonResult(snapshot);
+    return toLessonResult(snapshot, state.practice.answers);
   });
 }
 
 function toLessonResult(
   snapshot: NonNullable<ReturnType<typeof normalizeLessonSessionState>['result']>,
+  answers: ReturnType<typeof normalizeLessonSessionState>['practice']['answers'],
 ) {
   return {
     ...snapshot,
+    missedWordSenseIds: answers
+      .filter((answer) => !answer.isCorrect)
+      .map((answer) => answer.wordSenseId),
     words: snapshot.mastery.map((word) => ({
       id: word.wordSenseId,
       label: getMasteryLabel(word.value),

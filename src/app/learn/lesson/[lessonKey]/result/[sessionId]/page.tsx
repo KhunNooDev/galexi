@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { IDENTITY_KIND } from '@/constants/identity';
 import { ROUTES } from '@/constants/routes';
+import { LessonReview } from '@/features/learning/components/lesson-review';
 import { lessonResultParamsSchema } from '@/features/learning/lesson.schema';
 import { getLessonDefinition } from '@/features/learning/lessons/lesson-catalog';
 import { completeAndGetLessonResult } from '@/features/learning/server/lesson-result.service';
@@ -133,6 +134,12 @@ export default async function LessonResultPage({
                   ))}
                 </ul>
               </section>
+
+              <LessonReview
+                key={sessionId}
+                words={result.words}
+                missedWordSenseIds={result.missedWordSenseIds}
+              />
 
               <div className='border-t border-border pt-6'>
                 <Button asChild className='h-12 w-full rounded-full sm:w-auto sm:px-7'>

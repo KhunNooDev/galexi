@@ -45,15 +45,15 @@ export async function AuthPageShell({ children }: AuthPageShellProps) {
         </div>
       </header>
 
-      <div className='mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-7xl items-center gap-10 px-4 py-10 sm:px-8 sm:py-14 lg:grid-cols-[minmax(0,1fr)_minmax(25rem,31rem)] lg:gap-16 lg:py-10'>
+      <div className='mx-auto grid min-h-[calc(100svh-4rem)] w-full max-w-7xl content-start items-start gap-5 px-4 py-6 sm:gap-10 sm:px-8 sm:py-14 lg:grid-cols-[minmax(0,1fr)_minmax(25rem,31rem)] lg:content-center lg:items-center lg:gap-16 lg:py-10'>
         <section className='mx-auto max-w-2xl text-center lg:mx-0 lg:text-left'>
-          <p className='text-xs font-semibold tracking-[0.24em] text-primary uppercase sm:text-sm'>
+          <p className='hidden text-xs font-semibold tracking-[0.24em] text-primary uppercase sm:block sm:text-sm'>
             {t('auth.heroEyebrow')}
           </p>
-          <h1 className='mt-4 text-4xl leading-tight font-semibold tracking-tight text-foreground sm:text-5xl'>
+          <h1 className='mt-4 hidden text-4xl leading-tight font-semibold tracking-tight text-foreground sm:block sm:text-5xl'>
             {t('auth.heroTitle')}
           </h1>
-          <p className='mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg lg:mx-0'>
+          <p className='mx-auto max-w-xl text-sm leading-6 text-muted-foreground sm:mt-5 sm:text-lg sm:leading-7 lg:mx-0'>
             {t('auth.heroDescription')}
           </p>
 

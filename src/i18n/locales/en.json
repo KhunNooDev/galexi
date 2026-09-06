@@ -1,7 +1,7 @@
 {
   "metadata": {
     "title": "Galexi",
-    "description": "An admin-managed global dictionary with public vocabulary flashcards."
+    "description": "Learn English vocabulary with Thai meanings, pronunciation, and short practice activities."
   },
   "boundaries": {
     "loading": "Loading Galexi...",
@@ -32,21 +32,30 @@
     "brand": "Galexi",
     "eyebrow": "Your vocabulary universe",
     "heading": "Keep new words in orbit.",
-    "description": "Study a shared dictionary of pronunciations, meanings, and examples maintained by administrators.",
+    "description": "Build your English vocabulary with Thai meanings, pronunciation, and short lessons you can fit into your day.",
     "startLearning": "Start learning",
     "noAccountRequired": "No account required",
-    "openWords": "Open words",
+    "openWords": "Look up a word",
     "browseCategories": "Browse topics",
     "profile": "Profile",
-    "secureTitle": "Role-protected editing",
-    "secureDescription": "Administrators maintain the dictionary while every learner can study published words.",
-    "wordsTitle": "Shared vocabulary",
-    "wordsDescription": "Study pronunciations, Thai meanings, example sentences, and useful image links.",
-    "languageTitle": "Ready to translate",
-    "languageDescription": "Built with internationalization from the start, with English enabled today.",
+    "secureTitle": "Practice a little each day",
+    "secureDescription": "Learn a few words, check what you remember, and use them in a guided conversation.",
+    "wordsTitle": "Find the word you need",
+    "wordsDescription": "Search in English or Thai and explore meanings, pronunciation, and example sentences.",
+    "languageTitle": "Learn with Thai support",
+    "languageDescription": "Connect English words to Thai meanings and pronunciation guides, then test yourself when you feel ready.",
     "themeToggle": "Toggle light and dark mode"
   },
   "learning": {
+    "review": {
+      "title": "Keep practicing",
+      "description": "Retry missed words or practice all lesson vocabulary. Review scores last for this visit; your saved lesson result and mastery stay unchanged.",
+      "missed": "Review missed words",
+      "all": "Practice all words",
+      "back": "Back to review options",
+      "complete": "Review complete: {correct} of {total} correct",
+      "again": "Practice again"
+    },
     "back": "Back",
     "backHome": "Back home",
     "retry": "Try again",
@@ -132,7 +141,8 @@
       "setupTitle": "Set up your learning path",
       "completeEyebrow": "Available lessons complete",
       "allCompleteTitle": "You are caught up",
-      "allCompleteDescription": "You have completed every lesson currently available. Your results are ready whenever you want to review them.",
+      "allCompleteDescription": "You have completed every lesson currently available. Keep your vocabulary fresh with a review below.",
+      "reviewVocabulary": "Review vocabulary",
       "setupDescription": "Complete your learning preferences before starting your lesson.",
       "lessonDescription": "Your lesson progress is saved. Continue from the exact activity you reached.",
       "resultDescription": "Your activities are complete. Open the result to finish this lesson.",
@@ -217,6 +227,7 @@
       "eyebrow": "Lesson 1",
       "title": "Learning momentum",
       "description": "Build a useful set of words for learning, growth, and everyday goals.",
+      "backToLearning": "Back to learning",
       "learnPhase": "Learn",
       "progress": "Word {current} of {total}",
       "progressLabel": "Lesson progress",
@@ -283,7 +294,7 @@
             "momentumMethod": {
               "message": "That sounds good. What will help you keep going?",
               "responses": {
-                "reliablePractice": "Reliable practice is essential.",
+                "reliablePractice": "A reliable study partner is essential for me.",
                 "accomplishGoal": "I will accomplish one small goal today.",
                 "improveDaily": "I want to improve a little every day."
               }
@@ -292,8 +303,8 @@
               "message": "You are nearly there. How do you feel about continuing?",
               "responses": {
                 "curiousReady": "I am curious and ready to continue.",
-                "opportunityImportant": "This opportunity feels essential.",
-                "accomplishStep": "I can accomplish this step."
+                "opportunityImportant": "I am excited about this opportunity to practice essential skills.",
+                "accomplishStep": "I feel ready to accomplish my next goal."
               }
             }
           }
@@ -328,9 +339,9 @@
   },
   "auth": {
     "signInTitle": "Welcome back",
-    "signInDescription": "Sign in to access Galexi vocabulary.",
+    "signInDescription": "Sign in to save your progress and continue learning on any device.",
     "signUpTitle": "Create an account",
-    "signUpDescription": "Create an account to study shared vocabulary.",
+    "signUpDescription": "Create an account to save your progress and continue learning on any device.",
     "email": "Email",
     "emailPlaceholder": "you@example.com",
     "password": "Password",
@@ -340,6 +351,8 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "signOut": "Sign out",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
     "needAccount": "Need an account?",
     "haveAccount": "Already have an account?",
     "backHome": "Back home",
@@ -350,7 +363,11 @@
     "rememberMeHint": "Keep me signed in after I close the browser.",
     "heroEyebrow": "Your vocabulary universe",
     "heroTitle": "Your words. Your progress. One secure place.",
-    "heroDescription": "Sign in to keep your learning journey in sync and continue from any device.",
+    "heroDescription": "Save your progress and continue learning on any device.",
+    "legalPrefix": "By creating an account, you agree to the",
+    "legalJoin": "and acknowledge the",
+    "terms": "Terms of Use",
+    "privacy": "Privacy Notice",
     "benefits": {
       "continue": "Continue exactly where you left off",
       "sync": "Keep your learning progress in sync",
@@ -366,6 +383,30 @@
       "transferUnavailable": "Your progress-saving session expired. Return to Save my progress and try again.",
       "accountCreationFailed": "The account could not be created.",
       "checkEmail": "Check your email to confirm your account."
+    }
+  },
+  "legal": {
+    "backHome": "Back home",
+    "lastUpdated": "Last updated September 6, 2026",
+    "terms": {
+      "title": "Terms of Use",
+      "intro": "These terms describe how you may use Galexi for vocabulary learning.",
+      "accountTitle": "Your account",
+      "accountBody": "Keep your sign-in details private and provide an email address you can access. You are responsible for activity performed through your account.",
+      "useTitle": "Acceptable use",
+      "useBody": "Use Galexi for lawful learning activities. Do not attempt to disrupt the service, access another person's account, or misuse shared vocabulary content.",
+      "serviceTitle": "Service changes",
+      "serviceBody": "Features and learning content may change as Galexi improves. Access may be limited when maintenance or security work is required."
+    },
+    "privacy": {
+      "title": "Privacy Notice",
+      "intro": "This notice explains the account information Galexi uses to provide saved learning progress.",
+      "collectTitle": "Information used",
+      "collectBody": "Galexi uses your email address, account identifier, profile details you choose to provide, and learning progress connected to your account.",
+      "purposeTitle": "Why it is used",
+      "purposeBody": "This information supports sign-in, progress saving, learning synchronization, account security, and the vocabulary features you request.",
+      "securityTitle": "Account security",
+      "securityBody": "Authentication is handled through Galexi's configured authentication provider. Galexi does not display your password after you submit it."
     }
   },
   "profile": {
@@ -580,13 +621,15 @@
       "revealHint": "Think of the Thai meaning, then reveal the answer when you are ready.",
       "revealAnswer": "Reveal answer",
       "hideAnswer": "Study again",
+      "testYourself": "Test yourself",
       "notAvailable": "No meaning has been added yet."
     },
     "search": {
       "pageTitle": "Search vocabulary",
       "pageDescription": "Explore flashcards published by Galexi administrators.",
       "searchLabel": "Search public vocabulary",
-      "searchPlaceholder": "Search by word...",
+      "searchPlaceholder": "Search English or Thai meanings...",
+      "backToTopic": "Back to topic",
       "alphabetIndex": "Jump to words by letter",
       "resultCount": "{count, plural, one {# word} other {# words}}",
       "noResults": "No published words match your search.",

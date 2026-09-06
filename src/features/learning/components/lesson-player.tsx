@@ -52,7 +52,9 @@ export function LessonPlayer({
   const router = useRouter();
   const [phase, setPhase] = useState(initialState.phase);
   const [wordIndex, setWordIndex] = useState(initialState.wordIndex);
-  const [isRevealed, setIsRevealed] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(() =>
+    initialState.seenWordSenseIds.includes(words[initialState.wordIndex]?.id),
+  );
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
   const word = words[wordIndex];
@@ -111,9 +113,10 @@ export function LessonPlayer({
   const progress = ((wordIndex + 1) / words.length) * 100;
 
   function goToPreviousWord() {
+    const previousIndex = Math.max(0, wordIndex - 1);
     setError('');
-    setIsRevealed(false);
-    setWordIndex((currentIndex) => Math.max(0, currentIndex - 1));
+    setIsRevealed(initialState.seenWordSenseIds.includes(words[previousIndex]?.id));
+    setWordIndex(previousIndex);
   }
 
   function goToNextWord() {
@@ -284,7 +287,7 @@ export function LessonPlayer({
         <Button
           type='button'
           className='h-12 rounded-full'
-          disabled={isPending}
+          disabled={isPending || !isRevealed}
           onClick={goToNextWord}
         >
           {isPending ? (

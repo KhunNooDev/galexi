@@ -1,9 +1,10 @@
 'use client';
 
-import { startTransition, useActionState, useMemo } from 'react';
+import { startTransition, useActionState, useEffect, useMemo } from 'react';
+import { useFormContext } from 'react-hook-form';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { CircleAlert, LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
+import { CircleAlert, LoaderCircle, LockKeyhole, LogIn, Mail, UserPlus } from 'lucide-react';
 import { z } from 'zod';
 
 import type { AuthState } from '@/app/auth/actions';
@@ -11,7 +12,7 @@ import { createFormInputs, Form, FormResetFields } from '@/components/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AUTH_MODE, AUTH_PASSWORD_MIN_LENGTH, type AuthMode } from '@/constants/auth';
-import { getAuthRoute } from '@/constants/routes';
+import { getAuthRoute, ROUTES } from '@/constants/routes';
 import { cn } from '@/lib/utils';
 
 type AuthAction = (state: AuthState, formData: FormData) => Promise<AuthState>;
@@ -31,6 +32,27 @@ type AuthFormProps = {
 
 const { InputCheckbox, InputPass, InputText } = createFormInputs<AuthFormValues>();
 const authSecretFields: ('password' | 'confirmPassword')[] = ['password', 'confirmPassword'];
+const rememberMeStorageKey = 'galexi.auth.rememberMe';
+
+function RememberMeField({ hint, label }: { hint: string; label: string }) {
+  const { setValue } = useFormContext<AuthFormValues>();
+
+  useEffect(() => {
+    setValue('rememberMe', window.sessionStorage.getItem(rememberMeStorageKey) === 'true');
+  }, [setValue]);
+
+  return (
+    <InputCheckbox
+      field='rememberMe'
+      label={label}
+      hint={hint}
+      variant='inline'
+      onValueChange={(checked) =>
+        window.sessionStorage.setItem(rememberMeStorageKey, String(checked))
+      }
+    />
+  );
+}
 
 export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
   const t = useTranslations();
@@ -78,16 +100,10 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
     [mode, t],
   );
   const Icon = mode === AUTH_MODE.SIGN_IN ? LogIn : UserPlus;
-  const alternateHref = getAuthRoute(
-    mode === AUTH_MODE.SIGN_IN ? AUTH_MODE.SIGN_UP : AUTH_MODE.SIGN_IN,
-    returnTo,
-  );
-  const alternateLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signUp') : t('auth.signIn');
-  const alternatePrompt =
-    mode === AUTH_MODE.SIGN_IN ? t('auth.needAccount') : t('auth.haveAccount');
   const description =
     mode === AUTH_MODE.SIGN_IN ? t('auth.signInDescription') : t('auth.signUpDescription');
   const submitLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signIn') : t('auth.signUp');
+  const pendingLabel = mode === AUTH_MODE.SIGN_IN ? t('auth.signingIn') : t('auth.creatingAccount');
   const title = mode === AUTH_MODE.SIGN_IN ? t('auth.signInTitle') : t('auth.signUpTitle');
 
   const submitForm = (values: AuthFormValues) => {
@@ -153,6 +169,8 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
 
       <Form
         action={formAction}
+        aria-busy={pending}
+        autoComplete='on'
         className='flex flex-col gap-4'
         defaultValues={{ confirmPassword: '', email: '', password: '', rememberMe: false }}
         schema={authFormSchema}
@@ -181,6 +199,7 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
         )}
 
         <InputText
+          autoComplete='email'
           field='email'
           label={t('auth.email')}
           type='email'
@@ -192,6 +211,7 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
         />
 
         <InputPass
+          autoComplete={mode === AUTH_MODE.SIGN_IN ? 'current-password' : 'new-password'}
           field='password'
           label={t('auth.password')}
           placeholder={
@@ -212,6 +232,7 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
 
         {mode === AUTH_MODE.SIGN_UP && (
           <InputPass
+            autoComplete='new-password'
             field='confirmPassword'
             label={t('auth.confirmPassword')}
             placeholder={t('auth.passwordPlaceholder', {
@@ -228,12 +249,7 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
         )}
 
         {mode === AUTH_MODE.SIGN_IN && (
-          <InputCheckbox
-            field='rememberMe'
-            label={t('auth.rememberMe')}
-            hint={t('auth.rememberMeHint')}
-            variant='inline'
-          />
+          <RememberMeField label={t('auth.rememberMe')} hint={t('auth.rememberMeHint')} />
         )}
 
         <Button
@@ -241,20 +257,41 @@ export function AuthForm({ action, mode, returnTo }: AuthFormProps) {
           disabled={pending}
           className='mt-2 h-12 w-full cursor-pointer rounded-2xl bg-primary px-4 font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5 hover:bg-primary-hover disabled:cursor-wait sm:h-13'
         >
-          <Icon aria-hidden='true' className='size-4' />
-          {submitLabel}
+          {pending ? (
+            <LoaderCircle
+              aria-hidden='true'
+              className='size-4 animate-spin motion-reduce:animate-none'
+            />
+          ) : (
+            <Icon aria-hidden='true' className='size-4' />
+          )}
+          {pending ? pendingLabel : submitLabel}
         </Button>
       </Form>
 
-      <p className='mt-6 text-center text-xs text-muted-foreground sm:text-sm'>
-        {alternatePrompt}{' '}
-        <Link
-          href={alternateHref}
-          className='font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-current'
-        >
-          {alternateLabel}
-        </Link>
-      </p>
+      {mode === AUTH_MODE.SIGN_UP && (
+        <p className='mt-6 text-center text-xs leading-5 text-muted-foreground'>
+          {t('auth.legalPrefix')}{' '}
+          <Link
+            href={ROUTES.TERMS}
+            target='_blank'
+            rel='noreferrer'
+            className='font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-current'
+          >
+            {t('auth.terms')}
+          </Link>{' '}
+          {t('auth.legalJoin')}{' '}
+          <Link
+            href={ROUTES.PRIVACY}
+            target='_blank'
+            rel='noreferrer'
+            className='font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-current'
+          >
+            {t('auth.privacy')}
+          </Link>
+          .
+        </p>
+      )}
     </div>
   );
 }

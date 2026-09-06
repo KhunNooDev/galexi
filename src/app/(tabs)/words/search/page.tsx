@@ -21,6 +21,9 @@ export default async function SearchWordsPage({ searchParams }: PageProps<'/word
   const [t, publicWords] = await Promise.all([getTranslations(), listPublicWordSummaries(query)]);
   const wordGroups = Map.groupBy(publicWords, ({ word }) => getWordInitial(word));
   const availableLetters = [...wordGroups.keys()].filter((letter) => letter !== '#');
+  const returnTo = query
+    ? `${ROUTES.PUBLIC_WORDS}?${new URLSearchParams({ q: query })}`
+    : ROUTES.PUBLIC_WORDS;
 
   return (
     <main className='min-h-[calc(100svh-4rem)] bg-background pb-28 lg:pb-12'>
@@ -89,7 +92,7 @@ export default async function SearchWordsPage({ searchParams }: PageProps<'/word
                       {words.map(({ entries, word }) => (
                         <li key={word.toLocaleLowerCase()}>
                           <Link
-                            href={getPublicWordRoute(word)}
+                            href={getPublicWordRoute(word, returnTo)}
                             prefetch={false}
                             className='group flex min-h-16 items-center gap-2.5 rounded-2xl border border-border bg-surface px-3 py-2.5 shadow-[0_10px_30px_rgb(34_74_150/5%)] transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md hover:shadow-primary/8 focus-visible:ring-3 focus-visible:ring-focus/30 focus-visible:outline-none sm:min-h-20 sm:gap-3 sm:px-4 sm:py-3'
                           >

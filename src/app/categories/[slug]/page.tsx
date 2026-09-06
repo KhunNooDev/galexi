@@ -33,6 +33,7 @@ export default async function CategoryPage({
     getTranslations(),
     listPublicWordsByCategory(category.id, { query, partOfSpeech }),
   ]);
+  const returnTo = `${getCategoryRoute(category.slug)}?${new URLSearchParams({ q: query, partOfSpeech })}`;
 
   return (
     <main className='min-h-svh bg-background pb-28 lg:pb-12'>
@@ -73,6 +74,7 @@ export default async function CategoryPage({
             {entries.map((word) => (
               <li key={word.id} className='h-full'>
                 <CategoryWordCard
+                  returnTo={returnTo}
                   word={word}
                   imageAlt={t('words.flashcard.imageAlt', { word: word.word })}
                   ipaLabel={t('words.flashcard.ipaLabel')}

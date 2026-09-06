@@ -15,7 +15,9 @@ export const ROUTES = {
   LEARN_SAVE: '/learn/save',
   LEARN_START: '/learn/start',
   PROFILE: '/profile',
+  PRIVACY: '/privacy',
   PUBLIC_WORDS: '/words/search',
+  TERMS: '/terms',
 } as const;
 
 export function getCategoryRoute(slug: string) {
@@ -87,8 +89,20 @@ export function getWordImageRoute(id: number) {
   return `/api/word-images/${id}`;
 }
 
-export function getPublicWordRoute(word: string) {
-  return `${ROUTES.PUBLIC_WORDS}/${encodeURIComponent(word)}`;
+export function getWordSearchReturnTo(value: string | string[] | undefined) {
+  const safe = getSafeAuthReturnTo(value);
+  if (!safe) return ROUTES.PUBLIC_WORDS;
+  const { pathname } = new URL(safe, 'https://galexi.local');
+  return pathname === ROUTES.PUBLIC_WORDS || /^\/categories\/[^/]+$/.test(pathname)
+    ? safe
+    : ROUTES.PUBLIC_WORDS;
+}
+
+export function getPublicWordRoute(word: string, returnTo?: string) {
+  const route = `${ROUTES.PUBLIC_WORDS}/${encodeURIComponent(word)}`;
+  return returnTo
+    ? `${route}?${new URLSearchParams({ returnTo: getWordSearchReturnTo(returnTo) })}`
+    : route;
 }
 
 export function decodeWordRouteParam(word: string) {

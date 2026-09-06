@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { BookOpenText, Globe2, Languages, Search, ShieldCheck } from 'lucide-react';
+import { BookOpenText, Globe2, Languages, Search, Target } from 'lucide-react';
 
 import { ROUTES } from '@/constants/routes';
 import { StartLearningForm } from '@/features/learning/components/start-learning-form';
@@ -9,7 +9,7 @@ export default async function Home() {
   const t = await getTranslations();
   const features = [
     {
-      icon: ShieldCheck,
+      icon: Target,
       title: t('home.secureTitle'),
       description: t('home.secureDescription'),
     },

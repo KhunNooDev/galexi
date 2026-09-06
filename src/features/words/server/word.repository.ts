@@ -304,8 +304,12 @@ export function listPublicWordSummariesFromDatabase(query = '') {
     })
     .from(words)
     .innerJoin(wordSenses, and(eq(wordSenses.wordId, words.id), eq(wordSenses.isPublic, true)))
-    .where(normalizedQuery ? ilike(words.word, `%${normalizedQuery}%`) : undefined)
     .groupBy(normalizedWord)
+    .having(
+      normalizedQuery
+        ? sql`bool_or(${words.word} ilike ${`%${normalizedQuery}%`} or array_to_string(${wordSenses.meaningsTh}, ' ') ilike ${`%${normalizedQuery}%`})`
+        : undefined,
+    )
     .orderBy(asc(normalizedWord));
 }
 

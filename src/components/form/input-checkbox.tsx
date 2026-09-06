@@ -22,6 +22,7 @@ type InputCheckboxProps<TValues extends FieldValues> = {
   icon?: ReactNode;
   id?: string;
   label: string;
+  onValueChange?: (checked: boolean) => void;
   required?: boolean;
   variant?: 'card' | 'inline';
   wrapperClassName?: string;
@@ -35,6 +36,7 @@ export function InputCheckbox<TValues extends FieldValues>({
   icon,
   id = field.replaceAll('.', '-'),
   label,
+  onValueChange,
   required = false,
   variant = 'card',
   wrapperClassName,
@@ -53,9 +55,9 @@ export function InputCheckbox<TValues extends FieldValues>({
             <Label
               htmlFor={id}
               className={cn(
-                'group flex cursor-pointer items-start gap-3 transition-colors focus-within:ring-2 focus-within:ring-focus/20',
+                'group flex cursor-pointer items-start gap-3 transition-colors',
                 variant === 'card'
-                  ? 'rounded-xl border border-border bg-field p-4 hover:border-primary/40 hover:bg-primary/5'
+                  ? 'rounded-xl border border-border bg-field p-4 focus-within:ring-2 focus-within:ring-focus/20 hover:border-primary/40 hover:bg-primary/5'
                   : 'rounded-lg py-1 text-muted-foreground hover:text-surface-foreground',
                 controller.value &&
                   (variant === 'card'
@@ -77,7 +79,11 @@ export function InputCheckbox<TValues extends FieldValues>({
                 aria-required={required}
                 aria-describedby={getFieldDescriptionId(id, fieldErrors, hint)}
                 onBlur={controller.onBlur}
-                onCheckedChange={(checked) => controller.onChange(checked === true)}
+                onCheckedChange={(checked) => {
+                  const nextChecked = checked === true;
+                  controller.onChange(nextChecked);
+                  onValueChange?.(nextChecked);
+                }}
               />
               <span className='grid min-w-0 flex-1 gap-1'>
                 <span

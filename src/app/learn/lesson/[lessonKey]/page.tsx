@@ -62,7 +62,11 @@ export default async function LessonPage({ params }: { params: Promise<{ lessonK
         <div className='absolute right-0 bottom-0 size-72 rounded-full bg-cyan-400/7 blur-3xl' />
       </div>
       <div className='relative mx-auto flex min-h-svh max-w-7xl flex-col'>
-        <PageHeader brand identity={identity} />
+        <PageHeader
+          backHref={ROUTES.LEARN_HOME}
+          backLabel={t('backToLearning')}
+          identity={identity}
+        />
         <section className='flex flex-1 flex-col items-center px-5 py-7 sm:px-8 sm:py-10'>
           <div className='mb-6 w-full max-w-xl text-center'>
             <p className='text-xs font-semibold tracking-[0.16em] text-primary uppercase'>

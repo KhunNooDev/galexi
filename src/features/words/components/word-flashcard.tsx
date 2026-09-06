@@ -23,10 +23,16 @@ type FlashcardWord = {
   categories: { id: number; name: string; slug: string }[];
 };
 
-export function WordFlashcard({ word }: { word: FlashcardWord }) {
+export function WordFlashcard({
+  word,
+  mode = 'study',
+}: {
+  word: FlashcardWord;
+  mode?: 'study' | 'dictionary';
+}) {
   const t = useTranslations();
-  const [hasRevealed, setHasRevealed] = useState(false);
-  const [isRevealed, setIsRevealed] = useState(false);
+  const [hasRevealed, setHasRevealed] = useState(mode === 'dictionary');
+  const [isRevealed, setIsRevealed] = useState(mode === 'dictionary');
   const revealButtonRef = useRef<HTMLButtonElement>(null);
   const studyAgainButtonRef = useRef<HTMLButtonElement>(null);
   const shouldMoveFocusRef = useRef(false);
@@ -70,7 +76,12 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
 
   return (
     <div className='mx-auto w-full max-w-lg'>
-      <article className='flex aspect-3/4 w-full flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(34_74_150/12%)]'>
+      <article
+        className={cn(
+          'flex w-full flex-col overflow-hidden rounded-4xl border border-border bg-surface shadow-[0_24px_80px_rgb(34_74_150/12%)]',
+          mode === 'study' ? 'aspect-3/4' : 'min-h-0',
+        )}
+      >
         <div className='flex min-h-0 flex-1 flex-col p-4 sm:p-6'>
           <div className='shrink-0 text-center'>
             <div className='flex items-center justify-center gap-2'>
@@ -135,7 +146,10 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
               key='answer'
               data-flashcard-state
               hidden={!isRevealed}
-              className='flex min-h-0 flex-1 animate-in scrollbar-none flex-col gap-3 overflow-y-auto overscroll-contain duration-200 fade-in-0 slide-in-from-bottom-2 sm:gap-4'
+              className={cn(
+                'flex min-h-0 flex-1 animate-in flex-col gap-3 duration-200 fade-in-0 slide-in-from-bottom-2 sm:gap-4',
+                mode === 'study' && 'scrollbar-none overflow-y-auto overscroll-contain',
+              )}
               aria-live='polite'
             >
               <div
@@ -240,7 +254,7 @@ export function WordFlashcard({ word }: { word: FlashcardWord }) {
           onClick={(event) => setRevealed(false, event.detail === 0)}
         >
           <RotateCcw aria-hidden='true' className='size-4' />
-          {t('words.flashcard.hideAnswer')}
+          {t(mode === 'dictionary' ? 'words.flashcard.testYourself' : 'words.flashcard.hideAnswer')}
         </Button>
       )}
     </div>
